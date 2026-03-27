@@ -1,0 +1,144 @@
+<div class="pos-container">
+  <!-- Top Bar -->
+  <div class="pos-top-bar">
+    <div class="pos-brand">
+      <span class="logo-icon"></span>
+      <span class="brand-name">NexusPOS</span>
+    </div>
+    <div class="pos-context">
+      <div class="context-item">
+        <span class="label">Store:</span>
+        <span class="value">{{ storeContext?.storeCode || 'S001' }}</span>
+      </div>
+      <div class="context-item">
+        <span class="label">Shift:</span>
+        <span class="value">{{ storeContext?.shiftDate | date:'dd MMM yyyy' }}</span>
+      </div>
+      <div class="context-item">
+        <span class="label">User:</span>
+        <span class="value">{{ auth.currentUserValue?.email || 'Cashier' }}</span>
+      </div>
+    </div>
+    <button class="btn-logout" (click)="logout()">
+      <span>Logout</span>
+      <i class="logout-icon">🚪</i>
+    </button>
+  </div>
+
+  <div class="pos-main">
+    <!-- Left: Product Catalog -->
+    <div class="product-section">
+      <div class="search-header">
+        <div class="search-box">
+          <input type="text" placeholder="Scan Barcode or Search Product..." [(ngModel)]="searchQuery" (input)="search()">
+          <button class="btn-search" (click)="search()"><i class="fas fa-search"></i></button>
+        </div>
+        <div class="category-tabs">
+          <button class="tab-btn" [class.active]="activeCategory === 'All'" (click)="filterByCategory('All')">All</button>
+          <button *ngFor="let c of categories" 
+                  class="tab-btn" 
+                  [class.active]="activeCategory === c.name" 
+                  (click)="filterByCategory(c.name)">
+            {{ c.name }}
+          </button>
+        </div>
+      </div>
+
+      <div class="product-list">
+        <div class="product-list-item" *ngFor="let p of products" (click)="addToCart(p)">
+          <div class="p-image">📦</div>
+          <div class="p-details">
+            <div class="p-main-info">
+              <span class="p-name">{{ p.name }}</span>
+              <span class="p-sku">SKU: {{ p.sku }}</span>
+            </div>
+            <div class="p-price-info">
+              <span class="p-price">{{ (p.sellingPrice || p.mrp) | currency }}</span>
+              <span class="stock-badge">In Stock</span>
+            </div>
+          </div>
+          <div class="p-action">
+            <button class="btn-add-item">Add +</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Active Bill/Cart -->
+    <div class="bill-section">
+      <div class="bill-header">
+        <h3>Current Bill</h3>
+        <button class="btn-clear" (click)="clearCart()" *ngIf="cartItems.length > 0">Clear All</button>
+      </div>
+      
+      <!-- Customer Details -->
+      <div class="customer-details" style="padding: 10px; background: #f8f9fa; border-bottom: 1px solid #eee;">
+        <div style="display: flex; gap: 10px;">
+          <input type="text" placeholder="Customer Mobile (Req)" [(ngModel)]="customerMobile" (blur)="onMobileBlur()" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+          <input type="text" placeholder="Customer Name (Req)" [(ngModel)]="customerName" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+      </div>
+
+      <div class="bill-items-container">
+        <table class="bill-table" *ngIf="cartItems.length > 0">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of cartItems">
+              <td>{{ item.productName }}</td>
+              <td>
+                <div class="qty-control">
+                  <button (click)="decrementQuantity(item)">-</button>
+                  <span>{{ item.quantity }}</span>
+                  <button (click)="incrementQuantity(item)">+</button>
+                </div>
+              </td>
+              <td>{{ item.unitPrice | currency }}</td>
+              <td>{{ item.subTotal | currency }}</td>
+              <td>
+                <button class="btn-remove" (click)="removeItem(item)">×</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="empty-cart" *ngIf="cartItems.length === 0">
+          <div class="empty-icon">🛒</div>
+          <p>Scan items to start billing</p>
+        </div>
+      </div>
+
+      <div class="bill-summary">
+        <div class="summary-line">
+          <span>Subtotal</span>
+          <span>{{ cartSubTotal | currency }}</span>
+        </div>
+        <div class="summary-line">
+          <span>Discount (0%)</span>
+          <span>$0.00</span>
+        </div>
+        <div class="summary-line">
+          <span>Taxes (10%)</span>
+          <span>{{ taxAmount | currency }}</span>
+        </div>
+        <div class="summary-total">
+          <span>Net Total</span>
+          <span>{{ cartTotal | currency }}</span>
+        </div>
+        
+        <div class="bill-actions">
+          <button class="btn-secondary" [disabled]="cartItems.length === 0" (click)="holdBill()">Hold Bill</button>
+          <button class="btn-pay" [disabled]="cartItems.length === 0" (click)="proceedToPayment()">
+            Pay Now ({{ cartTotal | currency }})
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,164 @@
+<div class="dashboard-layout">
+  <!-- Sidebar (Consistent) -->
+  <app-admin-sidebar active="inventory"></app-admin-sidebar>
+
+  <div class="main-content">
+    <div class="header-section" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h1 class="title">Inventory Control</h1>
+        <p>Monitor stock levels and perform balance adjustments</p>
+      </div>
+      <button (click)="loadData()" class="btn btn-secondary" style="padding: 0.75rem 1.5rem;">🔄 Refresh Data</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+      <!-- Left: Stock Status Table -->
+      <div class="inner-section">
+        <div class="premium-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3>Current Stock Levels</h3>
+            <div class="search-bar">
+              <input type="text" placeholder="Search product or SKU..." class="search-input" [(ngModel)]="searchQuery"
+                (input)="searchInventory()">
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="premium-table">
+              <thead>
+                <tr>
+                  <th>Product Details</th>
+                  <th>On Hand</th>
+                  <th>Reorder Level</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let p of inventory">
+                  <td>
+                    <div style="font-weight: 600;">{{ p.name }}</div>
+                    <small style="color: var(--text-muted)">SKU: {{ p.sku }} | {{ p.barcode }}</small>
+                  </td>
+                  <td style="font-weight: 700;">{{ p.stockQuantity }} units</td>
+                  <td>{{ p.reorderLevel || 10 }}</td>
+                  <td>
+                    <span class="badge" [class.badge-light]="p.stockQuantity > (p.reorderLevel || 10)"
+                      [style.color]="p.stockQuantity <= (p.reorderLevel || 10) ? 'var(--danger)' : ''">
+                      {{ p.stockQuantity <= (p.reorderLevel || 10) ? 'Low Stock' : 'Healthy' }} </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Adjustment Form -->
+      <div class="inner-section">
+        <div class="premium-card">
+          <h3>Stock Adjustment</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Record manual changes due to
+            audit, damage, or inward.</p>
+
+          <form (ngSubmit)="onSubmit()" #adjForm="ngForm">
+            <div class="form-group">
+              <label>Select Product</label>
+              <select [(ngModel)]="newAdj.productId" name="productId" required>
+                <option [value]="0">-- Select Product --</option>
+                <option *ngFor="let p of products" [value]="p.id">{{ p.name }} ({{ p.sku }})</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Adjustment Type</label>
+              <select [(ngModel)]="newAdj.reasonCode" name="reason">
+                <option value="Inward">Stock Inward (+)</option>
+                <option value="Damage">Damage (-)</option>
+                <option value="Audit">Audit Adjustment (+/-)</option>
+                <option value="Return">Customer Return (+)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Quantity Change</label>
+              <input type="number" [(ngModel)]="newAdj.quantity" name="qty" required placeholder="e.g. 50 or -5">
+              <small style="color: grey">Use negative values for stock reduction during audits.</small>
+            </div>
+
+            <div class="form-group">
+              <label>Notes / Ref #</label>
+              <input type="text" [(ngModel)]="newAdj.documentReference" name="docRef"
+                placeholder="e.g. PO-8822 or Damage Report">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1rem; padding: 1rem;"
+              [disabled]="!adjForm.valid || newAdj.productId === 0 || newAdj.quantity === 0">
+              Post Adjustment
+            </button>
+          </form>
+        </div>
+
+        <!-- Mini Stats? -->
+        <div class="premium-card" style="margin-top: 1.5rem; background: #fffbeb; border-color: #fef3c7;">
+          <h4 style="color: #92400e; margin-bottom: 0.5rem;">Inventory Alerts</h4>
+          <div style="font-size: 0.9rem; color: #b45309;">
+            There are {{ kpis?.lowStockAlerts || 12 }} items below reorder levels. Take action to avoid out-of-stock
+            scenarios.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom: History -->
+    <div class="inner-section" style="margin-top: 2rem;">
+      <div class="premium-card">
+        <h3>Recent Adjustment Activity</h3>
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Product</th>
+              <th>Change</th>
+              <th>Type</th>
+              <th>Reference</th>
+              <th>By User</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let adj of adjustments">
+              <td>{{ adj.adjustmentDate | date:'short' }}</td>
+              <td style="font-weight: 600;">{{ getProductName(adj.productId) }}</td>
+              <td [style.color]="adj.quantity > 0 ? 'var(--success)' : 'var(--danger)'" style="font-weight: 700;">
+                {{ adj.quantity > 0 ? '+' : '' }}{{ adj.quantity }}
+              </td>
+              <td><span class="badge">{{ adj.reasonCode }}</span></td>
+              <td>{{ adj.documentReference || 'N/A' }}</td>
+              <td>System Admin</td>
+            </tr>
+            <tr *ngIf="adjustments.length === 0">
+              <td colspan="6" style="text-align: center; padding: 2rem;">No history available</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Pagination Controls -->
+        <div *ngIf="totalPages > 1"
+          style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--panel-border);">
+          <div style="font-size: 0.85rem; color: var(--text-muted);">
+            Showing page {{ currentPage }} of {{ totalPages }} ({{ totalAdjustments }} total)
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button (click)="prevPage()" [disabled]="currentPage === 1" class="btn btn-secondary"
+              style="padding: 0.5rem 1rem;">
+              &laquo; Previous
+            </button>
+            <button (click)="nextPage()" [disabled]="currentPage === totalPages" class="btn btn-secondary"
+              style="padding: 0.5rem 1rem;">
+              Next &raquo;
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

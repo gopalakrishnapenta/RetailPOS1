@@ -1,0 +1,103 @@
+<div class="dashboard-layout fade-in">
+  <app-admin-sidebar active="products"></app-admin-sidebar>
+
+  <div class="main-content">
+    <div class="header-section">
+      <div>
+        <h2 class="title">Product Management</h2>
+        <p class="subtitle">Add or edit products in the catalog.</p>
+      </div>
+    </div>
+
+    <!-- Product Form -->
+    <div class="premium-card">
+      <h3 class="card-title">{{ isEditing ? 'Edit Product' : 'Add New Product' }}</h3>
+      <form (ngSubmit)="onSubmit()" #prodForm="ngForm" class="form-grid">
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" [(ngModel)]="newProduct.name" name="name" required placeholder="e.g. Wireless Mouse">
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select [(ngModel)]="newProduct.categoryId" name="categoryId" (change)="onCategoryChange()" required>
+            <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>SKU (Prefix Locked)</label>
+          <div style="display: flex; gap: 5px; align-items: center;">
+            <input type="text" [(ngModel)]="skuPrefix" name="prefix" disabled
+              style="width: 70px; background: #f8fafc; text-align: center; border-radius: 4px; font-weight: bold; border: 1px solid #cbd5e1;">
+            <span style="font-weight: bold">-</span>
+            <input type="text" [(ngModel)]="skuSuffix" name="suffix" (input)="updateSku()" required placeholder="001"
+              style="flex: 1;">
+          </div>
+          <input type="hidden" [(ngModel)]="newProduct.sku" name="fullSku" required>
+        </div>
+        <div class="form-group">
+          <label>Barcode</label>
+          <input type="text" [(ngModel)]="newProduct.barcode" name="barcode" required placeholder="Barcode / UPC">
+        </div>
+        <div class="form-group">
+          <label>MRP ($)</label>
+          <input type="number" [(ngModel)]="newProduct.mrp" name="mrp" required>
+        </div>
+        <div class="form-group">
+          <label>Selling Price ($)</label>
+          <input type="number" [(ngModel)]="newProduct.sellingPrice" name="sellingPrice" required>
+        </div>
+        <div class="form-group">
+          <label>Stock Quantity</label>
+          <input type="number" [(ngModel)]="newProduct.stockQuantity" name="stockQuantity" required>
+        </div>
+        <div style="grid-column: 1 / -1; display:flex; gap:10px;">
+          <button type="submit" class="btn btn-primary" [disabled]="!prodForm.valid">{{ isEditing ? 'Update Product' :
+            'Add Product' }}</button>
+          <button type="button" class="btn btn-secondary" *ngIf="isEditing" (click)="resetForm()">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Product Grid -->
+    <div class="premium-card" style="margin-top: 2rem;">
+      <h3 class="card-title">Catalog Overview</h3>
+      <div class="table-container">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Category</th>
+              <th>Name</th>
+              <th>SKU / Barcode</th>
+              <th>Prices (MRP / Sell)</th>
+              <th>Stock</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of products">
+              <td>#{{ p.id }}</td>
+              <td><span class="badge" style="background:#e2e8f0; color:#475569">{{ p.categoryName || 'Uncategorized'
+                  }}</span></td>
+              <td style="font-weight: 500;">{{ p.name }}</td>
+              <td><span class="badge">{{ p.sku }}</span> <span class="badge badge-light" *ngIf="p.barcode">{{ p.barcode
+                  }}</span></td>
+              <td><s style="color:var(--text-muted)">{{ p.mrp | currency }}</s> <span
+                  style="color:var(--success); font-weight: 600">{{ p.sellingPrice | currency }}</span></td>
+              <td>{{ p.stockQuantity }}</td>
+              <td>
+                <button class="btn btn-sm btn-secondary" (click)="editProduct(p)"
+                  style="margin-right:0.5rem">Edit</button>
+                <button class="btn btn-sm" style="background:var(--danger); color:white"
+                  (click)="deleteProduct(p.id)">Del</button>
+              </td>
+            </tr>
+            <tr *ngIf="products.length === 0">
+              <td colspan="6" class="empty-state">No products available in the catalog.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

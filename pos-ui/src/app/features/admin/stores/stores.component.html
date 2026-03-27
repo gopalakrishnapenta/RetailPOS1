@@ -1,0 +1,50 @@
+<div class="dashboard-layout">
+  <app-admin-sidebar active="stores"></app-admin-sidebar>
+
+  <div class="main-content">
+    <h1 class="title">Store Management</h1>
+    
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+      <div class="premium-card">
+        <h3>Registered Stores</h3>
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Name</th>
+              <th>Location</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of stores">
+              <td>{{ s.storeCode }}</td>
+              <td>{{ s.name }}</td>
+              <td>{{ s.location }}</td>
+              <td><span class="badge" [class.badge-success]="s.isActive">Active</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="premium-card">
+        <h3>Add New Store</h3>
+        <form (ngSubmit)="onSubmit()">
+          <div class="form-group">
+            <label>Store Code</label>
+            <input type="text" [(ngModel)]="newStore.storeCode" name="code" required placeholder="e.g. S001">
+          </div>
+          <div class="form-group">
+            <label>Store Name</label>
+            <input type="text" [(ngModel)]="newStore.name" name="name" required placeholder="e.g. Downtown Nexus">
+          </div>
+          <div class="form-group">
+            <label>Location</label>
+            <input type="text" [(ngModel)]="newStore.location" name="loc" placeholder="City / Street">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Register Store</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

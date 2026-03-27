@@ -1,0 +1,21 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace OrdersService.Models
+{
+    public class Customer
+    {
+        [Key]
+        public int Id { get; set; }
+
+        [Required]
+        [MaxLength(20)]
+        public string Mobile { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(100)]
+        public string Name { get; set; } = string.Empty;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public int StoreId { get; set; }
+    }
+}
