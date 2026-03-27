@@ -21,11 +21,11 @@ namespace AdminService.Services
         public async Task<IEnumerable<SalesReportDto>> GetSalesReportAsync(DateTime? from, DateTime? to)
         {
             ApplyHeaders();
-            var bills = await _httpClient.GetFromJsonAsync<List<InternalBillDto>>("http://localhost:5003/api/bills") ?? new();
+            var bills1 = await _httpClient.GetFromJsonAsync<List<InternalBillDto>>("http://127.0.0.1:5003/api/bills") ?? new();
             var fromDate = from ?? DateTime.UtcNow.AddDays(-30);
             var toDate = to ?? DateTime.UtcNow;
 
-            return bills.Where(b => b.Status == "Finalized" && b.Date >= fromDate && b.Date <= toDate)
+            return bills1.Where(b => b.Status == "Finalized" && b.Date >= fromDate && b.Date <= toDate)
                 .GroupBy(b => b.Date.Date).OrderByDescending(g => g.Key)
                 .Select(g => new SalesReportDto { Date = g.Key.ToString("yyyy-MM-dd"), Bills = g.Count(), Sales = g.Sum(b => b.TotalAmount - b.TaxAmount), Tax = g.Sum(b => b.TaxAmount) });
         }
@@ -33,11 +33,11 @@ namespace AdminService.Services
         public async Task<TaxReportDto> GetTaxReportAsync(DateTime? from, DateTime? to)
         {
             ApplyHeaders();
-            var bills = await _httpClient.GetFromJsonAsync<List<InternalBillDto>>("http://localhost:5003/api/bills") ?? new();
+            var bills2 = await _httpClient.GetFromJsonAsync<List<InternalBillDto>>("http://127.0.0.1:5003/api/bills") ?? new();
             var fromDate = from ?? DateTime.UtcNow.AddDays(-30);
             var toDate = to ?? DateTime.UtcNow;
 
-            var finalized = bills.Where(b => b.Status == "Finalized" && b.Date >= fromDate && b.Date <= toDate).ToList();
+            var finalized = bills2.Where(b => b.Status == "Finalized" && b.Date >= fromDate && b.Date <= toDate).ToList();
             return new TaxReportDto
             {
                 TotalTaxCollected = finalized.Sum(b => b.TaxAmount),

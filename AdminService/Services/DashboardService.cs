@@ -23,9 +23,9 @@ namespace AdminService.Services
         public async Task<DashboardDto> GetDashboardAsync()
         {
             // Fetch data from other services
-            var bills = await FetchAsync<List<InternalBillDto>>("http://localhost:5003/api/bills") ?? new();
-            var products = await FetchAsync<List<InternalProductDto>>("http://localhost:5002/api/products") ?? new();
-            var customers = await FetchAsync<List<InternalCustomerDto>>("http://localhost:5003/api/customers") ?? new();
+            var bills = await FetchAsync<List<InternalBillDto>>("http://127.0.0.1:5003/api/bills") ?? new();
+            var products = await FetchAsync<List<InternalProductDto>>("http://127.0.0.1:5002/api/products") ?? new();
+            var customers = await FetchAsync<List<InternalCustomerDto>>("http://127.0.0.1:5003/api/customers") ?? new();
 
             var customerMap = customers.GroupBy(c => c.Mobile, StringComparer.OrdinalIgnoreCase)
                                        .ToDictionary(g => g.Key, g => g.First().Name, StringComparer.OrdinalIgnoreCase);

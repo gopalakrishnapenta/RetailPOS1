@@ -7,10 +7,28 @@ using CatalogService.Data;
 using CatalogService.Interfaces;
 using CatalogService.Services;
 using CatalogService.Repositories;
-using CatalogService.Models;
-using CatalogService.DTOs;
+using MassTransit;
+using CatalogService.Consumers;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<OrderPlacedConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("localhost", "/", h => {
+            h.Username("guest");
+            h.Password("guest");
+        });
+
+        cfg.ReceiveEndpoint("catalog-order-placed", e =>
+        {
+            e.ConfigureConsumer<OrderPlacedConsumer>(context);
+        });
+    });
+});
 
 builder.Services.AddControllers().AddJsonOptions(x =>
     x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);

@@ -11,7 +11,7 @@ namespace AdminService.Repositories
         }
     }
 
-    public class StoreRepository : GenericRepository<Store>, IStoreRepository
+    public class StoreRepository : GenericRepository<AdminStoreEntity>, IStoreRepository
     {
         public StoreRepository(AdminDbContext context) : base(context)
         {

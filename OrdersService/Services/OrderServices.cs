@@ -3,7 +3,8 @@ using OrdersService.Data;
 using OrdersService.Models;
 using OrdersService.DTOs;
 using OrdersService.Interfaces;
-using System.Net.Http.Json;
+using MassTransit;
+using RetailPOS.Contracts;
 
 namespace OrdersService.Services
 {
@@ -12,21 +13,21 @@ namespace OrdersService.Services
         private readonly IBillRepository _billRepository;
         private readonly IBillItemRepository _billItemRepository;
         private readonly ICustomerRepository _customerRepository;
-        private readonly HttpClient _httpClient;
         private readonly ITenantProvider _tenantProvider;
+        private readonly IPublishEndpoint _publishEndpoint;
 
         public BillService(
             IBillRepository billRepository, 
             IBillItemRepository billItemRepository,
             ICustomerRepository customerRepository,
-            IHttpClientFactory httpFactory, 
-            ITenantProvider tenantProvider)
+            ITenantProvider tenantProvider,
+            IPublishEndpoint publishEndpoint)
         {
             _billRepository = billRepository;
             _billItemRepository = billItemRepository;
             _customerRepository = customerRepository;
-            _httpClient = httpFactory.CreateClient();
             _tenantProvider = tenantProvider;
+            _publishEndpoint = publishEndpoint;
         }
 
         public async Task<IEnumerable<BillDto>> GetAllBillsAsync()
@@ -107,17 +108,13 @@ namespace OrdersService.Services
             var bill = await _billRepository.GetBillWithItemsAsync(id);
             if (bill == null) return false;
 
-            // Deduct stock from CatalogService
-            try {
-                var token = _tenantProvider.Token;
-                if (!string.IsNullOrEmpty(token)) {
-                    _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-                }
-                var deductions = bill.Items.Select(i => new { ProductId = i.ProductId, Quantity = i.Quantity }).ToList();
-                await _httpClient.PostAsJsonAsync("http://localhost:5002/api/products/deduct", deductions);
-            } catch (Exception ex) { 
-                Console.WriteLine($"Catalog stock deduction failed: {ex.Message}");
-            }
+            // Publish OrderPlacedEvent to RabbitMQ
+            await _publishEndpoint.Publish<OrderPlacedEvent>(new
+            {
+                OrderId = bill.Id,
+                StoreId = bill.StoreId,
+                Items = bill.Items.Select(i => new { i.ProductId, i.Quantity }).ToList()
+            });
 
             bill.Status = "Finalized";
             await _billRepository.SaveChangesAsync();

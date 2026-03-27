@@ -4,13 +4,17 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Text;
 using AdminService.Data;
 using AdminService.Interfaces;
 using AdminService.Services;
 using AdminService.Repositories;
+using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
 
 builder.Services.AddControllers().AddJsonOptions(x =>
     x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
@@ -69,8 +73,20 @@ builder.Services.AddAuthorization(options => {
     options.AddPolicy("StoreManagerOrHigher", policy => policy.RequireRole("Admin", "StoreManager"));
 });
 
-builder.Services.AddDbContext<AdminService.Data.AdminDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<AdminService.Data.AdminDbContext>(dbContextOptions => {
+    dbContextOptions.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("localhost", "/", h => {
+            h.Username("guest");
+            h.Password("guest");
+        });
+    });
+});
 
 builder.Services.AddScoped<IInventoryAdjustmentRepository, InventoryAdjustmentRepository>();
 builder.Services.AddScoped<IStoreRepository, StoreRepository>();
@@ -81,24 +97,11 @@ builder.Services.AddScoped<IReportService, ReportService>();
 
 var app = builder.Build();
 
-try
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        Console.WriteLine("Diagnostic: Attempting to resolve AdminDbContext...");
-        var context = scope.ServiceProvider.GetRequiredService<AdminService.Data.AdminDbContext>();
-        Console.WriteLine("Diagnostic: AdminDbContext resolved successfully.");
-        
-        Console.WriteLine("Applying Migrations to Admin Database...");
-        await context.Database.MigrateAsync();
-        Console.WriteLine("Diagnostic: Migrations applied.");
-    }
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"Diagnostic ERROR: {ex.Message}");
-    if (ex.InnerException != null) Console.WriteLine($"Inner: {ex.InnerException.Message}");
-}
+// using (var scope = app.Services.CreateScope())
+// {
+//     var context = scope.ServiceProvider.GetRequiredService<AdminService.Data.AdminDbContext>();
+//     await context.Database.MigrateAsync();
+// }
 
 if (app.Environment.IsDevelopment())
 {

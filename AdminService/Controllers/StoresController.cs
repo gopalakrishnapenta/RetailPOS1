@@ -3,6 +3,8 @@ using AdminService.Data;
 using AdminService.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using MassTransit;
+using RetailPOS.Contracts;
 
 namespace AdminService.Controllers
 {
@@ -12,38 +14,33 @@ namespace AdminService.Controllers
     public class StoresController : ControllerBase
     {
         private readonly AdminDbContext _context;
-        private readonly HttpClient _httpClient;
+        private readonly IPublishEndpoint _publishEndpoint;
 
-        public StoresController(AdminDbContext context, IHttpClientFactory httpFactory)
+        public StoresController(AdminDbContext context, IPublishEndpoint publishEndpoint)
         {
             _context = context;
-            _httpClient = httpFactory.CreateClient();
+            _publishEndpoint = publishEndpoint;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Store>>> GetStores()
+        public async Task<ActionResult<IEnumerable<AdminStoreEntity>>> GetStores()
         {
             return await _context.Stores.ToListAsync();
         }
 
         [HttpPost]
-        public async Task<ActionResult<Store>> CreateStore(Store store)
+        public async Task<ActionResult<AdminStoreEntity>> CreateStore(AdminStoreEntity store)
         {
             _context.Stores.Add(store);
             await _context.SaveChangesAsync();
 
-            // Sync with IdentityService
-            try {
-                var authHeader = Request.Headers["Authorization"].ToString();
-                if (!string.IsNullOrEmpty(authHeader))
-                {
-                    _httpClient.DefaultRequestHeaders.Authorization = 
-                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authHeader.Replace("Bearer ", ""));
-                }
-                await _httpClient.PostAsJsonAsync("http://localhost:5001/api/auth/stores", new { store.StoreCode, store.Name });
-            } catch (Exception ex) {
-                Console.WriteLine($"Store sync failed: {ex.Message}");
-            }
+            // Publish Event via RabbitMQ
+            await _publishEndpoint.Publish<StoreCreatedEvent>(new
+            {
+                Id = store.Id,
+                StoreCode = store.StoreCode,
+                Name = store.Name
+            });
 
             return CreatedAtAction(nameof(GetStores), new { id = store.Id }, store);
         }

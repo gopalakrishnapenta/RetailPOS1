@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace AdminService.Models
 {
-    public class Store
+    public class AdminStoreEntity
     {
         [Key]
         public int Id { get; set; }
