@@ -16,6 +16,7 @@ builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<OrderPlacedConsumer>();
     x.AddConsumer<CategoryConsumer>();
+    x.AddConsumer<OrderReturnedConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -32,6 +33,11 @@ builder.Services.AddMassTransit(x =>
         cfg.ReceiveEndpoint("catalog-category", e =>
         {
             e.ConfigureConsumer<CategoryConsumer>(context);
+        });
+
+        cfg.ReceiveEndpoint("catalog-order-returned", e =>
+        {
+            e.ConfigureConsumer<OrderReturnedConsumer>(context);
         });
     });
 });

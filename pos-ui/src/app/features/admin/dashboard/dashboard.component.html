@@ -10,7 +10,7 @@
     <!-- Row 1: KPIs -->
     <div class="kpi-grid" *ngIf="kpis">
       <div class="premium-card kpi-card">
-        <h4>Today's Sales</h4>
+        <h4>Today's Net Sales</h4>
         <div class="value">{{ kpis.todaySales | currency }}</div>
         <small [style.color]="kpis.salesChangePercent >= 0 ? 'var(--success)' : 'var(--danger)'"
           style="font-weight: 600;">
@@ -23,9 +23,9 @@
         <small style="color: var(--text-muted)">{{ kpis.totalBills }} total finalized</small>
       </div>
       <div class="premium-card kpi-card">
-        <h4>Total Revenue</h4>
+        <h4>Net All-Time Revenue</h4>
         <div class="value">{{ kpis.totalSales | currency }}</div>
-        <small style="color: var(--success)">All-time finalized</small>
+        <small style="color: var(--success)">Includes refund deductions</small>
       </div>
       <div class="premium-card kpi-card">
         <h4>Critical Alerts</h4>

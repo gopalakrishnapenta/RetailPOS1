@@ -25,7 +25,7 @@ namespace OrdersService.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Policy = "StoreManagerOrHigher")]
+        [Authorize(Policy = "Staff")]
         public async Task<IActionResult> GetById(int id)
         {
             var bill = await _billService.GetBillByIdAsync(id);

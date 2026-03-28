@@ -1,14 +1,14 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-billing',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './billing.component.html',
   styleUrls: []
 })
@@ -20,8 +20,8 @@ export class BillingComponent implements OnInit, OnDestroy {
   activeCategory = 'All';
   originalProducts: any[] = [];
   storeContext: any = null;
-  
-  constructor(private api: ApiService, private router: Router, public auth: AuthService) {}
+
+  constructor(private api: ApiService, private router: Router, public auth: AuthService) { }
 
   private pollInterval: any = null;
 
@@ -77,7 +77,7 @@ export class BillingComponent implements OnInit, OnDestroy {
     if (this.activeCategory === 'All') {
       this.products = this.originalProducts;
     } else {
-      this.products = this.originalProducts.filter(p => 
+      this.products = this.originalProducts.filter(p =>
         p.category?.name?.toLowerCase() === this.activeCategory.toLowerCase()
       );
     }
@@ -153,7 +153,7 @@ export class BillingComponent implements OnInit, OnDestroy {
     if (this.customerMobile.length >= 10) {
       this.api.searchCustomer(this.customerMobile).subscribe({
         next: (c) => { if (c && c.name) this.customerName = c.name; },
-        error: () => {} // Not found, ignore
+        error: () => { } // Not found, ignore
       });
     }
   }
@@ -165,12 +165,12 @@ export class BillingComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const customerData = { 
-      mobile: this.customerMobile, 
-      name: this.customerName, 
-      storeId: this.storeContext?.storeId || 1 
+    const customerData = {
+      mobile: this.customerMobile,
+      name: this.customerName,
+      storeId: this.storeContext?.storeId || 1
     };
-    
+
     // Auto-save/update customer
     this.api.createCustomer(customerData).subscribe({
       next: () => {
@@ -191,7 +191,7 @@ export class BillingComponent implements OnInit, OnDestroy {
       billNumber: 'DRF-' + Date.now().toString(),
       customerMobile: this.customerMobile,
       customerName: this.customerName,
-      storeId: this.storeContext?.storeId || 1, 
+      storeId: this.storeContext?.storeId || 1,
       storeCode: this.storeContext?.storeCode || 'S001',
       shiftDate: this.storeContext?.shiftDate || new Date().toISOString(),
       cashierId: parseInt(localStorage.getItem('userId') || '1'),

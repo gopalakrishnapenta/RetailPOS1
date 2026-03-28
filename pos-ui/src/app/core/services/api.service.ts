@@ -123,4 +123,31 @@ export class ApiService {
   deleteCategory(id: number) {
     return this.http.delete<any>(`${this.baseUrl}/admin/categories/${id}`, this.getHeaders());
   }
+
+  // --- Return Management ---
+  getReturns() {
+    return this.http.get<any[]>(`${this.baseUrl}/orders/returns`, this.getHeaders());
+  }
+
+  initiateReturn(payload: any) {
+    return this.http.post<any>(`${this.baseUrl}/orders/returns/initiate`, payload, this.getHeaders());
+  }
+
+  approveReturn(id: number, note?: string) {
+    return this.http.post<any>(`${this.baseUrl}/orders/returns/${id}/approve`, note ? `"${note}"` : null, {
+      ...this.getHeaders(),
+      headers: this.getHeaders().headers.set('Content-Type', 'application/json')
+    });
+  }
+
+  rejectReturn(id: number, note?: string) {
+    return this.http.post<any>(`${this.baseUrl}/orders/returns/${id}/reject`, note ? `"${note}"` : null, {
+      ...this.getHeaders(),
+      headers: this.getHeaders().headers.set('Content-Type', 'application/json')
+    });
+  }
+
+  getBillByNumber(billNumber: string) {
+    return this.http.get<any>(`${this.baseUrl}/orders/bills/search/${billNumber}`, this.getHeaders());
+  }
 }

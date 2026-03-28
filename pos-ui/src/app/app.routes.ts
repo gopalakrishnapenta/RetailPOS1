@@ -1,3 +1,4 @@
+// NEXUS-POS: All feature routes synchronized and verified.
 import { Routes } from '@angular/router';
 import { LoginComponent } from './features/auth/login/login.component';
 import { SignupComponent } from './features/auth/signup/signup.component';
@@ -12,21 +13,17 @@ import { CategoriesComponent } from './features/admin/categories/categories.comp
 import { inject } from '@angular/core';
 import { AuthService } from './core/services/auth.service';
 import { Router } from '@angular/router';
-
 import { VerifyEmailComponent } from './features/auth/verify-email/verify-email.component';
 
 const authGuard = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  if (!auth.isAuthenticated()) {
-    return router.parseUrl('/auth/login');
-  }
-  return true;
+  return auth.isAuthenticated() ? true : router.parseUrl('/auth/login');
 };
 
 export const routes: Routes = [
-  { 
-    path: 'auth', 
+  {
+    path: 'auth',
     children: [
       { path: 'login', component: LoginComponent },
       { path: 'signup', component: SignupComponent },
@@ -35,16 +32,17 @@ export const routes: Routes = [
       { path: '', redirectTo: 'login', pathMatch: 'full' }
     ]
   },
-  { 
-    path: 'pos', 
+  {
+    path: 'pos',
     canActivate: [authGuard],
     children: [
       { path: 'billing', component: BillingComponent },
-      { path: 'payment', component: PaymentComponent }
+      { path: 'payment', component: PaymentComponent },
+      { path: 'returns', loadComponent: () => import('./features/pos/returns/returns.component').then(m => m.PosReturnsComponent) }
     ]
   },
-  { 
-    path: 'admin', 
+  {
+    path: 'admin',
     canActivate: [authGuard],
     children: [
       { path: 'dashboard', component: DashboardComponent },
@@ -52,7 +50,8 @@ export const routes: Routes = [
       { path: 'products', component: ProductsComponent },
       { path: 'stores', component: StoresComponent },
       { path: 'categories', component: CategoriesComponent },
-      { path: 'reports', loadComponent: () => import('./features/admin/reports/reports.component').then(m => m.ReportsComponent) }
+      { path: 'returns', loadComponent: () => import('./features/admin/returns/returns.component').then(m => m.AdminReturnsComponent) },
+      { path: 'reports', loadComponent: () => import('./features/admin/reports/reports.component').then(m => m.AdminReportsComponent) }
     ]
   },
   { path: '**', redirectTo: 'auth/login' }

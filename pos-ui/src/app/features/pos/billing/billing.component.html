@@ -18,6 +18,12 @@
         <span class="label">User:</span>
         <span class="value">{{ auth.currentUserValue?.email || 'Cashier' }}</span>
       </div>
+      <div class="context-item" style="margin-left: 20px;">
+        <a routerLink="/pos/returns" class="btn btn-secondary btn-sm"
+          style="background: #334155; color: white; border: none; padding: 5px 15px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; display: flex; align-items: center; gap: 5px;">
+          <span>↩️ Returns & Refunds</span>
+        </a>
+      </div>
     </div>
     <button class="btn-logout" (click)="logout()">
       <span>Logout</span>
@@ -30,15 +36,15 @@
     <div class="product-section">
       <div class="search-header">
         <div class="search-box">
-          <input type="text" placeholder="Scan Barcode or Search Product..." [(ngModel)]="searchQuery" (input)="search()">
+          <input type="text" placeholder="Scan Barcode or Search Product..." [(ngModel)]="searchQuery"
+            (input)="search()">
           <button class="btn-search" (click)="search()"><i class="fas fa-search"></i></button>
         </div>
         <div class="category-tabs">
-          <button class="tab-btn" [class.active]="activeCategory === 'All'" (click)="filterByCategory('All')">All</button>
-          <button *ngFor="let c of categories" 
-                  class="tab-btn" 
-                  [class.active]="activeCategory === c.name" 
-                  (click)="filterByCategory(c.name)">
+          <button class="tab-btn" [class.active]="activeCategory === 'All'"
+            (click)="filterByCategory('All')">All</button>
+          <button *ngFor="let c of categories" class="tab-btn" [class.active]="activeCategory === c.name"
+            (click)="filterByCategory(c.name)">
             {{ c.name }}
           </button>
         </div>
@@ -70,12 +76,14 @@
         <h3>Current Bill</h3>
         <button class="btn-clear" (click)="clearCart()" *ngIf="cartItems.length > 0">Clear All</button>
       </div>
-      
+
       <!-- Customer Details -->
       <div class="customer-details" style="padding: 10px; background: #f8f9fa; border-bottom: 1px solid #eee;">
         <div style="display: flex; gap: 10px;">
-          <input type="text" placeholder="Customer Mobile (Req)" [(ngModel)]="customerMobile" (blur)="onMobileBlur()" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-          <input type="text" placeholder="Customer Name (Req)" [(ngModel)]="customerName" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+          <input type="text" placeholder="Customer Mobile (Req)" [(ngModel)]="customerMobile" (blur)="onMobileBlur()"
+            style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+          <input type="text" placeholder="Customer Name (Req)" [(ngModel)]="customerName"
+            style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
         </div>
       </div>
 
@@ -131,7 +139,7 @@
           <span>Net Total</span>
           <span>{{ cartTotal | currency }}</span>
         </div>
-        
+
         <div class="bill-actions">
           <button class="btn-secondary" [disabled]="cartItems.length === 0" (click)="holdBill()">Hold Bill</button>
           <button class="btn-pay" [disabled]="cartItems.length === 0" (click)="proceedToPayment()">

@@ -24,17 +24,35 @@ namespace AdminService.Services
         {
             // Fetch data from other services
             var bills = await FetchAsync<List<InternalBillDto>>("http://127.0.0.1:5003/api/bills") ?? new();
+            var returns = await FetchAsync<List<InternalReturnDto>>("http://127.0.0.1:5003/api/returns") ?? new();
             var products = await FetchAsync<List<InternalProductDto>>("http://127.0.0.1:5002/api/products") ?? new();
             var customers = await FetchAsync<List<InternalCustomerDto>>("http://127.0.0.1:5003/api/customers") ?? new();
 
             var customerMap = customers.GroupBy(c => c.Mobile, StringComparer.OrdinalIgnoreCase)
                                        .ToDictionary(g => g.Key, g => g.First().Name, StringComparer.OrdinalIgnoreCase);
             var today = DateTime.UtcNow.Date;
+            
             var todayBills = bills.Where(b => b.Status == "Finalized" && b.Date.Date == today).ToList();
             var yesterdayBills = bills.Where(b => b.Status == "Finalized" && b.Date.Date == today.AddDays(-1)).ToList();
             var finalizedBills = bills.Where(b => b.Status == "Finalized").ToList();
 
-            var todaySales = todayBills.Sum(b => b.TotalAmount);
+            // Calculate Return Deductions
+            var approvedReturns = returns.Where(r => r.Status == "Approved").ToList();
+            
+            // Assume an average refund per item based on finalized bills for report accuracy
+            decimal avgPrice = 0;
+            if (finalizedBills.Any())
+            {
+                var totalItemCount = finalizedBills.Sum(b => b.Items != null ? b.Items.Count : 0);
+                avgPrice = totalItemCount > 0 ? finalizedBills.Sum(b => b.TotalAmount) / totalItemCount : 0;
+            }
+
+            var totalRefundAmount = approvedReturns.Sum(r => r.Quantity * avgPrice);
+            var todayRefundAmount = approvedReturns.Where(r => r.Date.Date == today).Sum(r => r.Quantity * avgPrice);
+
+            var grossSales = finalizedBills.Sum(b => b.TotalAmount);
+            var totalSales = grossSales - totalRefundAmount; // Net Sales
+            var todaySales = todayBills.Sum(b => b.TotalAmount) - todayRefundAmount;
             var yesterdaySales = yesterdayBills.Sum(b => b.TotalAmount);
             double salesChange = yesterdaySales > 0 ? Math.Round((double)((todaySales - yesterdaySales) / yesterdaySales * 100), 1) : 0;
 
@@ -66,7 +84,8 @@ namespace AdminService.Services
 
             return new DashboardDto
             {
-                TotalSales = finalizedBills.Sum(b => b.TotalAmount), TodaySales = todaySales,
+                TotalSales = totalSales, TodaySales = todaySales,
+                GrossSales = grossSales, RefundedAmount = totalRefundAmount,
                 TotalBills = finalizedBills.Count, TodayBills = todayBills.Count,
                 SalesChangePercent = salesChange, ActiveCashiers = 1, LowStockAlerts = lowStockProds.Count,
                 RecentBills = recentBills, LowStockItems = lowStockItems, HourlyTrend = hourlyData, CategoryBreakdown = categoryBreakdown
@@ -98,7 +117,8 @@ namespace AdminService.Services
         }
 
         // Internal records for mapping
-        record InternalBillDto(int Id, string? CustomerMobile, string? CustomerName, decimal TotalAmount, decimal TaxAmount, string? Status, DateTime Date);
+        record InternalBillDto(int Id, string? CustomerMobile, string? CustomerName, decimal TotalAmount, decimal TaxAmount, string? Status, DateTime Date, List<object>? Items);
+        record InternalReturnDto(int Id, int OriginalBillId, int ProductId, int Quantity, string? Status, DateTime Date);
         record InternalProductDto(int Id, string Name, string Sku, int StockQuantity, int ReorderLevel, int CategoryId);
         record InternalCustomerDto(string Mobile, string Name);
     }

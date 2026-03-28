@@ -3,28 +3,52 @@ using OrdersService.Data;
 using OrdersService.Models;
 
 using Microsoft.AspNetCore.Authorization;
+using OrdersService.Interfaces;
 
 namespace OrdersService.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Policy = "StoreManagerOrHigher")]
     public class ReturnsController : ControllerBase
     {
-        private readonly OrdersDbContext _context;
+        private readonly IReturnService _returnService;
 
-        public ReturnsController(OrdersDbContext context)
+        public ReturnsController(IReturnService returnService)
         {
-            _context = context;
+            _returnService = returnService;
+        }
+
+        [HttpGet]
+        [Authorize(Policy = "Staff")]
+        public async Task<IActionResult> GetAll()
+        {
+            return Ok(await _returnService.GetAllReturnsAsync());
         }
 
         [HttpPost("initiate")]
+        [Authorize(Policy = "Staff")]
         public async Task<IActionResult> Initiate([FromBody] Return returnRequest)
         {
-            returnRequest.Status = "Initiated";
-            _context.Returns.Add(returnRequest);
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Return initiated successfully", returnRequest });
+            var result = await _returnService.InitiateReturnAsync(returnRequest);
+            return Ok(new { message = "Return initiated successfully", returnRequest = result });
+        }
+
+        [HttpPost("{id}/approve")]
+        [Authorize(Policy = "StoreManagerOrHigher")]
+        public async Task<IActionResult> Approve(int id, [FromBody] string? note)
+        {
+            var success = await _returnService.ApproveReturnAsync(id, note);
+            if (!success) return BadRequest(new { message = "Return could not be approved. Ensure it exists AND is in 'Initiated' status." });
+            return Ok(new { message = "Return approved and stock restock event published" });
+        }
+
+        [HttpPost("{id}/reject")]
+        [Authorize(Policy = "StoreManagerOrHigher")]
+        public async Task<IActionResult> Reject(int id, [FromBody] string? note)
+        {
+            var success = await _returnService.RejectReturnAsync(id, note);
+            if (!success) return BadRequest(new { message = "Return could not be rejected. Ensure it exists AND is in 'Initiated' status." });
+            return Ok(new { message = "Return rejected successfully" });
         }
     }
 }

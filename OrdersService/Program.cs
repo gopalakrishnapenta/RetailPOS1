@@ -57,6 +57,7 @@ builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IReturnRepository, ReturnRepository>();
 
+builder.Services.AddScoped<IReturnService, ReturnService>();
 builder.Services.AddScoped<IBillService, BillService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 

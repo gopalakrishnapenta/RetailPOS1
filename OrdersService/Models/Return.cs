@@ -21,5 +21,6 @@ namespace OrdersService.Models
         public string ManagerApprovalNote { get; set; } = string.Empty;
 
         public int StoreId { get; set; }
+        public DateTime Date { get; set; } = DateTime.UtcNow;
     }
 }

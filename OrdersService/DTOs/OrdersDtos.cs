@@ -30,4 +30,16 @@ namespace OrdersService.DTOs
         public string Mobile { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
     }
+
+    public class ReturnDetailedDto
+    {
+        public int Id { get; set; }
+        public int OriginalBillId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public string Reason { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string CustomerName { get; set; } = string.Empty;
+        public DateTime Date { get; set; }
+    }
 }

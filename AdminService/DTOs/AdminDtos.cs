@@ -2,8 +2,10 @@ namespace AdminService.DTOs
 {
     public class DashboardDto
     {
-        public decimal TotalSales { get; set; }
-        public decimal TodaySales { get; set; }
+        public decimal TotalSales { get; set; } // Net Sales
+        public decimal TodaySales { get; set; } // Today's Net
+        public decimal GrossSales { get; set; } // Total before refunds
+        public decimal RefundedAmount { get; set; } // Total approved refunds
         public int TotalBills { get; set; }
         public int TodayBills { get; set; }
         public double SalesChangePercent { get; set; }

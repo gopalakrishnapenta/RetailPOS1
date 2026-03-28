@@ -34,6 +34,7 @@ import { FormsModule } from '@angular/forms';
       <a routerLink="/admin/categories" *ngIf="isAdmin()" [class.active]="active === 'categories'">🏷️ Categories</a>
       <a routerLink="/admin/inventory" *ngIf="isOnlyManager()" [class.active]="active === 'inventory'">📦 Inventory Control</a>
       <a routerLink="/admin/products" *ngIf="isOnlyManager()" [class.active]="active === 'products'">🏷️ Product Master</a>
+      <a routerLink="/admin/returns" *ngIf="isManagerOrHigher()" [class.active]="active === 'returns'">↩️ Returns Queue</a>
       <a routerLink="/admin/reports" *ngIf="isManagerOrHigher()" [class.active]="active === 'reports'">📈 Reports</a>
 
       <div style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--panel-border);">
