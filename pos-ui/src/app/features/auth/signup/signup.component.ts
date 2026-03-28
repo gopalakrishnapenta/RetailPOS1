@@ -80,14 +80,26 @@ export class SignupComponent implements OnInit {
 
   onGoogleLogin(idToken: string) {
     this.isLoading = true;
-    this.auth.googleLogin(idToken).subscribe({
-      next: () => {
+    this.msg = '';
+    // Pass selected store and role for first-time Google signups
+    this.auth.googleLogin(idToken, this.data.storeId, this.data.role).subscribe({
+      next: (res) => {
         this.isLoading = false;
-        this.router.navigate(['/dashboard']);
+        // Post login logic (matching LoginComponent's behavior)
+        localStorage.setItem('storeContext', JSON.stringify({
+          storeId: res.storeId,
+          storeCode: res.storeCode,
+          shiftDate: new Date().toISOString().split('T')[0]
+        }));
+        this.router.navigate(['/pos/billing']);
       },
       error: (err) => {
         this.isLoading = false;
-        this.msg = err.error?.message || 'Google login failed';
+        if (err.error?.message === 'GOOGLE_SIGNUP_REQUIRED_FIELDS') {
+          this.msg = 'Please select a Store and Role first, then click Google Sign-in again.';
+        } else {
+          this.msg = err.error?.message || 'Google login failed';
+        }
         this.isErr = true;
       }
     });
@@ -97,9 +109,6 @@ export class SignupComponent implements OnInit {
     this.auth.getStores().subscribe({
       next: (res) => {
         this.stores = res;
-        if (this.stores.length > 0) {
-          // No auto-selection, user must pick
-        }
       },
       error: (err) => {
         console.error('Failed to load stores', err);
@@ -115,9 +124,10 @@ export class SignupComponent implements OnInit {
     this.auth.register(this.data).subscribe({
       next: () => {
         this.isLoading = false;
-        this.msg = 'Registration successful! Redirecting...';
+        this.msg = 'Registration successful! Please check your email for the verification code.';
         this.isErr = false;
-        setTimeout(() => this.router.navigate(['/auth/login']), 1500);
+        // Redirect to verification instead of login
+        setTimeout(() => this.router.navigate(['/auth/verify-email'], { queryParams: { email: this.data.email } }), 2000);
       },
       error: (err) => {
         this.isLoading = false;

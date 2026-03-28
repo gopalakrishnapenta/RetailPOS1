@@ -47,7 +47,13 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
         this.isLoading = false;
-        this.error = err.error?.message || 'Google login failed';
+        if (err.error?.message === 'GOOGLE_SIGNUP_REQUIRED_FIELDS') {
+          this.error = 'First time? Please go to the Signup page, select your Store and Role, then Sign in with Google.';
+          // Optionally redirect automatically
+          setTimeout(() => this.router.navigate(['/auth/signup']), 3000);
+        } else {
+          this.error = err.error?.message || 'Google login failed';
+        }
       }
     });
   }
@@ -79,9 +85,14 @@ export class LoginComponent implements OnInit {
         this.isLoading = false;
         this.handlePostLogin(res);
       },
-      error: () => {
+      error: (err) => {
         this.isLoading = false;
-        this.error = 'Invalid email or password';
+        if (err.error?.message === 'EMAIL_NOT_VERIFIED') {
+          this.error = 'Email not verified. Redirecting to verification page...';
+          setTimeout(() => this.router.navigate(['/auth/verify-email'], { queryParams: { email: this.credentials.email } }), 2000);
+        } else {
+          this.error = 'Invalid email or password';
+        }
       }
     });
   }

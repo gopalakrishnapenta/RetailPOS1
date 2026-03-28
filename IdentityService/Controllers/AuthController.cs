@@ -35,10 +35,30 @@ namespace IdentityService.Controllers
                 if (!success)
                     return BadRequest(new { message = "Email already exists" });
 
-                return Ok(new { message = "Registration successful" });
+                return Ok(new { message = "Registration successful. Please check your email for the verification code." });
             } catch (Exception ex) {
                 return StatusCode(500, new { message = $"Registration failed: {ex.Message}", details = ex.InnerException?.Message });
             }
+        }
+
+        [HttpPost("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto request)
+        {
+            var success = await _authService.VerifyEmailAsync(request.Email, request.Otp);
+            if (!success)
+                return BadRequest(new { message = "Invalid or expired verification code" });
+
+            return Ok(new { message = "Email verified successfully. You can now log in." });
+        }
+
+        [HttpPost("resend-verification")]
+        public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationDto request)
+        {
+            var otp = await _authService.ResendVerificationOtpAsync(request.Email);
+            if (otp == null)
+                return BadRequest(new { message = "User not found" });
+
+            return Ok(new { message = "Verification code resent successfully." });
         }
 
         [HttpPost("send-otp")]
@@ -61,9 +81,15 @@ namespace IdentityService.Controllers
         [HttpPost("google-login")]
         public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto request)
         {
-            var result = await _authService.GoogleLoginAsync(request.IdToken);
+            var result = await _authService.GoogleLoginAsync(request.IdToken, request.StoreId, request.Role);
             if (!result.Success)
+            {
+                if (result.Message == "GOOGLE_SIGNUP_REQUIRED_FIELDS")
+                {
+                    return BadRequest(new { code = "GOOGLE_SIGNUP_REQUIRED_FIELDS", message = "Please select a Store and Role before signing up with Google." });
+                }
                 return Unauthorized(new { message = result.Message });
+            }
 
             return Ok(result.Data);
         }
@@ -74,6 +100,19 @@ namespace IdentityService.Controllers
             var stores = await _authService.GetStoresAsync();
             return Ok(stores);
         }
-
+        [HttpGet("test-email")]
+        public async Task<IActionResult> TestEmail([FromQuery] string email)
+        {
+            try
+            {
+                var success = await _authService.TestEmailAsync(email);
+                if (success) return Ok(new { message = $"Test email sent successfully to {email}" });
+                return BadRequest(new { message = "Test email failed. Check logs for details." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = $"SMTP ERROR: {ex.Message}", details = ex.InnerException?.Message });
+            }
+        }
     }
 }

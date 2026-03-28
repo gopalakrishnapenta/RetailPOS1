@@ -23,8 +23,8 @@ export class AuthService {
     );
   }
 
-  googleLogin(idToken: string) {
-    return this.http.post<any>(`${this.baseUrl}/google-login`, { idToken }).pipe(
+  googleLogin(idToken: string, storeId?: number, role?: string) {
+    return this.http.post<any>(`${this.baseUrl}/google-login`, { idToken, storeId, role }).pipe(
       tap(res => {
         if (res && res.token) {
           localStorage.setItem(this.tokenKey, res.token);
@@ -42,12 +42,23 @@ export class AuthService {
   }
 
   register(data: any) { return this.http.post<any>(`${this.baseUrl}/register`, data); }
+  
+  verifyEmail(email: string, otp: string) { 
+    return this.http.post<any>(`${this.baseUrl}/verify-email`, { email, otp }); 
+  }
+
+  resendVerification(email: string) { 
+    return this.http.post<any>(`${this.baseUrl}/resend-verification`, { email }); 
+  }
+
   sendOtp(email: string) { return this.http.post<any>(`${this.baseUrl}/send-otp`, { email }); }
   resetPassword(data: any) { return this.http.post<any>(`${this.baseUrl}/reset-password`, data); }
 
   logout() {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.roleKey);
+    localStorage.removeItem('pos_store_id');
+    localStorage.removeItem('pos_user');
   }
 
   isAuthenticated(): boolean { return !!localStorage.getItem(this.tokenKey); }

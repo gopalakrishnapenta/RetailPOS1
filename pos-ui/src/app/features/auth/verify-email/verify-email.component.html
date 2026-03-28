@@ -1,0 +1,58 @@
+<div class="verify-container">
+  <div class="verify-card shadow-glass">
+    <div class="header">
+      <div class="icon-pulse">
+        <i class="fas fa-envelope-open-text"></i>
+      </div>
+      <h2>Verify Your Email</h2>
+      <p>We've sent a 6-digit verification code to <span class="email-highlight">{{ email }}</span>. Please enter it below to continue.</p>
+    </div>
+
+    <form (ngSubmit)="onVerify()" #verifyForm="ngForm">
+      <div class="otp-input-wrapper">
+        <input 
+          type="text" 
+          name="otp" 
+          [(ngModel)]="otp" 
+          maxlength="6" 
+          placeholder="000 000"
+          required
+          pattern="^[0-9]{6}$"
+          #otpInput="ngModel"
+          [disabled]="isLoading"
+        >
+        <div class="input-line"></div>
+      </div>
+
+      <div *ngIf="error" class="error-alert animate-shake">
+        <i class="fas fa-exclamation-circle"></i> {{ error }}
+      </div>
+      
+      <div *ngIf="message" class="success-alert animate-fade-in">
+        <i class="fas fa-check-circle"></i> {{ message }}
+      </div>
+
+      <button type="submit" class="verify-btn ripple" [disabled]="!verifyForm.form.valid || isLoading">
+        <span *ngIf="!isLoading">Verify Code</span>
+        <div *ngIf="isLoading" class="spinner"></div>
+      </button>
+
+      <div class="resend-section">
+        <p *ngIf="!canResend">Resend code in <span class="timer">{{ timer }}s</span></p>
+        <button 
+          type="button" 
+          class="resend-btn" 
+          *ngIf="canResend" 
+          (click)="onResend()" 
+          [disabled]="isLoading"
+        >
+          Resend Verification Code
+        </button>
+      </div>
+
+      <div class="back-to-login">
+        <a routerLink="/auth/login">Back to Login</a>
+      </div>
+    </form>
+  </div>
+</div>

@@ -34,6 +34,9 @@ namespace IdentityService.Services
             if (user == null || user.PasswordHash != loginDto.Password)
                 return new AuthResult { Success = false, Message = "Invalid email or password" };
 
+            if (!user.IsEmailVerified)
+                return new AuthResult { Success = false, Message = "EMAIL_NOT_VERIFIED" };
+
             // Ensure our primary admins have the correct role regardless of DB state
             if (user.Email.ToLower() == "admin@nexus.com" || user.Email.ToLower() == "admin@gmail.com") user.Role = "Admin";
 
@@ -89,25 +92,66 @@ namespace IdentityService.Services
             }
 
             try {
+                var otp = new Random().Next(100000, 999999).ToString();
                 var user = new User
                 {
                     Email = registerDto.Email,
                     PasswordHash = registerDto.Password,
                     Role = registerDto.Role,
                     PrimaryStoreId = registerDto.StoreId,
-                    EmployeeCode = $"E{new Random().Next(100, 999)}" // Auto-generate employee code if missing
+                    EmployeeCode = $"E{new Random().Next(100, 999)}",
+                    IsEmailVerified = false,
+                    VerificationOtp = otp,
+                    VerificationOtpExpiry = DateTime.UtcNow.AddMinutes(5)
                 };
                 
-                _logger.LogInformation($"Adding user {user.Email} to repository...");
+                _logger.LogInformation($"Adding user {user.Email} to repository with OTP: {otp}");
                 await _userRepository.AddAsync(user);
-                _logger.LogInformation($"Saving changes to database...");
                 await _userRepository.SaveChangesAsync();
-                _logger.LogInformation("Registration successful!");
+
+                // Send Email
+                var subject = "NexusPOS Email Verification";
+                var body = $"<h3>Verify Your Email</h3><p>Your verification code is: <b style='font-size: 24px;'>{otp}</b></p><p>This code expires in 5 minutes.</p>";
+                await _emailService.SendEmailAsync(user.Email, subject, body);
+
+                _logger.LogInformation("Registration successful! Verification OTP sent.");
                 return true;
             } catch (Exception ex) {
-                _logger.LogError(ex, $"Registration failed with exception for {registerDto.Email}");
-                throw; // Rethrow to be caught by Controller
+                _logger.LogError(ex, $"Registration failed for {registerDto.Email}");
+                throw;
             }
+        }
+
+        public async Task<bool> VerifyEmailAsync(string email, string otp)
+        {
+            var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == email);
+            if (user == null || user.VerificationOtp != otp || user.VerificationOtpExpiry < DateTime.UtcNow)
+                return false;
+
+            user.IsEmailVerified = true;
+            user.VerificationOtp = null;
+            user.VerificationOtpExpiry = null;
+            await _userRepository.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<string?> ResendVerificationOtpAsync(string email)
+        {
+            var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == email);
+            if (user == null) return null;
+
+            var otp = new Random().Next(100000, 999999).ToString();
+            user.VerificationOtp = otp;
+            user.VerificationOtpExpiry = DateTime.UtcNow.AddMinutes(5);
+            await _userRepository.SaveChangesAsync();
+
+            _logger.LogInformation($"Resent Verification OTP for {email}: {otp}");
+            
+            var subject = "NexusPOS Verification Code (Resent)";
+            var body = $"<h3>Verify Your Email</h3><p>Your new verification code is: <b style='font-size: 24px;'>{otp}</b></p>";
+            await _emailService.SendEmailAsync(user.Email, subject, body);
+            
+            return otp;
         }
 
         public async Task<string?> SendOtpAsync(string email)
@@ -117,8 +161,10 @@ namespace IdentityService.Services
 
             var otp = new Random().Next(100000, 999999).ToString();
             user.Otp = otp;
-            user.OtpExpiry = DateTime.UtcNow.AddMinutes(10);
+            user.OtpExpiry = DateTime.UtcNow.AddMinutes(5);
             await _userRepository.SaveChangesAsync();
+
+            _logger.LogInformation($"Forgot Password OTP for {email}: {otp}");
 
             var subject = "Password Reset OTP";
             var body = $@"
@@ -144,11 +190,12 @@ namespace IdentityService.Services
             user.PasswordHash = resetDto.NewPassword;
             user.Otp = null;
             user.OtpExpiry = null;
+            user.IsEmailVerified = true; // Resetting password successfully also verifies the email
             await _userRepository.SaveChangesAsync();
             return true;
         }
 
-        public async Task<AuthResult> GoogleLoginAsync(string idToken)
+        public async Task<AuthResult> GoogleLoginAsync(string idToken, int? storeId = null, string? role = null)
         {
             try
             {
@@ -163,18 +210,24 @@ namespace IdentityService.Services
                 var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == email);
                 if (user == null)
                 {
+                    if (!storeId.HasValue || string.IsNullOrEmpty(role))
+                    {
+                        return new AuthResult { Success = false, Message = "GOOGLE_SIGNUP_REQUIRED_FIELDS" };
+                    }
+
                     // Create new user for first-time Google sign-in
                     user = new User
                     {
                         Email = email,
-                        Role = "Cashier", // Default role for new Google signups
-                        PrimaryStoreId = 1, // Default store for simplicity
+                        Role = role, 
+                        PrimaryStoreId = storeId.Value,
                         EmployeeCode = $"G{new Random().Next(100, 999)}",
-                        PasswordHash = Guid.NewGuid().ToString() // Dummy password for Google users
+                        PasswordHash = Guid.NewGuid().ToString(), // Dummy password
+                        IsEmailVerified = true // Google emails are already verified
                     };
                     await _userRepository.AddAsync(user);
                     await _userRepository.SaveChangesAsync();
-                    _logger.LogInformation($"Created new user {email} via Google login.");
+                    _logger.LogInformation($"Created new user {email} via Google signup with Role: {role}, Store: {storeId}");
                 }
 
                 var store = await _storeRepository.GetByIdAsync(user.PrimaryStoreId);
@@ -227,6 +280,24 @@ namespace IdentityService.Services
             return stores
                 .Select(s => new StoreDto(s.Id, s.StoreCode, s.Name))
                 .ToList();
+        }
+
+        public async Task<bool> TestEmailAsync(string toEmail)
+        {
+            _logger.LogInformation($"[SMTP TEST] Initiating test email to {toEmail}");
+            var subject = "NexusPOS SMTP Test Connection";
+            var body = "<h3>Test Connection Successful</h3><p>Your SMTP settings are correctly configured and the NexusPOS Identity Service can send emails.</p>";
+            
+            try 
+            {
+                await _emailService.SendEmailAsync(toEmail, subject, body);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"[SMTP TEST] Test email to {toEmail} failed.");
+                throw; // Rethrow to let the controller handle the message
+            }
         }
     }
 }

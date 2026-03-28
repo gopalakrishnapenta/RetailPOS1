@@ -12,5 +12,9 @@ namespace IdentityService.Models
 
         public string? Otp { get; set; }
         public DateTime? OtpExpiry { get; set; }
+
+        public bool IsEmailVerified { get; set; } = false;
+        public string? VerificationOtp { get; set; }
+        public DateTime? VerificationOtpExpiry { get; set; }
     }
 }

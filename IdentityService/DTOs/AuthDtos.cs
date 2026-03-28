@@ -47,5 +47,18 @@ namespace IdentityService.DTOs
     public class GoogleLoginDto
     {
         public string IdToken { get; set; } = string.Empty;
+        public int? StoreId { get; set; }
+        public string? Role { get; set; }
+    }
+
+    public class VerifyEmailDto
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Otp { get; set; } = string.Empty;
+    }
+
+    public class ResendVerificationDto
+    {
+        public string Email { get; set; } = string.Empty;
     }
 }

@@ -30,15 +30,20 @@ namespace IdentityService.Services
                     return;
                 }
 
+                _logger.LogInformation($"[SMTP] Attempting to send email to {to} via {smtpHost}:{smtpPort}");
+
                 using var client = new SmtpClient(smtpHost, smtpPort)
                 {
+                    UseDefaultCredentials = false,
                     Credentials = new NetworkCredential(fromEmail, appPassword),
-                    EnableSsl = true
+                    EnableSsl = true,
+                    DeliveryMethod = SmtpDeliveryMethod.Network,
+                    Timeout = 15000 // 15-second timeout
                 };
 
                 var mailMessage = new MailMessage
                 {
-                    From = new MailAddress(fromEmail),
+                    From = new MailAddress(fromEmail, "NexusPOS Support"),
                     Subject = subject,
                     Body = body,
                     IsBodyHtml = true
@@ -47,11 +52,16 @@ namespace IdentityService.Services
                 mailMessage.To.Add(to);
 
                 await client.SendMailAsync(mailMessage);
-                _logger.LogInformation($"Email sent successfully to {to}");
+                _logger.LogInformation($"[SMTP] Email sent successfully to {to}");
+            }
+            catch (SmtpException smtpEx)
+            {
+                _logger.LogError(smtpEx, $"[SMTP] Error sending to {to}: {smtpEx.Message} (StatusCode: {smtpEx.StatusCode})");
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to send email to {to}");
+                _logger.LogError(ex, $"[SMTP] General error sending email to {to}");
                 throw;
             }
         }

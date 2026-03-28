@@ -13,6 +13,8 @@ import { inject } from '@angular/core';
 import { AuthService } from './core/services/auth.service';
 import { Router } from '@angular/router';
 
+import { VerifyEmailComponent } from './features/auth/verify-email/verify-email.component';
+
 const authGuard = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
@@ -28,6 +30,7 @@ export const routes: Routes = [
     children: [
       { path: 'login', component: LoginComponent },
       { path: 'signup', component: SignupComponent },
+      { path: 'verify-email', component: VerifyEmailComponent },
       { path: 'forgot-password', component: ForgotPasswordComponent },
       { path: '', redirectTo: 'login', pathMatch: 'full' }
     ]
