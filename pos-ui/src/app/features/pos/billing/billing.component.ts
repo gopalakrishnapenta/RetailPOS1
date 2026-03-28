@@ -190,6 +190,7 @@ export class BillingComponent implements OnInit, OnDestroy {
     return {
       billNumber: 'DRF-' + Date.now().toString(),
       customerMobile: this.customerMobile,
+      customerName: this.customerName,
       storeId: this.storeContext?.storeId || 1, 
       storeCode: this.storeContext?.storeCode || 'S001',
       shiftDate: this.storeContext?.shiftDate || new Date().toISOString(),

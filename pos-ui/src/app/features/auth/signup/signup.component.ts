@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { GoogleSigninButtonModule, SocialAuthService } from '@abacritt/angularx-social-login';
 
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, GoogleSigninButtonModule],
   template: `
     <div class="login-container premium-card fade-in">
       <div class="login-header">
@@ -17,7 +18,7 @@ import { AuthService } from '../../../core/services/auth.service';
       
       <form (ngSubmit)="onRegister()" #form="ngForm">
         <div class="form-group">
-          <label>Email Address (Gmail)</label>
+          <label>Email Address</label>
           <input type="email" [(ngModel)]="data.email" name="email" required placeholder="name@gmail.com">
         </div>
         <div class="form-group">
@@ -41,7 +42,6 @@ import { AuthService } from '../../../core/services/auth.service';
           <select [(ngModel)]="data.role" name="role" required class="form-control">
             <option value="Cashier">Cashier</option>
             <option value="StoreManager">Store Manager</option>
-            <option value="Admin">Admin</option>
           </select>
         </div>
         
@@ -51,6 +51,13 @@ import { AuthService } from '../../../core/services/auth.service';
           {{ isLoading ? 'Registering...' : 'Register' }}
         </button>
       </form>
+
+      <div class="divider"><span>OR</span></div>
+      
+      <div class="social-login">
+        <asl-google-signin-button type="standard" size="large" [width]="240"></asl-google-signin-button>
+      </div>
+
       <div class="auth-footer">Already have an account? <a routerLink="/auth/login" class="text-link" style="font-weight: 600;">Sign in</a></div>
     </div>
   `
@@ -60,10 +67,30 @@ export class SignupComponent implements OnInit {
   stores: any[] = [];
   msg = ''; isErr = false; isLoading = false; showPassword = false;
 
-  constructor(private auth: AuthService, private router: Router) { }
+  constructor(private auth: AuthService, private router: Router, private socialAuth: SocialAuthService) { }
 
   ngOnInit() {
     this.loadStores();
+    this.socialAuth.authState.subscribe((user) => {
+      if (user && user.idToken) {
+        this.onGoogleLogin(user.idToken);
+      }
+    });
+  }
+
+  onGoogleLogin(idToken: string) {
+    this.isLoading = true;
+    this.auth.googleLogin(idToken).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.msg = err.error?.message || 'Google login failed';
+        this.isErr = true;
+      }
+    });
   }
 
   loadStores() {

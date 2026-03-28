@@ -64,6 +64,6 @@ namespace AdminService.Services
             }
         }
 
-        record InternalBillDto(int Id, DateTime Date, decimal TotalAmount, decimal TaxAmount, string Status);
+        record InternalBillDto(int Id, DateTime Date, string? CustomerMobile, string? CustomerName, decimal TotalAmount, decimal TaxAmount, string Status);
     }
 }

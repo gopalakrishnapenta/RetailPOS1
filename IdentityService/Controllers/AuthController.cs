@@ -58,5 +58,22 @@ namespace IdentityService.Controllers
             return Ok(new { message = "Password reset successfully" });
         }
 
+        [HttpPost("google-login")]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto request)
+        {
+            var result = await _authService.GoogleLoginAsync(request.IdToken);
+            if (!result.Success)
+                return Unauthorized(new { message = result.Message });
+
+            return Ok(result.Data);
+        }
+
+        [HttpGet("stores")]
+        public async Task<IActionResult> GetStores()
+        {
+            var stores = await _authService.GetStoresAsync();
+            return Ok(stores);
+        }
+
     }
 }

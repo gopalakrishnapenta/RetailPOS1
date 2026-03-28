@@ -30,7 +30,6 @@ namespace OrdersService.Models
         [MaxLength(20)]
         public string Status { get; set; } = "Draft"; // Draft, Held, Finalized
 
-        [NotMapped]
         public string CustomerName { get; set; } = string.Empty;
 
         public ICollection<BillItem> Items { get; set; } = new List<BillItem>();

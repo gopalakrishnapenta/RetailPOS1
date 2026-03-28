@@ -41,7 +41,9 @@ namespace AdminService.Services
             var recentBills = bills.OrderByDescending(b => b.Date).Take(5).Select(b => new RecentBillDto
             {
                 Id = b.Id,
-                Customer = (!string.IsNullOrEmpty(b.CustomerMobile) && customerMap.TryGetValue(b.CustomerMobile, out var cName)) ? cName : (string.IsNullOrEmpty(b.CustomerMobile) ? "Walking Customer" : "Guest"),
+                Customer = !string.IsNullOrEmpty(b.CustomerName) ? b.CustomerName :
+                          (!string.IsNullOrEmpty(b.CustomerMobile) && customerMap.TryGetValue(b.CustomerMobile, out var cName)) ? cName : 
+                          (string.IsNullOrEmpty(b.CustomerMobile) ? "Walking Customer" : "Guest"),
                 Total = b.TotalAmount,
                 Time = b.Date.ToLocalTime().ToString("t")
             }).ToList();
@@ -96,7 +98,7 @@ namespace AdminService.Services
         }
 
         // Internal records for mapping
-        record InternalBillDto(int Id, string? CustomerMobile, decimal TotalAmount, decimal TaxAmount, string? Status, DateTime Date);
+        record InternalBillDto(int Id, string? CustomerMobile, string? CustomerName, decimal TotalAmount, decimal TaxAmount, string? Status, DateTime Date);
         record InternalProductDto(int Id, string Name, string Sku, int StockQuantity, int ReorderLevel, int CategoryId);
         record InternalCustomerDto(string Mobile, string Name);
     }

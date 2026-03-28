@@ -41,16 +41,7 @@ namespace OrdersService.Services
             var bill = await _billRepository.GetBillWithItemsAsync(id);
             if (bill == null) return null;
 
-            var dto = MapToDto(bill);
-            
-            // Populate CustomerName
-            if (!string.IsNullOrEmpty(bill.CustomerMobile))
-            {
-                var customer = await _customerRepository.GetByMobileAsync(bill.CustomerMobile);
-                if (customer != null) dto.CustomerName = customer.Name;
-            }
-
-            return dto;
+            return MapToDto(bill);
         }
 
         public async Task<BillDto> CreateOrUpdateCartAsync(BillDto cartDto)
@@ -62,6 +53,7 @@ namespace OrdersService.Services
                     Status = "Draft", 
                     BillNumber = cartDto.BillNumber, 
                     CustomerMobile = cartDto.CustomerMobile,
+                    CustomerName = cartDto.CustomerName,
                     TotalAmount = cartDto.TotalAmount,
                     TaxAmount = cartDto.TaxAmount,
                     StoreId = cartDto.StoreId != 0 ? cartDto.StoreId : _tenantProvider.StoreId,
@@ -74,6 +66,7 @@ namespace OrdersService.Services
                 bill = await _billRepository.GetBillWithItemsAsync(cartDto.Id) 
                        ?? throw new Exception("Bill not found");
                 bill.CustomerMobile = cartDto.CustomerMobile;
+                bill.CustomerName = cartDto.CustomerName;
                 bill.TotalAmount = cartDto.TotalAmount;
                 bill.TaxAmount = cartDto.TaxAmount;
                 
@@ -137,6 +130,7 @@ namespace OrdersService.Services
             BillNumber = b.BillNumber,
             Date = b.Date,
             CustomerMobile = b.CustomerMobile,
+            CustomerName = b.CustomerName,
             TotalAmount = b.TotalAmount,
             TaxAmount = b.TaxAmount,
             Status = b.Status,

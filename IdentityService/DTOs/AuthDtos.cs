@@ -22,6 +22,7 @@ namespace IdentityService.DTOs
         public string Role { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public int StoreId { get; set; }
+        public string? StoreCode { get; set; }
     }
 
     public class AuthResult
@@ -41,5 +42,10 @@ namespace IdentityService.DTOs
         public string Email { get; set; } = string.Empty;
         public string Otp { get; set; } = string.Empty;
         public string NewPassword { get; set; } = string.Empty;
+    }
+
+    public class GoogleLoginDto
+    {
+        public string IdToken { get; set; } = string.Empty;
     }
 }
