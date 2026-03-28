@@ -25,17 +25,37 @@ namespace IdentityService.Services
             _logger = logger;
         }
 
-        public async Task<AuthResponseDto?> LoginAsync(LoginDto loginDto)
+        public async Task<AuthResult> LoginAsync(LoginDto loginDto)
         {
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == loginDto.Email);
             if (user == null || user.PasswordHash != loginDto.Password)
-                return null;
+                return new AuthResult { Success = false, Message = "Invalid email or password" };
 
             // Ensure our primary admins have the correct role regardless of DB state
             if (user.Email.ToLower() == "admin@nexus.com" || user.Email.ToLower() == "admin@gmail.com") user.Role = "Admin";
 
-            var token = GenerateJwt(user, loginDto.StoreCode, loginDto.ShiftDate);
-            return new AuthResponseDto { Token = token, Role = user.Role, Email = user.Email, StoreId = user.PrimaryStoreId };
+            int currentStoreId = user.PrimaryStoreId;
+
+            if (user.Role == "Admin")
+            {
+                currentStoreId = 0; // Global context for Admin
+            }
+            else if (!string.IsNullOrEmpty(loginDto.StoreCode))
+            {
+                var store = await _storeRepository.SingleOrDefaultAsync(s => s.StoreCode == loginDto.StoreCode);
+                if (store == null || store.Id != user.PrimaryStoreId)
+                {
+                    return new AuthResult { Success = false, Message = "Your details are not matching with the selected Store ID." };
+                }
+                currentStoreId = store.Id;
+            }
+
+            var token = GenerateJwt(user, currentStoreId, loginDto.StoreCode, loginDto.ShiftDate);
+            return new AuthResult 
+            { 
+                Success = true, 
+                Data = new AuthResponseDto { Token = token, Role = user.Role, Email = user.Email, StoreId = currentStoreId } 
+            };
         }
 
         public async Task<bool> RegisterAsync(RegisterDto registerDto)
@@ -113,7 +133,7 @@ namespace IdentityService.Services
             return true;
         }
 
-        private string GenerateJwt(User user, string? storeCode = null, string? shiftDate = null)
+        private string GenerateJwt(User user, int storeId, string? storeCode = null, string? shiftDate = null)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "super_secret_key_1234567890_pos_system"));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -122,7 +142,7 @@ namespace IdentityService.Services
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Role, user.Role),
-                new Claim("StoreId", user.PrimaryStoreId.ToString())
+                new Claim("StoreId", storeId.ToString())
             };
 
             if (!string.IsNullOrEmpty(storeCode)) claims.Add(new Claim("StoreCode", storeCode));

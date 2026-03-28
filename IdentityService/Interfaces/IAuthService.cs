@@ -4,7 +4,7 @@ namespace IdentityService.Interfaces
 {
     public interface IAuthService
     {
-        Task<AuthResponseDto?> LoginAsync(LoginDto loginDto);
+        Task<AuthResult> LoginAsync(LoginDto loginDto);
         Task<bool> RegisterAsync(RegisterDto registerDto);
         Task<string?> SendOtpAsync(string email);
         Task<bool> ResetPasswordAsync(ResetPasswordDto resetDto);

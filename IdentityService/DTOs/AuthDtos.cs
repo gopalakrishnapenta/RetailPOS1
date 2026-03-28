@@ -24,6 +24,13 @@ namespace IdentityService.DTOs
         public int StoreId { get; set; }
     }
 
+    public class AuthResult
+    {
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+        public AuthResponseDto? Data { get; set; }
+    }
+
     public class ForgotPasswordDto
     {
         public string Email { get; set; } = string.Empty;

@@ -21,10 +21,10 @@ namespace IdentityService.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDto request)
         {
             var result = await _authService.LoginAsync(request);
-            if (result == null)
-                return Unauthorized(new { message = "Invalid email or password" });
+            if (!result.Success)
+                return Unauthorized(new { message = result.Message });
 
-            return Ok(result);
+            return Ok(result.Data);
         }
 
         [HttpPost("register")]

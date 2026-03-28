@@ -64,7 +64,7 @@ namespace CatalogService.Data
                         p.StoreId = _tenantProvider.StoreId;
                     }
                     if (entry.Entity is Category c && c.StoreId == 0 && _tenantProvider != null) {
-                        c.StoreId = _tenantProvider.StoreId;
+                        c.StoreId = (_tenantProvider.Role == "Admin") ? 0 : _tenantProvider.StoreId;
                     }
                 }
             }
