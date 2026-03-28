@@ -58,19 +58,5 @@ namespace IdentityService.Controllers
             return Ok(new { message = "Password reset successfully" });
         }
 
-        [HttpGet("stores")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetStores()
-        {
-            return Ok(await _authService.GetActiveStoresAsync());
-        }
-
-        [HttpPost("stores")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> SyncStore([FromBody] StoreDto storeDto)
-        {
-            var success = await _authService.CreateStoreAsync(storeDto);
-            return success ? Ok() : BadRequest();
-        }
     }
 }

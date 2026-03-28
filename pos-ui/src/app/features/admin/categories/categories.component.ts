@@ -15,6 +15,8 @@ import { AdminSidebarComponent } from '../components/sidebar/sidebar.component';
 export class CategoriesComponent implements OnInit {
   categories: any[] = [];
   newCat = { name: '', description: '', isActive: true };
+  isEditing = false;
+  editingId: number | null = null;
 
   constructor(private api: ApiService) {}
 
@@ -23,15 +25,46 @@ export class CategoriesComponent implements OnInit {
   }
 
   loadCategories() {
-    this.api.getCategories().subscribe(res => this.categories = res);
+    this.api.getAdminCategories().subscribe(res => this.categories = res);
+  }
+
+  editCategory(c: any) {
+    this.isEditing = true;
+    this.editingId = c.id;
+    this.newCat = { name: c.name, description: c.description, isActive: c.isActive };
+  }
+
+  cancelEdit() {
+    this.isEditing = false;
+    this.editingId = null;
+    this.newCat = { name: '', description: '', isActive: true };
+  }
+
+  toggleStatus(c: any) {
+    const action = c.isActive ? 'disable' : 'enable';
+    if (confirm(`Are you sure you want to ${action} this category?`)) {
+      this.api.deleteCategory(c.id).subscribe(() => {
+        this.loadCategories();
+        alert(`Category ${action}d successfully`);
+      });
+    }
   }
 
   onSubmit() {
     if (!this.newCat.name) return;
-    this.api.addCategory(this.newCat).subscribe(() => {
-      this.loadCategories();
-      this.newCat = { name: '', description: '', isActive: true };
-      alert('Category added successfully');
-    });
+
+    if (this.isEditing && this.editingId) {
+      this.api.updateCategory(this.editingId, this.newCat).subscribe(() => {
+        this.loadCategories();
+        this.cancelEdit();
+        alert('Category updated successfully');
+      });
+    } else {
+      this.api.addCategory(this.newCat).subscribe(() => {
+        this.loadCategories();
+        this.newCat = { name: '', description: '', isActive: true };
+        alert('Category added successfully');
+      });
+    }
   }
 }

@@ -116,23 +116,6 @@ namespace IdentityService.Services
             return true;
         }
 
-        public async Task<IEnumerable<StoreDto>> GetActiveStoresAsync()
-        {
-            var stores = await _storeRepository.FindAsync(s => s.IsActive);
-            return stores.Select(s => new StoreDto(s.Id, s.StoreCode, s.Name));
-        }
-
-        public async Task<bool> CreateStoreAsync(StoreDto storeDto)
-        {
-            if (await _storeRepository.AnyAsync(s => s.StoreCode == storeDto.StoreCode))
-                return false;
-
-            var store = new Store { StoreCode = storeDto.StoreCode, Name = storeDto.Name, IsActive = true };
-            await _storeRepository.AddAsync(store);
-            await _storeRepository.SaveChangesAsync();
-            return true;
-        }
-
         private string GenerateJwt(User user, int storeId, string? storeCode = null, string? shiftDate = null)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "super_secret_key_1234567890_pos_system"));

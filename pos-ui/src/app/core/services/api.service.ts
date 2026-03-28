@@ -108,7 +108,19 @@ export class ApiService {
   }
 
   // --- Category Management (Admin Only) ---
+  getAdminCategories() {
+    return this.http.get<any[]>(`${this.baseUrl}/admin/categories`, this.getHeaders());
+  }
+
   addCategory(category: any) {
-    return this.http.post<any>(`${this.baseUrl}/catalog/categories`, category, this.getHeaders());
+    return this.http.post<any>(`${this.baseUrl}/admin/categories`, category, this.getHeaders());
+  }
+
+  updateCategory(id: number, category: any) {
+    return this.http.put<any>(`${this.baseUrl}/admin/categories/${id}`, category, this.getHeaders());
+  }
+
+  deleteCategory(id: number) {
+    return this.http.delete<any>(`${this.baseUrl}/admin/categories/${id}`, this.getHeaders());
   }
 }

@@ -15,6 +15,7 @@ namespace AdminService.Data
 
         public DbSet<InventoryAdjustment> InventoryAdjustments { get; set; }
         public DbSet<AdminStoreEntity> Stores { get; set; }
+        public DbSet<AdminCategoryEntity> Categories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

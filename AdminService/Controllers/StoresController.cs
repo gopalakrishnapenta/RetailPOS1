@@ -44,5 +44,44 @@ namespace AdminService.Controllers
 
             return CreatedAtAction(nameof(GetStores), new { id = store.Id }, store);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateStore(int id, AdminStoreEntity store)
+        {
+            if (id != store.Id) return BadRequest();
+
+            _context.Entry(store).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            // Publish Update Event
+            await _publishEndpoint.Publish<StoreUpdatedEvent>(new
+            {
+                Id = store.Id,
+                StoreCode = store.StoreCode,
+                Name = store.Name
+            });
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteStore(int id)
+        {
+            var store = await _context.Stores.FindAsync(id);
+            if (store == null) return NotFound();
+
+            // In a real system, you might set IsActive = false instead.
+            _context.Stores.Remove(store);
+            await _context.SaveChangesAsync();
+
+            // Publish Delete Event
+            await _publishEndpoint.Publish<StoreDeletedEvent>(new
+            {
+                Id = store.Id,
+                StoreCode = store.StoreCode
+            });
+
+            return NoContent();
+        }
     }
 }

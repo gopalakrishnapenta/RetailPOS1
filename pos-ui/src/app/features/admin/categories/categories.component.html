@@ -14,21 +14,28 @@
               <th>Name</th>
               <th>Description</th>
               <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let c of categories">
+            <tr *ngFor="let c of categories" [style.opacity]="c.isActive ? '1' : '0.6'">
               <td>#{{ c.id }}</td>
               <td>{{ c.name }}</td>
               <td>{{ c.description }}</td>
-              <td><span class="badge" [class.badge-success]="c.isActive">Active</span></td>
+              <td><span class="badge" [class.badge-success]="c.isActive" [class.badge-danger]="!c.isActive">{{ c.isActive ? 'Active' : 'Disabled' }}</span></td>
+              <td>
+                <button class="btn btn-sm btn-outline" (click)="editCategory(c)" style="margin-right: 5px;">Edit</button>
+                <button class="btn btn-sm" [class.btn-danger]="c.isActive" [class.btn-success]="!c.isActive" (click)="toggleStatus(c)">
+                  {{ c.isActive ? 'Disable' : 'Enable' }}
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <div class="premium-card">
-        <h3>Add New Category</h3>
+        <h3>{{ isEditing ? 'Edit Category' : 'Add New Category' }}</h3>
         <form (ngSubmit)="onSubmit()">
           <div class="form-group">
             <label>Category Name</label>
@@ -38,7 +45,8 @@
             <label>Description</label>
             <input type="text" [(ngModel)]="newCat.description" name="desc" placeholder="Brief details about the category">
           </div>
-          <button type="submit" class="btn btn-primary btn-block">Add Category</button>
+          <button type="submit" class="btn btn-primary btn-block">{{ isEditing ? 'Update Category' : 'Add Category' }}</button>
+          <button *ngIf="isEditing" type="button" class="btn btn-secondary btn-block" (click)="cancelEdit()">Cancel</button>
         </form>
       </div>
     </div>

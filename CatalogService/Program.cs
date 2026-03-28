@@ -15,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<OrderPlacedConsumer>();
+    x.AddConsumer<CategoryConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -26,6 +27,11 @@ builder.Services.AddMassTransit(x =>
         cfg.ReceiveEndpoint("catalog-order-placed", e =>
         {
             e.ConfigureConsumer<OrderPlacedConsumer>(context);
+        });
+
+        cfg.ReceiveEndpoint("catalog-category", e =>
+        {
+            e.ConfigureConsumer<CategoryConsumer>(context);
         });
     });
 });

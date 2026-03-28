@@ -7,6 +7,38 @@ namespace RetailPOS.Contracts
         string Name { get; }
     }
 
+    public interface StoreUpdatedEvent
+    {
+        int Id { get; }
+        string StoreCode { get; }
+        string Name { get; }
+    }
+
+    public interface StoreDeletedEvent
+    {
+        int Id { get; }
+        string StoreCode { get; }
+    }
+
+    public interface CategoryCreatedEvent
+    {
+        int Id { get; }
+        string Name { get; }
+        bool IsActive { get; }
+    }
+
+    public interface CategoryUpdatedEvent
+    {
+        int Id { get; }
+        string Name { get; }
+        bool IsActive { get; }
+    }
+
+    public interface CategoryDeletedEvent
+    {
+        int Id { get; }
+    }
+
     public interface OrderPlacedEvent
     {
         int OrderId { get; }
