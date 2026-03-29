@@ -22,7 +22,7 @@ import { GoogleSigninButtonModule, SocialAuthService } from '@abacritt/angularx-
           <label>Email Address</label>
           <input type="email" [(ngModel)]="data.email" name="email" required placeholder="name@gmail.com"
             pattern="^[a-zA-Z0-9.]+@gmail\.com$">
-          <small *ngIf="form.controls['email']?.errors?.['pattern']" class="error-msg">Must be a @gmail.com address</small>
+          <small *ngIf="form.controls['email']?.errors?.['pattern']" class="error-msg">Must be a &#64;gmail.com address</small>
         </div>
         <div class="form-group">
           <label>Password</label>
