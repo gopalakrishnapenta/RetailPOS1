@@ -8,9 +8,11 @@ namespace CatalogService.Interfaces
         Task<IEnumerable<Product>> GetProductsWithCategoryAsync();
         Task<Product?> GetProductWithCategoryByIdAsync(int id);
         Task<Product?> GetProductBySkuAsync(string sku);
+        Task<Product?> GetByIdIgnoringFiltersAsync(int id);
     }
 
     public interface ICategoryRepository : IGenericRepository<Category>
     {
+        Task<Category?> GetByIdIgnoringFiltersAsync(int id);
     }
 }

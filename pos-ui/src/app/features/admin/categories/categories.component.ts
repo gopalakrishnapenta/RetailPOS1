@@ -41,11 +41,19 @@ export class CategoriesComponent implements OnInit {
   }
 
   toggleStatus(c: any) {
-    const action = c.isActive ? 'disable' : 'enable';
-    if (confirm(`Are you sure you want to ${action} this category?`)) {
-      this.api.deleteCategory(c.id).subscribe(() => {
+    if (c.isActive) {
+      if (confirm('Are you sure you want to disable this category?')) {
+        this.api.deleteCategory(c.id).subscribe(() => {
+          this.loadCategories();
+          alert('Category disabled successfully');
+        });
+      }
+    } else {
+      // Enable logic: Use PUT to update the status
+      const updatedCat = { ...c, isActive: true };
+      this.api.updateCategory(c.id, updatedCat).subscribe(() => {
         this.loadCategories();
-        alert(`Category ${action}d successfully`);
+        alert('Category enabled successfully');
       });
     }
   }

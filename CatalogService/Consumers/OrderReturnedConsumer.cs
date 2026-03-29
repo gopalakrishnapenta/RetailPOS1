@@ -22,7 +22,7 @@ namespace CatalogService.Consumers
 
             foreach (var item in data.Items)
             {
-                var product = await _productRepository.GetByIdAsync(item.ProductId);
+                var product = await _productRepository.GetByIdIgnoringFiltersAsync(item.ProductId);
                 if (product != null)
                 {
                     _logger.LogInformation($"Restocking {item.Quantity} units for Product {product.Name} (Current Stock: {product.StockQuantity})");

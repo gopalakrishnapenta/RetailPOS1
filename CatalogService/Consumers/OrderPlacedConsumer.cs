@@ -23,7 +23,7 @@ namespace CatalogService.Consumers
 
             foreach (var item in data.Items)
             {
-                var product = await _productRepository.GetByIdAsync(item.ProductId);
+                var product = await _productRepository.GetByIdIgnoringFiltersAsync(item.ProductId);
                 if (product != null)
                 {
                     _logger.LogInformation($"Deducting {item.Quantity} from Product {product.Name} (Stock: {product.StockQuantity})");

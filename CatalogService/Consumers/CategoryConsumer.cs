@@ -21,7 +21,7 @@ namespace CatalogService.Consumers
             var data = context.Message;
             _logger.LogInformation($"Consuming CategoryCreatedEvent: {data.Name}");
 
-            var existing = await _categoryRepository.GetByIdAsync(data.Id);
+            var existing = await _categoryRepository.GetByIdIgnoringFiltersAsync(data.Id);
             if (existing == null)
             {
                 var category = new Category

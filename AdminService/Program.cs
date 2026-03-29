@@ -98,11 +98,18 @@ builder.Services.AddScoped<IReportService, ReportService>();
 
 var app = builder.Build();
 
-// using (var scope = app.Services.CreateScope())
-// {
-//     var context = scope.ServiceProvider.GetRequiredService<AdminService.Data.AdminDbContext>();
-//     await context.Database.MigrateAsync();
-// }
+try {
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        var context = services.GetRequiredService<AdminService.Data.AdminDbContext>();
+        Console.WriteLine("Applying Admin Service Migrations...");
+        await context.Database.MigrateAsync();
+        Console.WriteLine("Admin Service Database initialized successfully.");
+    }
+} catch (Exception ex) {
+    Console.WriteLine($"ERROR: Admin Service Database Migration failed: {ex.Message}");
+}
 
 if (app.Environment.IsDevelopment())
 {
