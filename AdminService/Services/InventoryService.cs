@@ -2,8 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Json;
 using AdminService.Data;
 using AdminService.Models;
-using AdminService.DTOs;
 using AdminService.Interfaces;
+using AdminService.Exceptions;
+using AdminService.DTOs;
 
 namespace AdminService.Services
 {
@@ -12,12 +13,14 @@ namespace AdminService.Services
         private readonly IInventoryAdjustmentRepository _adjustmentRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly HttpClient _httpClient;
+        private readonly ILogger<InventoryService> _logger;
 
-        public InventoryService(IInventoryAdjustmentRepository adjustmentRepository, IHttpClientFactory httpFactory, IHttpContextAccessor httpContextAccessor)
+        public InventoryService(IInventoryAdjustmentRepository adjustmentRepository, IHttpClientFactory httpFactory, IHttpContextAccessor httpContextAccessor, ILogger<InventoryService> logger)
         {
             _adjustmentRepository = adjustmentRepository;
             _httpClient = httpFactory.CreateClient();
             _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
         }
 
         public async Task<bool> AdjustInventoryAsync(InventoryAdjustmentDto dto)
@@ -49,8 +52,19 @@ namespace AdminService.Services
                     _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", authHeader);
                 }
 
-                await _httpClient.PostAsJsonAsync("http://localhost:5002/api/products/adjust-stock", new { ProductId = adjustment.ProductId, QuantityChange = qtyChange });
-            } catch { }
+                var response = await _httpClient.PostAsJsonAsync("http://localhost:5002/api/products/adjust-stock", new { ProductId = adjustment.ProductId, QuantityChange = qtyChange });
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning($"Remote Stock Adjustment Failed: {error}");
+                    throw new BusinessRuleException($"Inventory Sync Failed with Catalog Service: {response.ReasonPhrase}");
+                }
+            } catch (BusinessRuleException) { throw; }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Stock Sync Error");
+                throw new BusinessRuleException("Could not synchronize stock adjustment with Catalog service.");
+            }
             return true;
         }
 

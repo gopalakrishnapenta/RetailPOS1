@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { GoogleSigninButtonModule, SocialAuthService } from '@abacritt/angularx-social-login';
 
 @Component({
@@ -67,7 +68,10 @@ export class SignupComponent implements OnInit {
   stores: any[] = [];
   msg = ''; isErr = false; isLoading = false; showPassword = false;
 
-  constructor(private auth: AuthService, private router: Router, private socialAuth: SocialAuthService) { }
+  private auth = inject(AuthService);
+  private router = inject(Router);
+  private socialAuth = inject(SocialAuthService);
+  private notification = inject(NotificationService);
 
   ngOnInit() {
     this.loadStores();
@@ -85,20 +89,21 @@ export class SignupComponent implements OnInit {
     this.auth.googleLogin(idToken, this.data.storeId, this.data.role).subscribe({
       next: (res) => {
         this.isLoading = false;
-        // Post login logic (matching LoginComponent's behavior)
         localStorage.setItem('storeContext', JSON.stringify({
           storeId: res.storeId,
           storeCode: res.storeCode,
           shiftDate: new Date().toISOString().split('T')[0]
         }));
+        this.notification.success('Welcome to RetailPOS!');
         this.router.navigate(['/pos/billing']);
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isLoading = false;
-        if (err.error?.message === 'GOOGLE_SIGNUP_REQUIRED_FIELDS') {
+        const msg = err.error?.detail || err.error?.message;
+        if (msg === 'GOOGLE_SIGNUP_REQUIRED_FIELDS' || err.status === 422) {
           this.msg = 'Please select a Store and Role first, then click Google Sign-in again.';
         } else {
-          this.msg = err.error?.message || 'Google login failed';
+          this.msg = msg || 'Google login failed';
         }
         this.isErr = true;
       }
@@ -110,10 +115,9 @@ export class SignupComponent implements OnInit {
       next: (res) => {
         this.stores = res;
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Failed to load stores', err);
-        this.msg = 'Failed to load stores. Please check connection.';
-        this.isErr = true;
+        this.notification.error('Check your internet or server connection.', 'Store Load Failed');
       }
     });
   }
@@ -124,14 +128,15 @@ export class SignupComponent implements OnInit {
     this.auth.register(this.data).subscribe({
       next: () => {
         this.isLoading = false;
-        this.msg = 'Registration successful! Please check your email for the verification code.';
+        this.notification.success('Registration successful! Redirecting...');
+        this.msg = 'Registration successful! Check your email for OTP.';
         this.isErr = false;
-        // Redirect to verification instead of login
         setTimeout(() => this.router.navigate(['/auth/verify-email'], { queryParams: { email: this.data.email } }), 2000);
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isLoading = false;
-        this.msg = err.error?.message || 'Registration failed';
+        const msg = err.error?.detail || err.error?.message;
+        this.msg = msg || 'Registration failed';
         this.isErr = true;
       }
     });

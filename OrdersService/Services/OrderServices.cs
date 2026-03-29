@@ -5,6 +5,7 @@ using OrdersService.DTOs;
 using OrdersService.Interfaces;
 using MassTransit;
 using RetailPOS.Contracts;
+using OrdersService.Exceptions;
 
 namespace OrdersService.Services
 {
@@ -39,7 +40,7 @@ namespace OrdersService.Services
         public async Task<BillDto?> GetBillByIdAsync(int id)
         {
             var bill = await _billRepository.GetBillWithItemsAsync(id);
-            if (bill == null) return null;
+            if (bill == null) throw new NotFoundException($"Bill with ID {id} not found.");
 
             return MapToDto(bill);
         }
@@ -64,7 +65,7 @@ namespace OrdersService.Services
             else
             {
                 bill = await _billRepository.GetBillWithItemsAsync(cartDto.Id) 
-                       ?? throw new Exception("Bill not found");
+                       ?? throw new NotFoundException($"Bill with ID {cartDto.Id} not found.");
                 bill.CustomerMobile = cartDto.CustomerMobile;
                 bill.CustomerName = cartDto.CustomerName;
                 bill.TotalAmount = cartDto.TotalAmount;
@@ -99,7 +100,7 @@ namespace OrdersService.Services
         public async Task<bool> FinalizeBillAsync(int id)
         {
             var bill = await _billRepository.GetBillWithItemsAsync(id);
-            if (bill == null) return false;
+            if (bill == null) throw new NotFoundException($"Bill with ID {id} not found.");
 
             // Publish OrderPlacedEvent to RabbitMQ
             await _publishEndpoint.Publish<OrderPlacedEvent>(new
@@ -117,7 +118,7 @@ namespace OrdersService.Services
         public async Task<bool> HoldBillAsync(int id)
         {
             var bill = await _billRepository.GetByIdAsync(id);
-            if (bill == null) return false;
+            if (bill == null) throw new NotFoundException($"Bill with ID {id} not found.");
 
             bill.Status = "Held";
             await _billRepository.SaveChangesAsync();
@@ -166,7 +167,8 @@ namespace OrdersService.Services
         public async Task<CustomerDto?> GetByMobileAsync(string mobile)
         {
             var c = await _customerRepository.GetByMobileAsync(mobile);
-            return c == null ? null : new CustomerDto { Mobile = c.Mobile, Name = c.Name };
+            if (c == null) throw new NotFoundException($"Customer with mobile {mobile} not found.");
+            return new CustomerDto { Mobile = c.Mobile, Name = c.Name };
         }
 
         public async Task<CustomerDto> CreateOrUpdateCustomerAsync(CustomerDto dto)

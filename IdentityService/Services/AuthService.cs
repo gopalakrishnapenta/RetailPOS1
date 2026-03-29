@@ -8,6 +8,7 @@ using IdentityService.Models;
 using IdentityService.DTOs;
 using IdentityService.Interfaces;
 using Google.Apis.Auth;
+using IdentityService.Exceptions;
 
 namespace IdentityService.Services
 {
@@ -32,37 +33,92 @@ namespace IdentityService.Services
         {
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == loginDto.Email);
             if (user == null || user.PasswordHash != loginDto.Password)
-                return new AuthResult { Success = false, Message = "Invalid email or password" };
+                throw new ValidationException("Invalid email or password.");
 
             if (!user.IsEmailVerified)
-                return new AuthResult { Success = false, Message = "EMAIL_NOT_VERIFIED" };
+                throw new ValidationException("EMAIL_NOT_VERIFIED");
 
-            // Ensure our primary admins have the correct role regardless of DB state
+            // Generate Login OTP
+            var otp = new Random().Next(100000, 999999).ToString();
+            user.Otp = otp;
+            user.OtpExpiry = DateTime.UtcNow.AddMinutes(10);
+            await _userRepository.SaveChangesAsync();
+
+            // Check if this is a Test/Dummy Account
+            var testAccounts = _config.GetSection("TestAccounts").Get<string[]>() ?? Array.Empty<string>();
+            bool isTestAccount = testAccounts.Any(a => a.Equals(user.Email, StringComparison.OrdinalIgnoreCase));
+
+            if (isTestAccount)
+            {
+                _logger.LogInformation("=================================================");
+                _logger.LogInformation($"[TEST OTP] Login OTP for {user.Email}: {otp}");
+                _logger.LogInformation("=================================================");
+            }
+            else
+            {
+                var subject = "NexusPOS Login Verification";
+                var body = $"<h3>Login Verification</h3><p>Your login code is: <b style='font-size: 24px;'>{otp}</b></p><p>This code expires in 10 minutes.</p>";
+                await _emailService.SendEmailAsync(user.Email, subject, body);
+            }
+
+            return new AuthResult 
+            { 
+                Success = true, 
+                Message = "OTP_SENT",
+                Data = new AuthResponseDto { 
+                    Email = user.Email,
+                    RequiresOtp = true,
+                    Role = user.Role,
+                    StoreId = user.PrimaryStoreId ?? 0,
+
+                    StoreCode = loginDto.StoreCode // Pass through for next step
+                } 
+            };
+        }
+
+        public async Task<AuthResult> VerifyLoginOtpAsync(VerifyLoginOtpDto verifyDto)
+        {
+            var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == verifyDto.Email);
+            if (user == null) throw new NotFoundException("User not found.");
+
+            if (user.Otp != verifyDto.Otp || user.OtpExpiry < DateTime.UtcNow)
+                throw new ValidationException("Invalid or expired OTP.");
+
+            // Clear OTP after successful use
+            user.Otp = null;
+            user.OtpExpiry = null;
+            await _userRepository.SaveChangesAsync();
+
+            // Success! Now handle role and store context logic
             if (user.Email.ToLower() == "admin@nexus.com" || user.Email.ToLower() == "admin@gmail.com") user.Role = "Admin";
 
-            int currentStoreId = user.PrimaryStoreId;
-            string? effectiveStoreCode = loginDto.StoreCode;
+            int currentStoreId = user.PrimaryStoreId ?? 0;
+
+            string? effectiveStoreCode = verifyDto.StoreCode;
 
             if (user.Role == "Admin")
             {
-                currentStoreId = 0; // Global context for Admin
+                currentStoreId = 0;
             }
             else if (string.IsNullOrEmpty(effectiveStoreCode))
             {
-                var store = await _storeRepository.GetByIdAsync(user.PrimaryStoreId);
+                var store = await _storeRepository.GetByIdAsync(user.PrimaryStoreId ?? 0);
+
                 effectiveStoreCode = store?.StoreCode;
             }
             else
             {
                 var store = await _storeRepository.SingleOrDefaultAsync(s => s.StoreCode == effectiveStoreCode);
-                if (store == null || store.Id != user.PrimaryStoreId)
+                if (store == null || store.Id != (user.PrimaryStoreId ?? 0))
+
                 {
-                    return new AuthResult { Success = false, Message = "Your details are not matching with the selected Store ID." };
+                    throw new ValidationException("Selected Store ID mismatched.");
                 }
                 currentStoreId = store.Id;
             }
 
-            var token = GenerateJwt(user, currentStoreId, effectiveStoreCode, loginDto.ShiftDate ?? DateTime.Today.ToString("yyyy-MM-dd"));
+            var token = GenerateJwt(user, currentStoreId, effectiveStoreCode, verifyDto.ShiftDate ?? DateTime.Today.ToString("yyyy-MM-dd"));
+            
             return new AuthResult 
             { 
                 Success = true, 
@@ -71,7 +127,8 @@ namespace IdentityService.Services
                     Role = user.Role, 
                     Email = user.Email, 
                     StoreId = currentStoreId,
-                    StoreCode = effectiveStoreCode
+                    StoreCode = effectiveStoreCode,
+                    RequiresOtp = false
                 } 
             };
         }
@@ -82,13 +139,13 @@ namespace IdentityService.Services
             if (await _userRepository.AnyAsync(u => u.Email == registerDto.Email))
             {
                 _logger.LogWarning($"Registration failed: Email {registerDto.Email} already exists.");
-                return false;
+                throw new ConflictException("An account with this email already exists.");
             }
 
             if (registerDto.Role == "Admin")
             {
                 _logger.LogWarning($"Registration rejected: Admin role cannot be created via signup for {registerDto.Email}");
-                return false;
+                throw new ValidationException("Admin accounts cannot be created via signup.");
             }
 
             try {
@@ -125,8 +182,9 @@ namespace IdentityService.Services
         public async Task<bool> VerifyEmailAsync(string email, string otp)
         {
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == email);
-            if (user == null || user.VerificationOtp != otp || user.VerificationOtpExpiry < DateTime.UtcNow)
-                return false;
+            if (user == null) throw new NotFoundException("User not found.");
+            if (user.VerificationOtp != otp || user.VerificationOtpExpiry < DateTime.UtcNow)
+                throw new ValidationException("Invalid or expired verification code.");
 
             user.IsEmailVerified = true;
             user.VerificationOtp = null;
@@ -138,7 +196,7 @@ namespace IdentityService.Services
         public async Task<string?> ResendVerificationOtpAsync(string email)
         {
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == email);
-            if (user == null) return null;
+            if (user == null) throw new NotFoundException("User not found.");
 
             var otp = new Random().Next(100000, 999999).ToString();
             user.VerificationOtp = otp;
@@ -157,7 +215,7 @@ namespace IdentityService.Services
         public async Task<string?> SendOtpAsync(string email)
         {
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == email);
-            if (user == null) return null;
+            if (user == null) throw new NotFoundException("User not found.");
 
             var otp = new Random().Next(100000, 999999).ToString();
             user.Otp = otp;
@@ -184,8 +242,9 @@ namespace IdentityService.Services
         public async Task<bool> ResetPasswordAsync(ResetPasswordDto resetDto)
         {
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == resetDto.Email);
-            if (user == null || user.Otp != resetDto.Otp || user.OtpExpiry < DateTime.UtcNow)
-                return false;
+            if (user == null) throw new NotFoundException("User not found.");
+            if (user.Otp != resetDto.Otp || user.OtpExpiry < DateTime.UtcNow)
+                throw new ValidationException("Invalid or expired OTP.");
 
             user.PasswordHash = resetDto.NewPassword;
             user.Otp = null;
@@ -229,9 +288,11 @@ namespace IdentityService.Services
                     await _userRepository.SaveChangesAsync();
                     _logger.LogInformation($"Created new user {email} via Google signup with Role: {role}, Store: {storeId}");
                 }
+ 
+                var store = await _storeRepository.GetByIdAsync(user.PrimaryStoreId ?? 0);
 
-                var store = await _storeRepository.GetByIdAsync(user.PrimaryStoreId);
-                var token = GenerateJwt(user, user.PrimaryStoreId, store?.StoreCode, DateTime.Today.ToString("yyyy-MM-dd"));
+                var token = GenerateJwt(user, user.PrimaryStoreId ?? 0, store?.StoreCode, DateTime.Today.ToString("yyyy-MM-dd"));
+
                 return new AuthResult 
                 { 
                     Success = true, 
@@ -239,8 +300,9 @@ namespace IdentityService.Services
                         Token = token, 
                         Role = user.Role, 
                         Email = user.Email, 
-                        StoreId = user.PrimaryStoreId,
+                        StoreId = user.PrimaryStoreId ?? 0,
                         StoreCode = store?.StoreCode
+
                     } 
                 };
             }
@@ -271,7 +333,22 @@ namespace IdentityService.Services
             if (!string.IsNullOrEmpty(storeCode)) claims.Add(new Claim("StoreCode", storeCode));
             if (!string.IsNullOrEmpty(shiftDate)) claims.Add(new Claim("ShiftDate", shiftDate));
 
-            var token = new JwtSecurityToken(_config["Jwt:Issuer"], _config["Jwt:Audience"], claims, expires: DateTime.Now.AddHours(8), signingCredentials: credentials);
+            // Add multiple audiences if configured
+            var audiences = _config.GetSection("Jwt:Audiences").Get<string[]>();
+            if (audiences != null)
+            {
+                foreach (var aud in audiences)
+                {
+                    claims.Add(new Claim(JwtRegisteredClaimNames.Aud, aud));
+                }
+            }
+
+            var token = new JwtSecurityToken(
+                _config["Jwt:Issuer"], 
+                null, // Setting null here because we added 'aud' claims manually
+                claims, 
+                expires: DateTime.Now.AddHours(8), 
+                signingCredentials: credentials);
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
         public async Task<List<StoreDto>> GetStoresAsync()

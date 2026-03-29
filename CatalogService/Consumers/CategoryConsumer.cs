@@ -28,12 +28,26 @@ namespace CatalogService.Consumers
                 {
                     Id = data.Id,
                     Name = data.Name,
+                    Description = data.Description,
                     IsActive = data.IsActive,
-                    StoreId = 0 // Global Admin Category
+                    StoreId = data.StoreId
                 };
+
                 await _categoryRepository.AddAsync(category);
                 await _categoryRepository.SaveChangesAsync();
-                _logger.LogInformation($"Category {data.Name} synced successfully in CatalogService.");
+                _logger.LogInformation($"Category {data.Name} synced successfully (Created) in CatalogService.");
+            }
+            else
+            {
+                // UPSERT: Update if it already exists (useful for resync)
+                existing.Name = data.Name;
+                existing.Description = data.Description;
+                existing.IsActive = data.IsActive;
+                existing.StoreId = data.StoreId;
+                _categoryRepository.Update(existing);
+
+                await _categoryRepository.SaveChangesAsync();
+                _logger.LogInformation($"Category {data.Name} synced successfully (Updated) in CatalogService.");
             }
         }
 
@@ -46,8 +60,11 @@ namespace CatalogService.Consumers
             if (category != null)
             {
                 category.Name = data.Name;
+                category.Description = data.Description;
                 category.IsActive = data.IsActive;
+                category.StoreId = data.StoreId;
                 _categoryRepository.Update(category);
+
                 await _categoryRepository.SaveChangesAsync();
                 _logger.LogInformation($"Category {data.Id} updated successfully in CatalogService (Active: {data.IsActive}).");
             }

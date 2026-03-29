@@ -7,7 +7,8 @@ namespace IdentityService.Models
         public string PasswordHash { get; set; }
         public string Role { get; set; }
         public string? EmployeeCode { get; set; }
-        public int PrimaryStoreId { get; set; }
+        public int? PrimaryStoreId { get; set; }
+
         public Store PrimaryStore { get; set; }
 
         public string? Otp { get; set; }

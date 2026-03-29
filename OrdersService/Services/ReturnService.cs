@@ -4,6 +4,7 @@ using OrdersService.DTOs;
 using MassTransit;
 using RetailPOS.Contracts;
 using Microsoft.EntityFrameworkCore;
+using OrdersService.Exceptions;
 
 namespace OrdersService.Services
 {
@@ -41,13 +42,14 @@ namespace OrdersService.Services
         public async Task<bool> ApproveReturnAsync(int returnId, string? approvalNote)
         {
             var ret = await _returnRepo.GetByIdAsync(returnId);
-            if (ret == null || ret.Status != "Initiated") return false;
+            if (ret == null) throw new NotFoundException($"Return with ID {returnId} not found.");
+            if (ret.Status != "Initiated") throw new ValidationException($"Return {returnId} cannot be approved as it is in status '{ret.Status}'.");
 
             var bill = await _billRepo.GetBillWithItemsAsync(ret.OriginalBillId);
-            if (bill == null) return false;
+            if (bill == null) throw new NotFoundException($"Original bill {ret.OriginalBillId} not found.");
 
             var item = bill.Items.FirstOrDefault(i => i.ProductId == ret.ProductId);
-            if (item == null) return false;
+            if (item == null) throw new ValidationException($"Product {ret.ProductId} was not found in the original bill.");
 
             // Update Return State
             ret.Status = "Approved";
@@ -75,7 +77,8 @@ namespace OrdersService.Services
         public async Task<bool> RejectReturnAsync(int returnId, string? rejectionNote)
         {
             var ret = await _returnRepo.GetByIdAsync(returnId);
-            if (ret == null || ret.Status != "Initiated") return false;
+            if (ret == null) throw new NotFoundException($"Return with ID {returnId} not found.");
+            if (ret.Status != "Initiated") throw new ValidationException($"Return {returnId} cannot be rejected as it is in status '{ret.Status}'.");
 
             ret.Status = "Rejected";
             ret.ManagerApprovalNote = rejectionNote ?? "Rejected by manager";

@@ -18,11 +18,20 @@ namespace IdentityService.DTOs
 
     public class AuthResponseDto
     {
-        public string Token { get; set; } = string.Empty;
+        public string? Token { get; set; }
+        public bool RequiresOtp { get; set; } = false;
         public string Role { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public int StoreId { get; set; }
         public string? StoreCode { get; set; }
+    }
+
+    public class VerifyLoginOtpDto
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Otp { get; set; } = string.Empty;
+        public string? StoreCode { get; set; }
+        public string? ShiftDate { get; set; }
     }
 
     public class AuthResult

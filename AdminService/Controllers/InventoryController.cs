@@ -20,7 +20,7 @@ namespace AdminService.Controllers
         [HttpPost("adjustments")]
         public async Task<IActionResult> Adjust([FromBody] InventoryAdjustmentDto adjustmentDto)
         {
-            var success = await _inventoryService.AdjustInventoryAsync(adjustmentDto);
+            await _inventoryService.AdjustInventoryAsync(adjustmentDto);
             return Ok(new { message = "Inventory adjustment saved successfully" });
         }
 

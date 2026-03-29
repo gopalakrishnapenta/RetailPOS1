@@ -5,6 +5,7 @@ namespace IdentityService.Interfaces
     public interface IAuthService
     {
         Task<AuthResult> LoginAsync(LoginDto loginDto);
+        Task<AuthResult> VerifyLoginOtpAsync(VerifyLoginOtpDto verifyDto);
         Task<bool> RegisterAsync(RegisterDto registerDto);
         Task<bool> VerifyEmailAsync(string email, string otp);
         Task<string?> ResendVerificationOtpAsync(string email);

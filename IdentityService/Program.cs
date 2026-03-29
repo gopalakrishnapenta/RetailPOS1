@@ -9,6 +9,7 @@ using IdentityService.Services;
 using IdentityService.Repositories;
 using MassTransit;
 using IdentityService.Consumers;
+using IdentityService.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,7 +75,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime         = true,
             ValidateIssuerSigningKey = true,
             ValidIssuer              = jwtIssuer,
-            ValidAudience            = jwtAud,
+            ValidAudiences           = builder.Configuration.GetSection("Jwt:Audiences").Get<string[]>() ?? new[] { jwtAud },
             IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
@@ -115,6 +116,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseExceptionMiddleware();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

@@ -23,6 +23,19 @@ export class AuthService {
     );
   }
 
+  verifyLoginOtp(data: any) {
+    return this.http.post<any>(`${this.baseUrl}/verify-login-otp`, data).pipe(
+      tap(res => {
+        if (res && res.token) {
+          localStorage.setItem(this.tokenKey, res.token);
+          localStorage.setItem(this.roleKey, res.role);
+          localStorage.setItem('pos_store_id', res.storeId.toString());
+          localStorage.setItem('pos_user', JSON.stringify({ email: res.email, role: res.role, storeId: res.storeId }));
+        }
+      })
+    );
+  }
+
   googleLogin(idToken: string, storeId?: number, role?: string) {
     return this.http.post<any>(`${this.baseUrl}/google-login`, { idToken, storeId, role }).pipe(
       tap(res => {

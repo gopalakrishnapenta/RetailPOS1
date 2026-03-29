@@ -93,7 +93,7 @@ namespace IdentityService.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("PrimaryStoreId")
+                    b.Property<int?>("PrimaryStoreId")
                         .HasColumnType("int");
 
                     b.Property<string>("Role")
@@ -173,8 +173,7 @@ namespace IdentityService.Migrations
                     b.HasOne("IdentityService.Models.Store", "PrimaryStore")
                         .WithMany("Users")
                         .HasForeignKey("PrimaryStoreId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("PrimaryStore");
                 });

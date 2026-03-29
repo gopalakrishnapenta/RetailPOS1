@@ -29,7 +29,6 @@ namespace OrdersService.Controllers
         public async Task<IActionResult> GetById(int id)
         {
             var bill = await _billService.GetBillByIdAsync(id);
-            if (bill == null) return NotFound();
             return Ok(bill);
         }
 
@@ -43,16 +42,14 @@ namespace OrdersService.Controllers
         [HttpPost("{id}/finalize")]
         public async Task<IActionResult> Finalize(int id)
         {
-            var success = await _billService.FinalizeBillAsync(id);
-            if (!success) return NotFound();
+            await _billService.FinalizeBillAsync(id);
             return Ok(new { message = "Bill finalized successfully" });
         }
 
         [HttpPost("{id}/hold")]
         public async Task<IActionResult> Hold(int id)
         {
-            var success = await _billService.HoldBillAsync(id);
-            if (!success) return NotFound();
+            await _billService.HoldBillAsync(id);
             return Ok(new { message = "Bill held successfully" });
         }
     }

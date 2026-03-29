@@ -15,12 +15,15 @@ namespace AdminService.Controllers
     {
         private readonly AdminDbContext _context;
         private readonly IPublishEndpoint _publishEndpoint;
-
-        public CategoriesController(AdminDbContext context, IPublishEndpoint publishEndpoint)
+        private readonly ILogger<CategoriesController> _logger;
+ 
+        public CategoriesController(AdminDbContext context, IPublishEndpoint publishEndpoint, ILogger<CategoriesController> logger)
         {
             _context = context;
             _publishEndpoint = publishEndpoint;
+            _logger = logger;
         }
+
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<AdminCategoryEntity>>> GetCategories()
@@ -42,13 +45,18 @@ namespace AdminService.Controllers
             _context.Categories.Add(category);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation($"[SYNC] Publishing CategoryCreatedEvent for {category.Name} (Id: {category.Id})");
             // Publish Event
             await _publishEndpoint.Publish<CategoryCreatedEvent>(new
             {
                 Id = category.Id,
                 Name = category.Name,
-                IsActive = category.IsActive
+                Description = category.Description,
+                IsActive = category.IsActive,
+                StoreId = category.StoreId
             });
+
+
 
             return CreatedAtAction(nameof(GetCategory), new { id = category.Id }, category);
         }
@@ -56,7 +64,9 @@ namespace AdminService.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCategory(int id, AdminCategoryEntity category)
         {
-            if (id != category.Id) return BadRequest();
+            if (category.Id == 0) category.Id = id;
+            if (id != category.Id) return BadRequest(new { Message = "ID mismatch." });
+
 
             _context.Entry(category).State = EntityState.Modified;
             await _context.SaveChangesAsync();
@@ -66,8 +76,11 @@ namespace AdminService.Controllers
             {
                 Id = category.Id,
                 Name = category.Name,
-                IsActive = category.IsActive
+                Description = category.Description,
+                IsActive = category.IsActive,
+                StoreId = category.StoreId
             });
+
 
             return NoContent();
         }
@@ -86,10 +99,34 @@ namespace AdminService.Controllers
             {
                 Id = category.Id,
                 Name = category.Name,
-                IsActive = category.IsActive
+                Description = category.Description,
+                IsActive = category.IsActive,
+                StoreId = category.StoreId
             });
 
+
             return NoContent();
+        }
+
+        [HttpPost("sync")]
+        [AllowAnonymous]
+        public async Task<IActionResult> SyncCategories()
+
+        {
+            var categories = await _context.Categories.ToListAsync();
+            foreach (var category in categories)
+            {
+                await _publishEndpoint.Publish<CategoryCreatedEvent>(new
+                {
+                    Id = category.Id,
+                    Name = category.Name,
+                    Description = category.Description,
+                    IsActive = category.IsActive,
+                    StoreId = category.StoreId
+                });
+
+            }
+            return Ok(new { Message = $"Sync initiated for {categories.Count} categories." });
         }
     }
 }

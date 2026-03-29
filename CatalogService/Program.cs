@@ -9,6 +9,7 @@ using CatalogService.Services;
 using CatalogService.Repositories;
 using MassTransit;
 using CatalogService.Consumers;
+using CatalogService.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -101,7 +102,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true, 
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidAudiences = builder.Configuration.GetSection("Jwt:Audiences").Get<string[]>() ?? new[] { builder.Configuration["Jwt:Audience"] },
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "super_secret_key_1234567890_pos_system"))
         };
     });
@@ -130,6 +131,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseExceptionMiddleware();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();

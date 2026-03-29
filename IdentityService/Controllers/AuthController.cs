@@ -21,43 +21,34 @@ namespace IdentityService.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDto request)
         {
             var result = await _authService.LoginAsync(request);
-            if (!result.Success)
-                return Unauthorized(new { message = result.Message });
+            return Ok(result.Data);
+        }
 
+        [HttpPost("verify-login-otp")]
+        public async Task<IActionResult> VerifyLoginOtp([FromBody] VerifyLoginOtpDto request)
+        {
+            var result = await _authService.VerifyLoginOtpAsync(request);
             return Ok(result.Data);
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto request)
         {
-            try {
-                var success = await _authService.RegisterAsync(request);
-                if (!success)
-                    return BadRequest(new { message = "Email already exists" });
-
-                return Ok(new { message = "Registration successful. Please check your email for the verification code." });
-            } catch (Exception ex) {
-                return StatusCode(500, new { message = $"Registration failed: {ex.Message}", details = ex.InnerException?.Message });
-            }
+            await _authService.RegisterAsync(request);
+            return Ok(new { message = "Registration successful. Please check your email for the verification code." });
         }
 
         [HttpPost("verify-email")]
         public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto request)
         {
-            var success = await _authService.VerifyEmailAsync(request.Email, request.Otp);
-            if (!success)
-                return BadRequest(new { message = "Invalid or expired verification code" });
-
+            await _authService.VerifyEmailAsync(request.Email, request.Otp);
             return Ok(new { message = "Email verified successfully. You can now log in." });
         }
 
         [HttpPost("resend-verification")]
         public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationDto request)
         {
-            var otp = await _authService.ResendVerificationOtpAsync(request.Email);
-            if (otp == null)
-                return BadRequest(new { message = "User not found" });
-
+            await _authService.ResendVerificationOtpAsync(request.Email);
             return Ok(new { message = "Verification code resent successfully." });
         }
 
@@ -71,10 +62,7 @@ namespace IdentityService.Controllers
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto request)
         {
-            var success = await _authService.ResetPasswordAsync(request);
-            if (!success)
-                return BadRequest(new { message = "Invalid or expired OTP" });
-
+            await _authService.ResetPasswordAsync(request);
             return Ok(new { message = "Password reset successfully" });
         }
 
@@ -103,16 +91,8 @@ namespace IdentityService.Controllers
         [HttpGet("test-email")]
         public async Task<IActionResult> TestEmail([FromQuery] string email)
         {
-            try
-            {
-                var success = await _authService.TestEmailAsync(email);
-                if (success) return Ok(new { message = $"Test email sent successfully to {email}" });
-                return BadRequest(new { message = "Test email failed. Check logs for details." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = $"SMTP ERROR: {ex.Message}", details = ex.InnerException?.Message });
-            }
+            await _authService.TestEmailAsync(email);
+            return Ok(new { message = $"Test email sent successfully to {email}" });
         }
     }
 }

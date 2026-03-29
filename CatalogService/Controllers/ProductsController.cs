@@ -33,7 +33,6 @@ namespace CatalogService.Controllers
         public async Task<IActionResult> Get(int id)
         {
             var product = await _productService.GetProductByIdAsync(id);
-            if (product == null) return NotFound();
             return Ok(product);
         }
 
@@ -49,8 +48,7 @@ namespace CatalogService.Controllers
         [Authorize(Policy = "StoreManagerOrHigher")]
         public async Task<IActionResult> Update(int id, [FromBody] ProductDto productDto)
         {
-            var success = await _productService.UpdateProductAsync(id, productDto);
-            if (!success) return NotFound();
+            await _productService.UpdateProductAsync(id, productDto);
             return Ok(new { message = "Product updated successfully" });
         }
 
@@ -58,8 +56,7 @@ namespace CatalogService.Controllers
         [Authorize(Policy = "StoreManagerOrHigher")]
         public async Task<IActionResult> Delete(int id)
         {
-            var success = await _productService.DeleteProductAsync(id);
-            if (!success) return NotFound();
+            await _productService.DeleteProductAsync(id);
             return Ok(new { message = "Product deleted successfully" });
         }
 

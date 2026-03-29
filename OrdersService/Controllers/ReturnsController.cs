@@ -37,8 +37,7 @@ namespace OrdersService.Controllers
         [Authorize(Policy = "StoreManagerOrHigher")]
         public async Task<IActionResult> Approve(int id, [FromBody] string? note)
         {
-            var success = await _returnService.ApproveReturnAsync(id, note);
-            if (!success) return BadRequest(new { message = "Return could not be approved. Ensure it exists AND is in 'Initiated' status." });
+            await _returnService.ApproveReturnAsync(id, note);
             return Ok(new { message = "Return approved and stock restock event published" });
         }
 
@@ -46,8 +45,7 @@ namespace OrdersService.Controllers
         [Authorize(Policy = "StoreManagerOrHigher")]
         public async Task<IActionResult> Reject(int id, [FromBody] string? note)
         {
-            var success = await _returnService.RejectReturnAsync(id, note);
-            if (!success) return BadRequest(new { message = "Return could not be rejected. Ensure it exists AND is in 'Initiated' status." });
+            await _returnService.RejectReturnAsync(id, note);
             return Ok(new { message = "Return rejected successfully" });
         }
     }

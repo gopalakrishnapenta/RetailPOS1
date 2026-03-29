@@ -26,7 +26,6 @@ namespace CatalogService.Controllers
         public async Task<IActionResult> Get(int id)
         {
             var category = await _categoryService.GetCategoryByIdAsync(id);
-            if (category == null) return NotFound();
             return Ok(category);
         }
     }

@@ -1,3 +1,17 @@
 <div class="app-layout">
   <router-outlet></router-outlet>
 </div>
+
+<!-- Global Toast Notifications -->
+<div class="toast-container" *ngIf="toasts$ | async as toasts">
+  <div *ngFor="let toast of toasts" 
+       class="toast" 
+       [ngClass]="['toast-' + toast.type, toast.closing ? 'toast-closing' : '']">
+    <div class="toast-icon">{{ getIcon(toast.type) }}</div>
+    <div class="toast-content">
+      <div class="toast-title">{{ toast.title }}</div>
+      <div class="toast-message">{{ toast.message }}</div>
+    </div>
+    <button class="toast-close" (click)="removeToast(toast.id)">✕</button>
+  </div>
+</div>

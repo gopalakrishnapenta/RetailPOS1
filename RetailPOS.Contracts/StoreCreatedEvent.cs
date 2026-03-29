@@ -20,25 +20,6 @@ namespace RetailPOS.Contracts
         string StoreCode { get; }
     }
 
-    public interface CategoryCreatedEvent
-    {
-        int Id { get; }
-        string Name { get; }
-        bool IsActive { get; }
-    }
-
-    public interface CategoryUpdatedEvent
-    {
-        int Id { get; }
-        string Name { get; }
-        bool IsActive { get; }
-    }
-
-    public interface CategoryDeletedEvent
-    {
-        int Id { get; }
-    }
-
     public interface OrderPlacedEvent
     {
         int OrderId { get; }
