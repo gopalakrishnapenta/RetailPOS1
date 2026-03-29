@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace OrdersService.DTOs
 {
     public class BillDto
@@ -5,7 +7,8 @@ namespace OrdersService.DTOs
         public int Id { get; set; }
         public string BillNumber { get; set; } = string.Empty;
         public DateTime Date { get; set; }
-        public string CustomerMobile { get; set; } = string.Empty;
+        [RegularExpression(@"^[0-9]{10}$", ErrorMessage = "Customer mobile must be exactly 10 digits")]
+        public string? CustomerMobile { get; set; }
         public string CustomerName { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
         public decimal TaxAmount { get; set; }
@@ -27,7 +30,8 @@ namespace OrdersService.DTOs
 
     public class CustomerDto
     {
-        public string Mobile { get; set; } = string.Empty;
+        [RegularExpression(@"^[0-9]{10}$", ErrorMessage = "Mobile must be exactly 10 digits")]
+        public string? Mobile { get; set; }
         public string Name { get; set; } = string.Empty;
     }
 

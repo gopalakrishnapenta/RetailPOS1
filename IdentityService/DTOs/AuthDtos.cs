@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace IdentityService.DTOs
 {
     public class LoginDto
@@ -10,8 +12,15 @@ namespace IdentityService.DTOs
 
     public class RegisterDto
     {
+        [Required]
+        [RegularExpression(@"^[a-z0-9.]+@gmail\.com$", ErrorMessage = "Only @gmail.com accounts are allowed.")]
         public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", 
+            ErrorMessage = "Password must be at least 8 characters, include uppercase, lowercase, number, and symbol.")]
         public string Password { get; set; } = string.Empty;
+
         public string Role { get; set; } = "Cashier";
         public int StoreId { get; set; } = 1;
     }

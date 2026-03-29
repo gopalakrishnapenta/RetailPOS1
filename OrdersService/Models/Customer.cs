@@ -7,9 +7,9 @@ namespace OrdersService.Models
         [Key]
         public int Id { get; set; }
 
-        [Required]
         [MaxLength(20)]
-        public string Mobile { get; set; } = string.Empty;
+        [RegularExpression(@"^[0-9]{10}$", ErrorMessage = "Mobile number must be exactly 10 digits.")]
+        public string? Mobile { get; set; }
 
         [Required]
         [MaxLength(100)]

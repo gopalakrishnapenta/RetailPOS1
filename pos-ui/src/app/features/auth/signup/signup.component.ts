@@ -20,16 +20,22 @@ import { GoogleSigninButtonModule, SocialAuthService } from '@abacritt/angularx-
       <form (ngSubmit)="onRegister()" #form="ngForm">
         <div class="form-group">
           <label>Email Address</label>
-          <input type="email" [(ngModel)]="data.email" name="email" required placeholder="name@gmail.com">
+          <input type="email" [(ngModel)]="data.email" name="email" required placeholder="name@gmail.com"
+            pattern="^[a-zA-Z0-9.]+@gmail\.com$">
+          <small *ngIf="form.controls['email']?.errors?.['pattern']" class="error-msg">Must be a @gmail.com address</small>
         </div>
         <div class="form-group">
           <label>Password</label>
           <div class="password-wrapper">
-            <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="data.password" name="password" required placeholder="Create a secure password">
+            <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="data.password" name="password" required placeholder="Create a secure password"
+              pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$">
             <span class="toggle-password" (click)="showPassword = !showPassword">
               {{ showPassword ? '👁️' : '👁️‍🗨️' }}
             </span>
           </div>
+          <small *ngIf="form.controls['password']?.errors?.['pattern']" class="error-msg" style="font-size: 0.7rem;">
+            8+ chars, Uppercase, Lowercase, Number, Symbol required
+          </small>
         </div>
         <div class="form-group">
           <label>Select Store</label>
