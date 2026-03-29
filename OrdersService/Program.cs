@@ -64,11 +64,22 @@ builder.Services.AddScoped<ICustomerService, CustomerService>();
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+try
 {
-    var context = scope.ServiceProvider.GetRequiredService<OrdersService.Data.OrdersDbContext>();
-    Console.WriteLine("Applying Migrations to Orders Database...");
-    await context.Database.MigrateAsync();
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("Applying Migrations and Seeding Orders Database...");
+        var context = scope.ServiceProvider.GetRequiredService<OrdersService.Data.OrdersDbContext>();
+        await context.Database.MigrateAsync();
+        logger.LogInformation("Orders Database initialized successfully.");
+    }
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "An ERROR occurred while seeding the Orders database. The application may be in an unstable state.");
 }
 
 if (app.Environment.IsDevelopment())

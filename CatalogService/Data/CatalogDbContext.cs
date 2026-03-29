@@ -33,15 +33,23 @@ namespace CatalogService.Data
                 .HasForeignKey(p => p.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // ── Multi-tenant Global Query Filters ────────────────────────────────────
+            modelBuilder.Entity<Product>().HasQueryFilter(p => 
+                (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) // Admin sees everything
+                || p.StoreId == _tenantProvider.StoreId // Others see their OWN store
+                || p.StoreId == 0); // AND Global items
+
+            modelBuilder.Entity<Category>().HasQueryFilter(c => 
+                (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0)
+                || c.StoreId == _tenantProvider.StoreId
+                || c.StoreId == 0);
+
             modelBuilder.Entity<Category>()
                 .Property(c => c.Id)
                 .ValueGeneratedNever();
 
             modelBuilder.Entity<Category>().HasData(
 
-                new Category { Id = 1, Name = "Electronics", Description = "Gadgets" },
-                new Category { Id = 2, Name = "Grocery", Description = "Daily essentials" },
-                new Category { Id = 3, Name = "Beverages", Description = "Drinks" },
                 new Category { Id = 4, Name = "Fruits", Description = "Fresh fruits" },
                 new Category { Id = 5, Name = "Veggies", Description = "Fresh vegetables" }
             );

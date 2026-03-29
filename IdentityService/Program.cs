@@ -97,13 +97,16 @@ try
     using (var scope = app.Services.CreateScope())
     {
         var services = scope.ServiceProvider;
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("Applying Migrations and Seeding Identity Database...");
         await IdentityService.Data.SeedData.Initialize(services);
+        logger.LogInformation("Identity Database initialized successfully.");
     }
 }
 catch (Exception ex)
 {
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    logger.LogError(ex, "An error occurred while seeding the database.");
+    logger.LogError(ex, "An ERROR occurred while seeding the Identity database. The application may be in an unstable state.");
 }
 
 if (app.Environment.IsDevelopment())

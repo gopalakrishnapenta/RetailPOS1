@@ -115,10 +115,21 @@ builder.Services.AddAuthorization(options => {
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+try
 {
-    var services = scope.ServiceProvider;
-    await CatalogService.Data.SeedData.Initialize(services);
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("Applying Migrations and Seeding Catalog Database...");
+        await CatalogService.Data.SeedData.Initialize(services);
+        logger.LogInformation("Catalog Database initialized successfully.");
+    }
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "An ERROR occurred while seeding the Catalog database. The application may be in an unstable state.");
 }
 
 if (app.Environment.IsDevelopment())

@@ -40,11 +40,11 @@ namespace OrdersService.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Multi-tenant Global Query Filters
-            modelBuilder.Entity<Bill>().HasQueryFilter(b => b.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0));
-            modelBuilder.Entity<Customer>().HasQueryFilter(c => c.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0));
-            modelBuilder.Entity<BillItem>().HasQueryFilter(bi => bi.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0));
-            modelBuilder.Entity<Payment>().HasQueryFilter(p => p.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0));
-            modelBuilder.Entity<Return>().HasQueryFilter(r => r.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0));
+            modelBuilder.Entity<Bill>().HasQueryFilter(b => b.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || b.StoreId == 0);
+            modelBuilder.Entity<Customer>().HasQueryFilter(c => c.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || c.StoreId == 0);
+            modelBuilder.Entity<BillItem>().HasQueryFilter(bi => bi.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || bi.StoreId == 0);
+            modelBuilder.Entity<Payment>().HasQueryFilter(p => p.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || p.StoreId == 0);
+            modelBuilder.Entity<Return>().HasQueryFilter(r => r.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || r.StoreId == 0);
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
