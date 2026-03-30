@@ -1,12 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using AdminService.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using RetailPOS.Common.Authorization;
 
 namespace AdminService.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Policy = "StoreManagerOrHigher")]
     public class DashboardController : ControllerBase
     {
         private readonly IDashboardService _dashboardService;
@@ -16,11 +16,11 @@ namespace AdminService.Controllers
             _dashboardService = dashboardService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetDashboard()
+        [HttpGet("stats")]
+        [Authorize(Policy = RetailPOS.Common.Authorization.Permissions.Admin.ReportsView)]
+        public async Task<IActionResult> GetStats()
         {
-            var result = await _dashboardService.GetDashboardAsync();
-            return Ok(result);
+            return Ok(await _dashboardService.GetDashboardAsync());
         }
     }
 }

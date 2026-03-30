@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RetailPOS.Contracts\RetailPOS.Contracts.csproj" />
+    <ProjectReference Include="..\RetailPOS.Common\RetailPOS.Common.csproj" />
   </ItemGroup>
 
 </Project>

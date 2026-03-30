@@ -5,6 +5,8 @@ namespace RetailPOS.Contracts
         int Id { get; }
         string StoreCode { get; }
         string Name { get; }
+        string Location { get; }
+        bool IsActive { get; }
     }
 
     public interface StoreUpdatedEvent
@@ -12,6 +14,8 @@ namespace RetailPOS.Contracts
         int Id { get; }
         string StoreCode { get; }
         string Name { get; }
+        string Location { get; }
+        bool IsActive { get; }
     }
 
     public interface StoreDeletedEvent

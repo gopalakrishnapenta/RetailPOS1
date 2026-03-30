@@ -9,37 +9,36 @@ namespace IdentityService.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<Store> Stores { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<Permission> Permissions { get; set; }
+        public DbSet<UserStoreRole> UserStoreRoles { get; set; }
+        public DbSet<RolePermission> RolePermissions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Store>()
-                .HasIndex(s => s.StoreCode)
-                .IsUnique();
+            // Core Indexes
+            modelBuilder.Entity<Store>().HasIndex(s => s.StoreCode).IsUnique();
+            modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
+            modelBuilder.Entity<Permission>().HasIndex(p => p.Code).IsUnique();
+            
+            // Soft-Delete Filter
+            modelBuilder.Entity<Store>().HasQueryFilter(s => s.IsActive);
 
-            modelBuilder.Entity<User>()
-                .HasIndex(u => u.Email)
-                .IsUnique();
+            // RolePermission Many-to-Many Configuration
+            modelBuilder.Entity<RolePermission>().HasKey(rp => new { rp.RoleId, rp.PermissionId });
+            modelBuilder.Entity<RolePermission>().HasOne(rp => rp.Role).WithMany(r => r.RolePermissions).HasForeignKey(rp => rp.RoleId);
+            modelBuilder.Entity<RolePermission>().HasOne(rp => rp.Permission).WithMany(p => p.RolePermissions).HasForeignKey(rp => rp.PermissionId);
 
-            modelBuilder.Entity<User>()
-                .HasOne(u => u.PrimaryStore)
-                .WithMany(s => s.Users)
-                .HasForeignKey(u => u.PrimaryStoreId)
-                .OnDelete(DeleteBehavior.SetNull);
+            // UserStoreRole Configuration
+            modelBuilder.Entity<UserStoreRole>().HasOne(usr => usr.User).WithMany(u => u.UserRoles).HasForeignKey(usr => usr.UserId);
+            modelBuilder.Entity<UserStoreRole>().HasOne(usr => usr.Store).WithMany(s => s.UserRoles).HasForeignKey(usr => usr.StoreId).IsRequired(false).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<UserStoreRole>().HasOne(usr => usr.Role).WithMany(r => r.UserRoles).HasForeignKey(usr => usr.RoleId);
 
-            // Data Seeding via Migrations
-            modelBuilder.Entity<Store>().HasData(
-                new Store { Id = 1, StoreCode = "S001", Name = "Nexus Main Store", Location = "Downtown", IsActive = true }
-            );
-
-            modelBuilder.Entity<User>().HasData(
-                new User { Id = 1, Email = "admin@nexus.com", PasswordHash = "Admin@123", Role = "Admin", EmployeeCode = "E001", PrimaryStoreId = 1 },
-                new User { Id = 2, Email = "admin@gmail.com", PasswordHash = "admin", Role = "Admin", EmployeeCode = "E003", PrimaryStoreId = 1 },
-                new User { Id = 3, Email = "manager@nexus.com", PasswordHash = "Manager@123", Role = "Manager", EmployeeCode = "E004", PrimaryStoreId = 1 },
-                new User { Id = 4, Email = "storemanager@nexus.com", PasswordHash = "SManager@123", Role = "StoreManager", EmployeeCode = "E005", PrimaryStoreId = 1 },
-                new User { Id = 5, Email = "cashier@nexus.com", PasswordHash = "Cashier@123", Role = "Cashier", EmployeeCode = "E002", PrimaryStoreId = 1 }
-            );
+            // --- DATA SEEDING (RBAC) ---
+            // Note: Permissions and Role Mappings are now handled dynamically via DbInitializer.cs
+            // to avoid migration bloat.
         }
     }
 }

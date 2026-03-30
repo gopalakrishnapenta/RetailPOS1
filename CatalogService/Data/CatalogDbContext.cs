@@ -40,9 +40,10 @@ namespace CatalogService.Data
                 || p.StoreId == 0); // AND Global items
 
             modelBuilder.Entity<Category>().HasQueryFilter(c => 
+                c.IsActive && (
                 (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0)
                 || c.StoreId == _tenantProvider.StoreId
-                || c.StoreId == 0);
+                || c.StoreId == 0));
 
             modelBuilder.Entity<Category>()
                 .Property(c => c.Id)

@@ -33,6 +33,7 @@ namespace IdentityService.DTOs
         public string Email { get; set; } = string.Empty;
         public int StoreId { get; set; }
         public string? StoreCode { get; set; }
+        public List<string> Permissions { get; set; } = new List<string>();
     }
 
     public class VerifyLoginOtpDto

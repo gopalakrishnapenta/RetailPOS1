@@ -2,12 +2,12 @@ using Microsoft.AspNetCore.Mvc;
 using PaymentService.Models;
 using PaymentService.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using RetailPOS.Common.Authorization;
 
 namespace PaymentService.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Policy = "Staff")]
     public class PaymentsController : ControllerBase
     {
         private readonly IPaymentService _paymentService;
@@ -18,6 +18,7 @@ namespace PaymentService.Controllers
         }
 
         [HttpPost("collect")]
+        [Authorize(Policy = Permissions.Orders.Finalize)]
         public async Task<IActionResult> Collect([FromBody] Payment payment)
         {
             var result = await _paymentService.ProcessPaymentAsync(payment);

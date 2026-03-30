@@ -3,6 +3,7 @@ using ReturnsService.Models;
 using ReturnsService.Services;
 using ReturnsService.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using RetailPOS.Common.Authorization;
 
 namespace ReturnsService.Controllers
 {
@@ -18,14 +19,14 @@ namespace ReturnsService.Controllers
         }
 
         [HttpGet]
-        [Authorize(Policy = "Staff")]
+        [Authorize(Policy = Permissions.Returns.View)]
         public async Task<IActionResult> GetAll()
         {
             return Ok(await _returnService.GetAllReturnsAsync());
         }
 
         [HttpPost("initiate")]
-        [Authorize(Policy = "Staff")]
+        [Authorize(Policy = Permissions.Returns.Initiate)]
         public async Task<IActionResult> Initiate([FromBody] Return returnRequest)
         {
             var result = await _returnService.InitiateReturnAsync(returnRequest);
@@ -33,15 +34,15 @@ namespace ReturnsService.Controllers
         }
 
         [HttpPost("{id}/approve")]
-        [Authorize(Policy = "StoreManagerOrHigher")]
+        [Authorize(Policy = Permissions.Returns.Approve)]
         public async Task<IActionResult> Approve(int id, [FromBody] string? note)
         {
             await _returnService.ApproveReturnAsync(id, note);
-            return Ok(new { message = "Return approved and stock restock event published" });
+            return Ok(new { message = "Return approved successfully" });
         }
 
         [HttpPost("{id}/reject")]
-        [Authorize(Policy = "StoreManagerOrHigher")]
+        [Authorize(Policy = Permissions.Returns.Approve)]
         public async Task<IActionResult> Reject(int id, [FromBody] string? note)
         {
             await _returnService.RejectReturnAsync(id, note);

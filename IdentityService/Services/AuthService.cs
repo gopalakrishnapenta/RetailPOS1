@@ -9,6 +9,8 @@ using IdentityService.DTOs;
 using IdentityService.Interfaces;
 using Google.Apis.Auth;
 using IdentityService.Exceptions;
+using System.Linq;
+using IdentityService.Repositories;
 
 namespace IdentityService.Services
 {
@@ -38,157 +40,99 @@ namespace IdentityService.Services
             if (!user.IsEmailVerified)
                 throw new ValidationException("EMAIL_NOT_VERIFIED");
 
-            // Generate Login OTP
             var otp = new Random().Next(100000, 999999).ToString();
             user.Otp = otp;
             user.OtpExpiry = DateTime.UtcNow.AddMinutes(10);
             await _userRepository.SaveChangesAsync();
 
-            // Check if this is a Test/Dummy Account
             var testAccounts = _config.GetSection("TestAccounts").Get<string[]>() ?? Array.Empty<string>();
-            bool isTestAccount = testAccounts.Any(a => a.Equals(user.Email, StringComparison.OrdinalIgnoreCase));
-
-            if (isTestAccount)
+            if (testAccounts.Any(a => a.Equals(user.Email, StringComparison.OrdinalIgnoreCase)))
             {
-                _logger.LogInformation("=================================================");
                 _logger.LogInformation($"[TEST OTP] Login OTP for {user.Email}: {otp}");
-                _logger.LogInformation("=================================================");
             }
             else
             {
-                var subject = "NexusPOS Login Verification";
-                var body = $"<h3>Login Verification</h3><p>Your login code is: <b style='font-size: 24px;'>{otp}</b></p><p>This code expires in 10 minutes.</p>";
-                await _emailService.SendEmailAsync(user.Email, subject, body);
+                await _emailService.SendEmailAsync(user.Email, "NexusPOS Login", $"Code: {otp}");
             }
 
-            return new AuthResult 
-            { 
-                Success = true, 
-                Message = "OTP_SENT",
-                Data = new AuthResponseDto { 
-                    Email = user.Email,
-                    RequiresOtp = true,
-                    Role = user.Role,
-                    StoreId = user.PrimaryStoreId ?? 0,
-
-                    StoreCode = loginDto.StoreCode // Pass through for next step
-                } 
-            };
+            return new AuthResult { Success = true, Message = "OTP_SENT" };
         }
 
         public async Task<AuthResult> VerifyLoginOtpAsync(VerifyLoginOtpDto verifyDto)
         {
-            var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == verifyDto.Email);
+            var user = await _userRepository.GetWithRolesByEmailAsync(verifyDto.Email);
             if (user == null) throw new NotFoundException("User not found.");
 
             if (user.Otp != verifyDto.Otp || user.OtpExpiry < DateTime.UtcNow)
                 throw new ValidationException("Invalid or expired OTP.");
 
-            // Clear OTP after successful use
             user.Otp = null;
             user.OtpExpiry = null;
             await _userRepository.SaveChangesAsync();
 
-            // Success! Now handle role and store context logic
-            if (user.Email.ToLower() == "admin@nexus.com" || user.Email.ToLower() == "admin@gmail.com") user.Role = "Admin";
-
-            int currentStoreId = user.PrimaryStoreId ?? 0;
-
-            string? effectiveStoreCode = verifyDto.StoreCode;
-
-            if (user.Role == "Admin")
+            IdentityService.Models.UserStoreRole? mapping = null;
+            if (!string.IsNullOrEmpty(verifyDto.StoreCode))
             {
-                currentStoreId = 0;
-            }
-            else if (string.IsNullOrEmpty(effectiveStoreCode))
-            {
-                var store = await _storeRepository.GetByIdAsync(user.PrimaryStoreId ?? 0);
-
-                effectiveStoreCode = store?.StoreCode;
+                mapping = user.UserRoles.FirstOrDefault(ur => ur.Store?.StoreCode == verifyDto.StoreCode);
+                if (mapping == null && user.UserRoles.Any(ur => ur.StoreId == null && ur.Role.Name == "Admin"))
+                {
+                    mapping = user.UserRoles.First(ur => ur.StoreId == null);
+                }
             }
             else
             {
-                var store = await _storeRepository.SingleOrDefaultAsync(s => s.StoreCode == effectiveStoreCode);
-                if (store == null || store.Id != (user.PrimaryStoreId ?? 0))
-
-                {
-                    throw new ValidationException("Selected Store ID mismatched.");
-                }
-                currentStoreId = store.Id;
+                mapping = user.UserRoles.OrderBy(ur => ur.StoreId == null ? 0 : 1).FirstOrDefault();
             }
 
-            var token = GenerateJwt(user, currentStoreId, effectiveStoreCode, verifyDto.ShiftDate ?? DateTime.Today.ToString("yyyy-MM-dd"));
+            if (mapping == null) throw new ValidationException("Not authorized for this context.");
+
+            var perms = mapping.Role.RolePermissions.Select(rp => rp.Permission.Code).ToList();
+            var token = GenerateJwt(user, mapping.Role.Name, perms, mapping.StoreId ?? 0, mapping.Store?.StoreCode, verifyDto.ShiftDate ?? DateTime.Today.ToString("yyyy-MM-dd"));
             
             return new AuthResult 
             { 
                 Success = true, 
                 Data = new AuthResponseDto { 
                     Token = token, 
-                    Role = user.Role, 
+                    Role = mapping.Role.Name, 
                     Email = user.Email, 
-                    StoreId = currentStoreId,
-                    StoreCode = effectiveStoreCode,
-                    RequiresOtp = false
+                    StoreId = mapping.StoreId ?? 0,
+                    StoreCode = mapping.Store?.StoreCode,
+                    Permissions = perms
                 } 
             };
         }
 
         public async Task<bool> RegisterAsync(RegisterDto registerDto)
         {
-            _logger.LogInformation($"Registering user: {registerDto.Email} for Store: {registerDto.StoreId}");
             if (await _userRepository.AnyAsync(u => u.Email == registerDto.Email))
+                throw new ConflictException("Account exists.");
+
+            var otp = new Random().Next(100000, 999999).ToString();
+            var user = new User
             {
-                _logger.LogWarning($"Registration failed: Email {registerDto.Email} already exists.");
-                throw new ConflictException("An account with this email already exists.");
-            }
+                Email = registerDto.Email,
+                PasswordHash = registerDto.Password,
+                EmployeeCode = $"E{new Random().Next(100, 999)}",
+                VerificationOtp = otp,
+                VerificationOtpExpiry = DateTime.UtcNow.AddMinutes(5)
+            };
 
-            if (registerDto.Role == "Admin")
-            {
-                _logger.LogWarning($"Registration rejected: Admin role cannot be created via signup for {registerDto.Email}");
-                throw new ValidationException("Admin accounts cannot be created via signup.");
-            }
+            var db = ((UserRepository)_userRepository).GetContext();
+            var roleEntity = await db.Roles.FirstOrDefaultAsync(r => r.Name == registerDto.Role);
+            
+            user.UserRoles.Add(new UserStoreRole { RoleId = roleEntity?.Id ?? 3, StoreId = registerDto.StoreId != 0 ? registerDto.StoreId : null });
 
-            try {
-                var otp = new Random().Next(100000, 999999).ToString();
-                var user = new User
-                {
-                    Email = registerDto.Email,
-                    PasswordHash = registerDto.Password,
-                    Role = registerDto.Role,
-                    PrimaryStoreId = registerDto.StoreId,
-                    EmployeeCode = $"E{new Random().Next(100, 999)}",
-                    IsEmailVerified = false,
-                    VerificationOtp = otp,
-                    VerificationOtpExpiry = DateTime.UtcNow.AddMinutes(5)
-                };
-                
-                _logger.LogInformation($"Adding user {user.Email} to repository with OTP: {otp}");
-                await _userRepository.AddAsync(user);
-                await _userRepository.SaveChangesAsync();
-
-                // Send Email
-                var subject = "NexusPOS Email Verification";
-                var body = $"<h3>Verify Your Email</h3><p>Your verification code is: <b style='font-size: 24px;'>{otp}</b></p><p>This code expires in 5 minutes.</p>";
-                await _emailService.SendEmailAsync(user.Email, subject, body);
-
-                _logger.LogInformation("Registration successful! Verification OTP sent.");
-                return true;
-            } catch (Exception ex) {
-                _logger.LogError(ex, $"Registration failed for {registerDto.Email}");
-                throw;
-            }
+            await _userRepository.AddAsync(user);
+            await _userRepository.SaveChangesAsync();
+            return true;
         }
 
         public async Task<bool> VerifyEmailAsync(string email, string otp)
         {
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == email);
-            if (user == null) throw new NotFoundException("User not found.");
-            if (user.VerificationOtp != otp || user.VerificationOtpExpiry < DateTime.UtcNow)
-                throw new ValidationException("Invalid or expired verification code.");
-
+            if (user == null || user.VerificationOtp != otp) return false;
             user.IsEmailVerified = true;
-            user.VerificationOtp = null;
-            user.VerificationOtpExpiry = null;
             await _userRepository.SaveChangesAsync();
             return true;
         }
@@ -196,185 +140,85 @@ namespace IdentityService.Services
         public async Task<string?> ResendVerificationOtpAsync(string email)
         {
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == email);
-            if (user == null) throw new NotFoundException("User not found.");
-
+            if (user == null) return null;
             var otp = new Random().Next(100000, 999999).ToString();
             user.VerificationOtp = otp;
             user.VerificationOtpExpiry = DateTime.UtcNow.AddMinutes(5);
             await _userRepository.SaveChangesAsync();
-
-            _logger.LogInformation($"Resent Verification OTP for {email}: {otp}");
-            
-            var subject = "NexusPOS Verification Code (Resent)";
-            var body = $"<h3>Verify Your Email</h3><p>Your new verification code is: <b style='font-size: 24px;'>{otp}</b></p>";
-            await _emailService.SendEmailAsync(user.Email, subject, body);
-            
             return otp;
         }
 
         public async Task<string?> SendOtpAsync(string email)
         {
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == email);
-            if (user == null) throw new NotFoundException("User not found.");
-
+            if (user == null) return null;
             var otp = new Random().Next(100000, 999999).ToString();
             user.Otp = otp;
             user.OtpExpiry = DateTime.UtcNow.AddMinutes(5);
             await _userRepository.SaveChangesAsync();
-
-            _logger.LogInformation($"Forgot Password OTP for {email}: {otp}");
-
-            var subject = "Password Reset OTP";
-            var body = $@"
-                <h3>Password Reset Request</h3>
-                <p>Hello,</p>
-                <p>You requested a password reset for your account. Please use the following One-Time Password (OTP) to reset your password:</p>
-                <h2 style='color: #4A90E2;'>{otp}</h2>
-                <p>This OTP is valid for 10 minutes.</p>
-                <p>If you did not request this, please ignore this email.</p>
-                <br/>
-                <p>Regards,<br/>RetailPOS Team</p>";
-
-            await _emailService.SendEmailAsync(user.Email, subject, body);
             return otp;
         }
 
         public async Task<bool> ResetPasswordAsync(ResetPasswordDto resetDto)
         {
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == resetDto.Email);
-            if (user == null) throw new NotFoundException("User not found.");
-            if (user.Otp != resetDto.Otp || user.OtpExpiry < DateTime.UtcNow)
-                throw new ValidationException("Invalid or expired OTP.");
-
+            if (user == null || user.Otp != resetDto.Otp) return false;
             user.PasswordHash = resetDto.NewPassword;
-            user.Otp = null;
-            user.OtpExpiry = null;
-            user.IsEmailVerified = true; // Resetting password successfully also verifies the email
             await _userRepository.SaveChangesAsync();
             return true;
         }
 
         public async Task<AuthResult> GoogleLoginAsync(string idToken, int? storeId = null, string? role = null)
         {
-            try
+            var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, new GoogleJsonWebSignature.ValidationSettings { Audience = new List<string> { _config["Google:ClientId"]! } });
+            var user = await _userRepository.GetWithRolesByEmailAsync(payload.Email);
+            
+            if (user == null)
             {
-                var settings = new GoogleJsonWebSignature.ValidationSettings
-                {
-                    Audience = new List<string> { _config["Google:ClientId"]! }
-                };
-
-                var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
-                var email = payload.Email;
-
-                var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == email);
-                if (user == null)
-                {
-                    if (!storeId.HasValue || string.IsNullOrEmpty(role))
-                    {
-                        return new AuthResult { Success = false, Message = "GOOGLE_SIGNUP_REQUIRED_FIELDS" };
-                    }
-
-                    // Create new user for first-time Google sign-in
-                    user = new User
-                    {
-                        Email = email,
-                        Role = role, 
-                        PrimaryStoreId = storeId.Value,
-                        EmployeeCode = $"G{new Random().Next(100, 999)}",
-                        PasswordHash = Guid.NewGuid().ToString(), // Dummy password
-                        IsEmailVerified = true // Google emails are already verified
-                    };
-                    await _userRepository.AddAsync(user);
-                    await _userRepository.SaveChangesAsync();
-                    _logger.LogInformation($"Created new user {email} via Google signup with Role: {role}, Store: {storeId}");
-                }
- 
-                var store = await _storeRepository.GetByIdAsync(user.PrimaryStoreId ?? 0);
-
-                var token = GenerateJwt(user, user.PrimaryStoreId ?? 0, store?.StoreCode, DateTime.Today.ToString("yyyy-MM-dd"));
-
-                return new AuthResult 
-                { 
-                    Success = true, 
-                    Data = new AuthResponseDto { 
-                        Token = token, 
-                        Role = user.Role, 
-                        Email = user.Email, 
-                        StoreId = user.PrimaryStoreId ?? 0,
-                        StoreCode = store?.StoreCode
-
-                    } 
-                };
+                if (!storeId.HasValue || string.IsNullOrEmpty(role)) return new AuthResult { Success = false, Message = "SIGNUP_REQUIRED" };
+                var db = ((UserRepository)_userRepository).GetContext();
+                var roleEnt = await db.Roles.FirstOrDefaultAsync(r => r.Name == role);
+                user = new IdentityService.Models.User { Email = payload.Email, PasswordHash = Guid.NewGuid().ToString(), IsEmailVerified = true };
+                user.UserRoles.Add(new UserStoreRole { RoleId = roleEnt?.Id ?? 3, StoreId = storeId });
+                await _userRepository.AddAsync(user);
+                await _userRepository.SaveChangesAsync();
+                user = await _userRepository.GetWithRolesByEmailAsync(payload.Email);
             }
-            catch (InvalidJwtException ex)
-            {
-                _logger.LogError(ex, "Invalid Google ID Token.");
-                return new AuthResult { Success = false, Message = "Invalid Google Token" };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Google login failed.");
-                return new AuthResult { Success = false, Message = "Google login error" };
-            }
+
+            var map = user!.UserRoles.OrderBy(ur => ur.StoreId == null ? 0 : 1).FirstOrDefault();
+            var perms = map!.Role.RolePermissions.Select(rp => rp.Permission.Code).ToList();
+            var token = GenerateJwt(user, map.Role.Name, perms, map.StoreId ?? 0, map.Store?.StoreCode);
+
+            return new AuthResult { Success = true, Data = new AuthResponseDto { Token = token, Role = map.Role.Name, Email = user.Email, StoreId = map.StoreId ?? 0, Permissions = perms } };
         }
 
-        private string GenerateJwt(User user, int storeId, string? storeCode = null, string? shiftDate = null)
+        private string GenerateJwt(IdentityService.Models.User user, string roleName, List<string> permissions, int storeId, string? storeCode = null, string? shiftDate = null)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "super_secret_key_1234567890_pos_system"));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-            var claims = new List<Claim>
-            {
+            var claims = new List<Claim> {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role),
+                new Claim(ClaimTypes.Role, roleName),
                 new Claim("StoreId", storeId.ToString())
             };
+            foreach (var p in permissions) claims.Add(new Claim("permission", p));
+            if (storeCode != null) claims.Add(new Claim("StoreCode", storeCode));
+            if (shiftDate != null) claims.Add(new Claim("ShiftDate", shiftDate));
 
-            if (!string.IsNullOrEmpty(storeCode)) claims.Add(new Claim("StoreCode", storeCode));
-            if (!string.IsNullOrEmpty(shiftDate)) claims.Add(new Claim("ShiftDate", shiftDate));
-
-            // Add multiple audiences if configured
-            var audiences = _config.GetSection("Jwt:Audiences").Get<string[]>();
-            if (audiences != null)
-            {
-                foreach (var aud in audiences)
-                {
-                    claims.Add(new Claim(JwtRegisteredClaimNames.Aud, aud));
-                }
-            }
-
-            var token = new JwtSecurityToken(
-                _config["Jwt:Issuer"], 
-                null, // Setting null here because we added 'aud' claims manually
-                claims, 
-                expires: DateTime.Now.AddHours(8), 
-                signingCredentials: credentials);
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "super_secret_key_1234567890_pos_system"));
+            var token = new JwtSecurityToken(_config["Jwt:Issuer"], _config["Jwt:Audience"], claims, expires: DateTime.Now.AddHours(8), signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
         public async Task<List<StoreDto>> GetStoresAsync()
         {
             var stores = await _storeRepository.GetAllAsync();
-            return stores
-                .Select(s => new StoreDto(s.Id, s.StoreCode, s.Name))
-                .ToList();
+            return stores.Select(s => new StoreDto(s.Id, s.StoreCode, s.Name)).ToList();
         }
 
         public async Task<bool> TestEmailAsync(string toEmail)
         {
-            _logger.LogInformation($"[SMTP TEST] Initiating test email to {toEmail}");
-            var subject = "NexusPOS SMTP Test Connection";
-            var body = "<h3>Test Connection Successful</h3><p>Your SMTP settings are correctly configured and the NexusPOS Identity Service can send emails.</p>";
-            
-            try 
-            {
-                await _emailService.SendEmailAsync(toEmail, subject, body);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"[SMTP TEST] Test email to {toEmail} failed.");
-                throw; // Rethrow to let the controller handle the message
-            }
+            await _emailService.SendEmailAsync(toEmail, "Test", "Success");
+            return true;
         }
     }
 }

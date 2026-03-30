@@ -92,21 +92,36 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 var app = builder.Build();
 
+// ── [UPGRADE] Dynamic RBAC & Database Initialization ────────────────────
 try
 {
     using (var scope = app.Services.CreateScope())
     {
         var services = scope.ServiceProvider;
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogInformation("Applying Migrations and Seeding Identity Database...");
-        await IdentityService.Data.SeedData.Initialize(services);
-        logger.LogInformation("Identity Database initialized successfully.");
+        var context = services.GetRequiredService<AppDbContext>();
+
+        logger.LogInformation("Attempting to apply Identity Database migrations...");
+        
+        try 
+        {
+            await context.Database.MigrateAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning("Identity migration skipped (Database may be dirty): {Message}", ex.Message);
+        }
+
+        // [PRO UPGRADE] This MUST run even if migration skipped, to ensure Permissions are synced!
+        await DbInitializer.InitAsync(context, logger);
+        
+        logger.LogInformation("Identity Database & RBAC initialized successfully.");
     }
 }
 catch (Exception ex)
 {
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    logger.LogError(ex, "An ERROR occurred while seeding the Identity database. The application may be in an unstable state.");
+    logger.LogError(ex, "CRITICAL ERROR: Failed to initialize Identity Database/RBAC.");
 }
 
 if (app.Environment.IsDevelopment())

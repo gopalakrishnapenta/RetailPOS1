@@ -5,21 +5,21 @@ using AdminService.Models;
 using AdminService.Interfaces;
 using AdminService.Exceptions;
 using AdminService.DTOs;
+using MassTransit;
+using RetailPOS.Contracts;
 
 namespace AdminService.Services
 {
     public class InventoryService : IInventoryService
     {
         private readonly IInventoryAdjustmentRepository _adjustmentRepository;
-        private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly HttpClient _httpClient;
+        private readonly IPublishEndpoint _publishEndpoint;
         private readonly ILogger<InventoryService> _logger;
 
-        public InventoryService(IInventoryAdjustmentRepository adjustmentRepository, IHttpClientFactory httpFactory, IHttpContextAccessor httpContextAccessor, ILogger<InventoryService> logger)
+        public InventoryService(IInventoryAdjustmentRepository adjustmentRepository, IPublishEndpoint publishEndpoint, ILogger<InventoryService> logger)
         {
             _adjustmentRepository = adjustmentRepository;
-            _httpClient = httpFactory.CreateClient();
-            _httpContextAccessor = httpContextAccessor;
+            _publishEndpoint = publishEndpoint;
             _logger = logger;
         }
 
@@ -37,34 +37,21 @@ namespace AdminService.Services
             await _adjustmentRepository.AddAsync(adjustment);
             await _adjustmentRepository.SaveChangesAsync();
 
-            try
-            {
-                int qtyChange = adjustment.Quantity;
-                if (adjustment.ReasonCode.Equals("Damage", StringComparison.OrdinalIgnoreCase) || adjustment.ReasonCode.Equals("Outward", StringComparison.OrdinalIgnoreCase))
-                    qtyChange = -Math.Abs(adjustment.Quantity);
-                else if (adjustment.ReasonCode.Equals("Inward", StringComparison.OrdinalIgnoreCase))
-                    qtyChange = Math.Abs(adjustment.Quantity);
+            // ── Event-Driven Synchronization ──────────────────────────────────
+            int qtyChange = adjustment.Quantity;
+            if (adjustment.ReasonCode.Equals("Damage", StringComparison.OrdinalIgnoreCase) || adjustment.ReasonCode.Equals("Outward", StringComparison.OrdinalIgnoreCase))
+                qtyChange = -Math.Abs(adjustment.Quantity);
+            else if (adjustment.ReasonCode.Equals("Inward", StringComparison.OrdinalIgnoreCase))
+                qtyChange = Math.Abs(adjustment.Quantity);
 
-                var authHeader = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
-                if (!string.IsNullOrEmpty(authHeader))
-                {
-                    _httpClient.DefaultRequestHeaders.Authorization = null;
-                    _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", authHeader);
-                }
-
-                var response = await _httpClient.PostAsJsonAsync("http://localhost:5002/api/products/adjust-stock", new { ProductId = adjustment.ProductId, QuantityChange = qtyChange });
-                if (!response.IsSuccessStatusCode)
-                {
-                    var error = await response.Content.ReadAsStringAsync();
-                    _logger.LogWarning($"Remote Stock Adjustment Failed: {error}");
-                    throw new BusinessRuleException($"Inventory Sync Failed with Catalog Service: {response.ReasonPhrase}");
-                }
-            } catch (BusinessRuleException) { throw; }
-            catch (Exception ex)
+            await _publishEndpoint.Publish<StockAdjustedEvent>(new
             {
-                _logger.LogError(ex, "Stock Sync Error");
-                throw new BusinessRuleException("Could not synchronize stock adjustment with Catalog service.");
-            }
+                ProductId = adjustment.ProductId,
+                QuantityChange = qtyChange,
+                ReasonCode = adjustment.ReasonCode
+            });
+
+            _logger.LogInformation($"Dispatched StockAdjustedEvent for Product {adjustment.ProductId}");
             return true;
         }
 

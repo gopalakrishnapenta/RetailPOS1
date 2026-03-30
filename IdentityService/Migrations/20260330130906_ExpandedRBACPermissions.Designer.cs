@@ -4,6 +4,7 @@ using IdentityService.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IdentityService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260330130906_ExpandedRBACPermissions")]
+    partial class ExpandedRBACPermissions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -149,18 +152,6 @@ namespace IdentityService.Migrations
                             Id = 17,
                             Code = "users:manage",
                             Description = "Manage Staff Accounts"
-                        },
-                        new
-                        {
-                            Id = 18,
-                            Code = "catalog:delete",
-                            Description = "Delete Products from Catalog"
-                        },
-                        new
-                        {
-                            Id = 19,
-                            Code = "catalog:categories:view",
-                            Description = "View Category List"
                         });
                 });
 
@@ -277,11 +268,6 @@ namespace IdentityService.Migrations
                         new
                         {
                             RoleId = 2,
-                            PermissionId = 13
-                        },
-                        new
-                        {
-                            RoleId = 2,
                             PermissionId = 14
                         },
                         new
@@ -298,16 +284,6 @@ namespace IdentityService.Migrations
                         {
                             RoleId = 2,
                             PermissionId = 17
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 18
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 19
                         },
                         new
                         {
@@ -343,11 +319,6 @@ namespace IdentityService.Migrations
                         {
                             RoleId = 3,
                             PermissionId = 14
-                        },
-                        new
-                        {
-                            RoleId = 3,
-                            PermissionId = 19
                         });
                 });
 

@@ -12,10 +12,9 @@ using AdminService.Services;
 using AdminService.Repositories;
 using MassTransit;
 using AdminService.Middleware;
+using RetailPOS.Common.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
-
-
 
 builder.Services.AddControllers().AddJsonOptions(x =>
     x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
@@ -69,10 +68,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITenantProvider, TenantProvider>();
 
-builder.Services.AddAuthorization(options => {
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("StoreManagerOrHigher", policy => policy.RequireRole("Admin", "StoreManager"));
-});
+// Project-Wide Granular Authorization (Enterprise RBAC)
+builder.Services.AddRetailPOSAuthorization();
 
 builder.Services.AddDbContext<AdminService.Data.AdminDbContext>(dbContextOptions => {
     dbContextOptions.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
@@ -98,18 +95,23 @@ builder.Services.AddScoped<IReportService, ReportService>();
 
 var app = builder.Build();
 
-try {
     using (var scope = app.Services.CreateScope())
     {
         var services = scope.ServiceProvider;
         var context = services.GetRequiredService<AdminService.Data.AdminDbContext>();
-        Console.WriteLine("Applying Admin Service Migrations...");
-        await context.Database.MigrateAsync();
-        Console.WriteLine("Admin Service Database initialized successfully.");
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        
+        try 
+        {
+            logger.LogInformation("Attempting to apply Admin Service migrations...");
+            await context.Database.MigrateAsync();
+            logger.LogInformation("Admin Service migrations applied successfully.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning("Admin Service migration failed or already applied: {Message}", ex.Message);
+        }
     }
-} catch (Exception ex) {
-    Console.WriteLine($"ERROR: Admin Service Database Migration failed: {ex.Message}");
-}
 
 if (app.Environment.IsDevelopment())
 {

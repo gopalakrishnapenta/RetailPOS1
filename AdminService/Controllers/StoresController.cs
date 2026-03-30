@@ -3,6 +3,7 @@ using AdminService.Data;
 using AdminService.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using RetailPOS.Common.Authorization;
 using MassTransit;
 using RetailPOS.Contracts;
 
@@ -10,7 +11,6 @@ namespace AdminService.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Policy = "AdminOnly")]
     public class StoresController : ControllerBase
     {
         private readonly AdminDbContext _context;
@@ -23,62 +23,99 @@ namespace AdminService.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = RetailPOS.Common.Authorization.Permissions.Admin.StoresView)]
         public async Task<ActionResult<IEnumerable<AdminStoreEntity>>> GetStores()
         {
             return await _context.Stores.ToListAsync();
         }
 
+        [HttpGet("all")]
+        [Authorize(Policy = RetailPOS.Common.Authorization.Permissions.System.All)]
+        public async Task<ActionResult<IEnumerable<AdminStoreEntity>>> GetAllStores()
+        {
+            // Admin only: See all stores including soft-deleted (IsActive = false)
+            return await _context.Stores.IgnoreQueryFilters().ToListAsync();
+        }
+
         [HttpPost]
+        [Authorize(Policy = RetailPOS.Common.Authorization.Permissions.Admin.StoresManage)]
         public async Task<ActionResult<AdminStoreEntity>> CreateStore(AdminStoreEntity store)
         {
             _context.Stores.Add(store);
             await _context.SaveChangesAsync();
 
-            // Publish Event via RabbitMQ
             await _publishEndpoint.Publish<StoreCreatedEvent>(new
             {
-                Id = store.Id,
-                StoreCode = store.StoreCode,
-                Name = store.Name
+                store.Id,
+                store.StoreCode,
+                store.Name,
+                store.Location,
+                store.IsActive
             });
 
             return CreatedAtAction(nameof(GetStores), new { id = store.Id }, store);
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = RetailPOS.Common.Authorization.Permissions.Admin.StoresManage)]
         public async Task<IActionResult> UpdateStore(int id, AdminStoreEntity store)
         {
             if (id != store.Id) return BadRequest();
-
             _context.Entry(store).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
-            // Publish Update Event
             await _publishEndpoint.Publish<StoreUpdatedEvent>(new
             {
-                Id = store.Id,
-                StoreCode = store.StoreCode,
-                Name = store.Name
+                store.Id,
+                store.StoreCode,
+                store.Name,
+                store.Location,
+                store.IsActive
             });
 
             return NoContent();
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = RetailPOS.Common.Authorization.Permissions.Admin.StoresManage)]
         public async Task<IActionResult> DeleteStore(int id)
         {
             var store = await _context.Stores.FindAsync(id);
             if (store == null) return NotFound();
 
-            // In a real system, you might set IsActive = false instead.
-            _context.Stores.Remove(store);
+            store.IsActive = false; // Soft-delete
             await _context.SaveChangesAsync();
 
-            // Publish Delete Event
-            await _publishEndpoint.Publish<StoreDeletedEvent>(new
+            await _publishEndpoint.Publish<StoreUpdatedEvent>(new
             {
-                Id = store.Id,
-                StoreCode = store.StoreCode
+                store.Id,
+                store.StoreCode,
+                store.Name,
+                store.Location,
+                store.IsActive
+            });
+
+            return NoContent();
+        }
+
+        [HttpPost("{id}/restore")]
+        [Authorize(Policy = RetailPOS.Common.Authorization.Permissions.Admin.StoresManage)]
+        public async Task<IActionResult> RestoreStore(int id)
+        {
+            // Admin only: Restore a previously deactivated store
+            var store = await _context.Stores.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.Id == id);
+            if (store == null) return NotFound();
+
+            store.IsActive = true;
+            await _context.SaveChangesAsync();
+
+            await _publishEndpoint.Publish<StoreUpdatedEvent>(new
+            {
+                store.Id,
+                store.StoreCode,
+                store.Name,
+                store.Location,
+                store.IsActive
             });
 
             return NoContent();

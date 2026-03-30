@@ -8,6 +8,7 @@ using ReturnsService.Services;
 using ReturnsService.Repositories;
 using MassTransit;
 using Microsoft.OpenApi.Models;
+using RetailPOS.Common.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,25 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "ReturnsService API", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name         = "Authorization",
+        Type         = SecuritySchemeType.Http,
+        Scheme       = "Bearer",
+        BearerFormat = "JWT",
+        In           = ParameterLocation.Header,
+        Description  = "Enter your JWT token below. Example: eyJhbGci..."
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
 });
 
 builder.Services.AddDbContext<ReturnsDbContext>(options =>
@@ -59,13 +79,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("StoreManager", policy => policy.RequireRole("StoreManager"));
-    options.AddPolicy("Staff", policy => policy.RequireRole("Staff", "StoreManager", "Admin", "Cashier"));
-    options.AddPolicy("StoreManagerOrHigher", policy => policy.RequireRole("StoreManager", "Admin"));
-});
+// Project-Wide Granular Authorization (Enterprise RBAC)
+builder.Services.AddRetailPOSAuthorization();
 
 var app = builder.Build();
 

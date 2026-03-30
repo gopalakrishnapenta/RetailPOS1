@@ -27,13 +27,10 @@ namespace IdentityService.Consumers
             {
                 var store = new Store
                 {
-                    // We try to keep IDs in sync if possible, but IdentityService uses its own autoincrement.
-                    // However, for consistency, we could try to set the ID if the DB allows it (SET IDENTITY_INSERT).
-                    // For now, we'll let it autoincrement as long as StoreCode is the primary logical key.
                     StoreCode = data.StoreCode,
                     Name = data.Name,
-                    IsActive = true,
-                    Location = "Synced via Event"
+                    IsActive = data.IsActive,
+                    Location = data.Location
                 };
                 await _storeRepository.AddAsync(store);
                 await _storeRepository.SaveChangesAsync();
@@ -50,6 +47,8 @@ namespace IdentityService.Consumers
             if (store != null)
             {
                 store.Name = data.Name;
+                store.Location = data.Location;
+                store.IsActive = data.IsActive;
                 _storeRepository.Update(store);
                 await _storeRepository.SaveChangesAsync();
                 _logger.LogInformation($"Store {data.StoreCode} updated successfully in IdentityService.");

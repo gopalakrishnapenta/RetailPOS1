@@ -23,8 +23,8 @@ namespace AdminService.Data
 
             // ── Multi-tenant Global Query Filters ────────────────────────────────────
             modelBuilder.Entity<InventoryAdjustment>().HasQueryFilter(a => a.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || a.StoreId == 0);
-            modelBuilder.Entity<AdminStoreEntity>().HasQueryFilter(s => s.Id == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || s.Id == 0);
-            modelBuilder.Entity<AdminCategoryEntity>().HasQueryFilter(c => c.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || c.StoreId == 0);
+            modelBuilder.Entity<AdminStoreEntity>().HasQueryFilter(s => s.IsActive && (s.Id == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || s.Id == 0));
+            modelBuilder.Entity<AdminCategoryEntity>().HasQueryFilter(c => c.IsActive && (c.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || c.StoreId == 0));
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

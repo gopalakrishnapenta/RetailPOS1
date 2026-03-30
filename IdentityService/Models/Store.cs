@@ -19,6 +19,6 @@ namespace IdentityService.Models
 
         public bool IsActive { get; set; } = true;
 
-        public ICollection<User> Users { get; set; } = new List<User>();
+        public virtual ICollection<UserStoreRole> UserRoles { get; set; } = new List<UserStoreRole>();
     }
 }

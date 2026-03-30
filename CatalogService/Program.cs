@@ -10,14 +10,15 @@ using CatalogService.Repositories;
 using MassTransit;
 using CatalogService.Consumers;
 using CatalogService.Middleware;
+using RetailPOS.Common.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumer<OrderPlacedConsumer>();
     x.AddConsumer<CategoryConsumer>();
     x.AddConsumer<OrderReturnedConsumer>();
+    x.AddConsumer<StockAdjustedConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -39,6 +40,11 @@ builder.Services.AddMassTransit(x =>
         cfg.ReceiveEndpoint("catalog-order-returned", e =>
         {
             e.ConfigureConsumer<OrderReturnedConsumer>(context);
+        });
+
+        cfg.ReceiveEndpoint("catalog-inventory-adjusted", e =>
+        {
+            e.ConfigureConsumer<StockAdjustedConsumer>(context);
         });
     });
 });
@@ -107,11 +113,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization(options => {
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("StoreManagerOrHigher", policy => policy.RequireRole("Admin", "StoreManager"));
-    options.AddPolicy("Staff", policy => policy.RequireRole("Admin", "StoreManager", "Cashier"));
-});
+// Project-Wide Granular Authorization (Enterprise RBAC)
+builder.Services.AddRetailPOSAuthorization();
 
 var app = builder.Build();
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using CatalogService.Interfaces;
 using CatalogService.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using RetailPOS.Common.Authorization;
 
 namespace CatalogService.Controllers
 {
@@ -17,12 +18,14 @@ namespace CatalogService.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = Permissions.Catalog.CategoriesView)]
         public async Task<IActionResult> GetAll()
         {
             return Ok(await _categoryService.GetAllCategoriesAsync());
         }
 
         [HttpGet("{id}")]
+        [Authorize(Policy = Permissions.Catalog.CategoriesView)]
         public async Task<IActionResult> Get(int id)
         {
             var category = await _categoryService.GetCategoryByIdAsync(id);

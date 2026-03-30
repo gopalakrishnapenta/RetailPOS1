@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using AdminService.Interfaces;
+using AdminService.Models;
 using AdminService.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using RetailPOS.Common.Authorization;
 
 namespace AdminService.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Policy = "StoreManagerOrHigher")]
     public class InventoryController : ControllerBase
     {
         private readonly IInventoryService _inventoryService;
@@ -17,17 +18,12 @@ namespace AdminService.Controllers
             _inventoryService = inventoryService;
         }
 
-        [HttpPost("adjustments")]
-        public async Task<IActionResult> Adjust([FromBody] InventoryAdjustmentDto adjustmentDto)
+        [HttpPost("adjust")]
+        [Authorize(Policy = RetailPOS.Common.Authorization.Permissions.Admin.InventoryAdjust)]
+        public async Task<IActionResult> Adjust([FromBody] InventoryAdjustmentDto adjustment)
         {
-            await _inventoryService.AdjustInventoryAsync(adjustmentDto);
-            return Ok(new { message = "Inventory adjustment saved successfully" });
-        }
-
-        [HttpGet("adjustments")]
-        public async Task<IActionResult> GetAdjustments([FromQuery] int page = 1, [FromQuery] int pageSize = 5)
-        {
-            return Ok(await _inventoryService.GetAdjustmentsAsync(page, pageSize));
+            await _inventoryService.AdjustInventoryAsync(adjustment);
+            return Ok(new { message = "Stock adjusted successfully" });
         }
     }
 }
