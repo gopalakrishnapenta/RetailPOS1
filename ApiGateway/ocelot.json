@@ -98,29 +98,29 @@
     {
       "DownstreamPathTemplate": "/api/payments/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5003 } ],
-      "UpstreamPathTemplate": "/gateway/orders/payments/{everything}",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5005 } ],
+      "UpstreamPathTemplate": "/gateway/payments/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ]
     },
     {
       "DownstreamPathTemplate": "/api/payments",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5003 } ],
-      "UpstreamPathTemplate": "/gateway/orders/payments",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5005 } ],
+      "UpstreamPathTemplate": "/gateway/payments",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ]
     },
     {
       "DownstreamPathTemplate": "/api/returns/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5003 } ],
-      "UpstreamPathTemplate": "/gateway/orders/returns/{everything}",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5006 } ],
+      "UpstreamPathTemplate": "/gateway/returns/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ]
     },
     {
       "DownstreamPathTemplate": "/api/returns",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5003 } ],
-      "UpstreamPathTemplate": "/gateway/orders/returns",
+      "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5006 } ],
+      "UpstreamPathTemplate": "/gateway/returns",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ]
     },
     {

@@ -16,12 +16,4 @@ namespace OrdersService.Interfaces
     {
         Task<Customer?> GetByMobileAsync(string mobile);
     }
-
-    public interface IPaymentRepository : IGenericRepository<Payment>
-    {
-    }
-
-    public interface IReturnRepository : IGenericRepository<Return>
-    {
-    }
 }

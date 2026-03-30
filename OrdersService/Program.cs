@@ -12,11 +12,27 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddConsumer<OrdersService.Consumers.PaymentProcessedConsumer>();
+    x.AddConsumer<OrdersService.Consumers.ReturnInitiatedConsumer>();
+    x.AddConsumer<OrdersService.Consumers.OrderReturnedConsumer>();
+
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host("localhost", "/", h => {
             h.Username("guest");
             h.Password("guest");
+        });
+        
+        cfg.ReceiveEndpoint("orders-payment-queue", e => {
+            e.ConfigureConsumer<OrdersService.Consumers.PaymentProcessedConsumer>(context);
+        });
+        
+        cfg.ReceiveEndpoint("orders-return-init-queue", e => {
+            e.ConfigureConsumer<OrdersService.Consumers.ReturnInitiatedConsumer>(context);
+        });
+
+        cfg.ReceiveEndpoint("orders-return-complete-queue", e => {
+            e.ConfigureConsumer<OrdersService.Consumers.OrderReturnedConsumer>(context);
         });
     });
 });
@@ -55,10 +71,7 @@ builder.Services.AddAuthorization(options => {
 builder.Services.AddScoped<IBillRepository, BillRepository>();
 builder.Services.AddScoped<IBillItemRepository, BillItemRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
-builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
-builder.Services.AddScoped<IReturnRepository, ReturnRepository>();
 
-builder.Services.AddScoped<IReturnService, ReturnService>();
 builder.Services.AddScoped<IBillService, BillService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 

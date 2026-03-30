@@ -33,6 +33,5 @@ namespace OrdersService.Models
         public string CustomerName { get; set; } = string.Empty;
 
         public ICollection<BillItem> Items { get; set; } = new List<BillItem>();
-        public ICollection<Payment> Payments { get; set; } = new List<Payment>();
     }
 }

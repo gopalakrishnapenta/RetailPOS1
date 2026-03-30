@@ -27,4 +27,12 @@ namespace RetailPOS.Contracts
         int ProductId { get; }
         int Quantity { get; }
     }
+
+    public interface ReturnInitiatedEvent
+    {
+        int OrderId { get; }
+        int ServiceReturnId { get; }
+        int StoreId { get; }
+        List<ReturnedItemEvent> Items { get; }
+    }
 }

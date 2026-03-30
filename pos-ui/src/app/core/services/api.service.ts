@@ -41,7 +41,7 @@ export class ApiService {
   }
   
   collectPayment(payment: any) {
-    return this.http.post<any>(`${this.baseUrl}/orders/payments/collect`, payment, this.getHeaders());
+    return this.http.post<any>(`${this.baseUrl}/payments/collect`, payment, this.getHeaders());
   }
 
   searchCustomer(mobile: string) {
@@ -126,22 +126,22 @@ export class ApiService {
 
   // --- Return Management ---
   getReturns() {
-    return this.http.get<any[]>(`${this.baseUrl}/orders/returns`, this.getHeaders());
+    return this.http.get<any[]>(`${this.baseUrl}/returns`, this.getHeaders());
   }
 
   initiateReturn(payload: any) {
-    return this.http.post<any>(`${this.baseUrl}/orders/returns/initiate`, payload, this.getHeaders());
+    return this.http.post<any>(`${this.baseUrl}/returns/initiate`, payload, this.getHeaders());
   }
 
   approveReturn(id: number, note?: string) {
-    return this.http.post<any>(`${this.baseUrl}/orders/returns/${id}/approve`, note ? `"${note}"` : null, {
+    return this.http.post<any>(`${this.baseUrl}/returns/${id}/approve`, note ? `"${note}"` : null, {
       ...this.getHeaders(),
       headers: this.getHeaders().headers.set('Content-Type', 'application/json')
     });
   }
 
   rejectReturn(id: number, note?: string) {
-    return this.http.post<any>(`${this.baseUrl}/orders/returns/${id}/reject`, note ? `"${note}"` : null, {
+    return this.http.post<any>(`${this.baseUrl}/returns/${id}/reject`, note ? `"${note}"` : null, {
       ...this.getHeaders(),
       headers: this.getHeaders().headers.set('Content-Type', 'application/json')
     });

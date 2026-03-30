@@ -1,0 +1,6 @@
+@ReturnsService_HostAddress = http://localhost:5167
+
+GET {{ReturnsService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

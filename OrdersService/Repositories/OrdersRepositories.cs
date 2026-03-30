@@ -40,18 +40,4 @@ namespace OrdersService.Repositories
             return await _dbSet.FirstOrDefaultAsync(c => c.Mobile == mobile);
         }
     }
-
-    public class PaymentRepository : GenericRepository<Payment>, IPaymentRepository
-    {
-        public PaymentRepository(OrdersDbContext context) : base(context)
-        {
-        }
-    }
-
-    public class ReturnRepository : GenericRepository<Return>, IReturnRepository
-    {
-        public ReturnRepository(OrdersDbContext context) : base(context)
-        {
-        }
-    }
 }

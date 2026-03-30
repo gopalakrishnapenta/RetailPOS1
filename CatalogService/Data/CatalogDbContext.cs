@@ -49,9 +49,11 @@ namespace CatalogService.Data
                 .ValueGeneratedNever();
 
             modelBuilder.Entity<Category>().HasData(
-
-                new Category { Id = 4, Name = "Fruits", Description = "Fresh fruits" },
-                new Category { Id = 5, Name = "Veggies", Description = "Fresh vegetables" }
+                new Category { Id = 1, Name = "Electronics", Description = "Gadgets", StoreId = 0 },
+                new Category { Id = 2, Name = "Grocery", Description = "Daily essentials", StoreId = 0 },
+                new Category { Id = 3, Name = "Beverages", Description = "Drinks", StoreId = 0 },
+                new Category { Id = 4, Name = "Fruits", Description = "Fresh fruits", StoreId = 0 },
+                new Category { Id = 5, Name = "Veggies", Description = "Fresh vegetables", StoreId = 0 }
             );
 
             modelBuilder.Entity<Product>().HasData(

@@ -18,12 +18,4 @@ namespace OrdersService.Interfaces
         Task<CustomerDto?> GetByMobileAsync(string mobile);
         Task<CustomerDto> CreateOrUpdateCustomerAsync(CustomerDto customerDto);
     }
-
-    public interface IReturnService
-    {
-        Task<Return> InitiateReturnAsync(Return returnRequest);
-        Task<bool> ApproveReturnAsync(int returnId, string? approvalNote);
-        Task<bool> RejectReturnAsync(int returnId, string? rejectionNote);
-        Task<IEnumerable<ReturnDetailedDto>> GetAllReturnsAsync();
-    }
 }
