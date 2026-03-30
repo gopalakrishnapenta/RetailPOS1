@@ -16,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddConsumer<OrderPlacedConsumer>();
     x.AddConsumer<CategoryConsumer>();
     x.AddConsumer<OrderReturnedConsumer>();
     x.AddConsumer<StockAdjustedConsumer>();

@@ -20,9 +20,6 @@ namespace IdentityService.DTOs
         [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", 
             ErrorMessage = "Password must be at least 8 characters, include uppercase, lowercase, number, and symbol.")]
         public string Password { get; set; } = string.Empty;
-
-        public string Role { get; set; } = "Cashier";
-        public int StoreId { get; set; } = 1;
     }
 
     public class AuthResponseDto

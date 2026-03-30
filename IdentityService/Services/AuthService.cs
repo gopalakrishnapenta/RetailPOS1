@@ -9,8 +9,9 @@ using IdentityService.DTOs;
 using IdentityService.Interfaces;
 using Google.Apis.Auth;
 using IdentityService.Exceptions;
-using System.Linq;
 using IdentityService.Repositories;
+using MassTransit;
+using RetailPOS.Contracts;
 
 namespace IdentityService.Services
 {
@@ -21,14 +22,16 @@ namespace IdentityService.Services
         private readonly IConfiguration _config;
         private readonly IEmailService _emailService;
         private readonly ILogger<AuthService> _logger;
+        private readonly IPublishEndpoint _publishEndpoint;
 
-        public AuthService(IUserRepository userRepository, IStoreRepository storeRepository, IConfiguration config, ILogger<AuthService> logger, IEmailService emailService)
+        public AuthService(IUserRepository userRepository, IStoreRepository storeRepository, IConfiguration config, ILogger<AuthService> logger, IEmailService emailService, IPublishEndpoint publishEndpoint)
         {
             _userRepository = userRepository;
             _storeRepository = storeRepository;
             _config = config;
             _logger = logger;
             _emailService = emailService;
+            _publishEndpoint = publishEndpoint;
         }
 
         public async Task<AuthResult> LoginAsync(LoginDto loginDto)
@@ -84,7 +87,21 @@ namespace IdentityService.Services
                 mapping = user.UserRoles.OrderBy(ur => ur.StoreId == null ? 0 : 1).FirstOrDefault();
             }
 
-            if (mapping == null) throw new ValidationException("Not authorized for this context.");
+            if (mapping == null) 
+            {
+                _logger.LogWarning($"User {user.Email} has no Store Assignment. Returning PENDING_STAFF.");
+                return new AuthResult 
+                { 
+                    Success = true, 
+                    Data = new AuthResponseDto { 
+                        Token = null, 
+                        Role = "PENDING_STAFF", 
+                        Email = user.Email, 
+                        StoreId = 0,
+                        Permissions = new List<string>()
+                    } 
+                };
+            }
 
             var perms = mapping.Role.RolePermissions.Select(rp => rp.Permission.Code).ToList();
             var token = GenerateJwt(user, mapping.Role.Name, perms, mapping.StoreId ?? 0, mapping.Store?.StoreCode, verifyDto.ShiftDate ?? DateTime.Today.ToString("yyyy-MM-dd"));
@@ -118,13 +135,16 @@ namespace IdentityService.Services
                 VerificationOtpExpiry = DateTime.UtcNow.AddMinutes(5)
             };
 
-            var db = ((UserRepository)_userRepository).GetContext();
-            var roleEntity = await db.Roles.FirstOrDefaultAsync(r => r.Name == registerDto.Role);
-            
-            user.UserRoles.Add(new UserStoreRole { RoleId = roleEntity?.Id ?? 3, StoreId = registerDto.StoreId != 0 ? registerDto.StoreId : null });
-
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
+
+            // Notify Admin Service that a new staff member registered
+            await _publishEndpoint.Publish<UserRegisteredEvent>(new
+            {
+                UserId = user.Id,
+                Email = user.Email
+            });
+
             return true;
         }
 
@@ -205,7 +225,18 @@ namespace IdentityService.Services
             if (shiftDate != null) claims.Add(new Claim("ShiftDate", shiftDate));
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "super_secret_key_1234567890_pos_system"));
-            var token = new JwtSecurityToken(_config["Jwt:Issuer"], _config["Jwt:Audience"], claims, expires: DateTime.Now.AddHours(8), signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            
+            // Realign with unified cluster audience
+            var audience = _config["Jwt:Audience"] ?? "RetailPOS_Services";
+
+            var token = new JwtSecurityToken(
+                _config["Jwt:Issuer"], 
+                audience, 
+                claims, 
+                expires: DateTime.Now.AddHours(8), 
+                signingCredentials: creds);
+                
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 

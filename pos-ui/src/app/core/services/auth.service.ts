@@ -12,12 +12,13 @@ export class AuthService {
 
   login(credentials: any) {
     return this.http.post<any>(`${this.baseUrl}/login`, credentials).pipe(
-      tap(res => {
+      tap(response => {
+        const res = response.data || response;
         if (res && res.token) {
           localStorage.setItem(this.tokenKey, res.token);
           localStorage.setItem(this.roleKey, res.role);
-          localStorage.setItem('pos_store_id', res.storeId.toString());
-          localStorage.setItem('pos_user', JSON.stringify({ email: credentials.email, role: res.role, storeId: res.storeId }));
+          localStorage.setItem('pos_store_id', (res.storeId ?? 0).toString());
+          localStorage.setItem('pos_user', JSON.stringify({ email: credentials.email, role: res.role, storeId: res.storeId ?? 0 }));
         }
       })
     );
@@ -25,12 +26,13 @@ export class AuthService {
 
   verifyLoginOtp(data: any) {
     return this.http.post<any>(`${this.baseUrl}/verify-login-otp`, data).pipe(
-      tap(res => {
+      tap(response => {
+        const res = response.data || response;
         if (res && res.token) {
           localStorage.setItem(this.tokenKey, res.token);
           localStorage.setItem(this.roleKey, res.role);
-          localStorage.setItem('pos_store_id', res.storeId.toString());
-          localStorage.setItem('pos_user', JSON.stringify({ email: res.email, role: res.role, storeId: res.storeId }));
+          localStorage.setItem('pos_store_id', (res.storeId ?? 0).toString());
+          localStorage.setItem('pos_user', JSON.stringify({ email: res.email, role: res.role, storeId: res.storeId ?? 0 }));
         }
       })
     );

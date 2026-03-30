@@ -64,6 +64,11 @@ export class LoginComponent implements OnInit {
   }
 
   private handlePostLogin(res: any) {
+    if (res.role === 'PENDING_STAFF' || !res.token) {
+      this.notification.warning('Sign-in successful, but your account is waiting for a Manager to assign you to a Store.', 'Pending Assignment');
+      return;
+    }
+
     const finalShiftDate = res.shiftDate || new Date().toISOString().split('T')[0];
 
     localStorage.setItem('storeContext', JSON.stringify({
@@ -121,10 +126,11 @@ export class LoginComponent implements OnInit {
       shiftDate: new Date().toISOString().split('T')[0]
     };
 
-    this.auth.verifyLoginOtp(verifyDto).subscribe({
+        this.auth.verifyLoginOtp(verifyDto).subscribe({
       next: (res) => {
         this.isLoading = false;
-        this.handlePostLogin(res);
+        // Use res.data because the backend wraps the response in an AuthResult
+        this.handlePostLogin(res.data || res); 
       },
       error: (err: any) => {
         this.isLoading = false;

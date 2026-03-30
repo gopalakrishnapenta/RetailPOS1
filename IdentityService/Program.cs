@@ -16,6 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<StoreCreatedConsumer>();
+    x.AddConsumer<StaffAssignedConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -27,6 +28,11 @@ builder.Services.AddMassTransit(x =>
         cfg.ReceiveEndpoint("identity-store-created", e =>
         {
             e.ConfigureConsumer<StoreCreatedConsumer>(context);
+        });
+
+        cfg.ReceiveEndpoint("identity-staff-assigned", e =>
+        {
+            e.ConfigureConsumer<StaffAssignedConsumer>(context);
         });
     });
 });

@@ -70,6 +70,43 @@ namespace IdentityService.Data
 
             await context.SaveChangesAsync();
             logger.LogInformation("✅ [RBAC] Permission Sync Complete.");
+
+            // 5. Ensure DEFAULT ADMIN user exists
+            var adminEmail = "admin@gmail.com";
+            var adminUser = await context.Users.Include(u => u.UserRoles).FirstOrDefaultAsync(u => u.Email == adminEmail);
+            if (adminUser == null)
+            {
+                logger.LogInformation($"[RBAC] Seeding DEFAULT ADMIN: {adminEmail}");
+                adminUser = new User
+                {
+                    Email = adminEmail,
+                    PasswordHash = "Admin@123", // Provided by user
+                    IsEmailVerified = true,
+                    EmployeeCode = "ADM001"
+                };
+                context.Users.Add(adminUser);
+                await context.SaveChangesAsync();
+            }
+
+            if (!adminUser.UserRoles.Any())
+            {
+                logger.LogInformation($"[RBAC] Granting Global Admin to: {adminEmail}");
+                adminUser.UserRoles.Add(new UserStoreRole
+                {
+                    RoleId = adminRole.Id,
+                    StoreId = null // Global Admin
+                });
+                await context.SaveChangesAsync();
+            }
+
+            // 6. [REPAIR] Ensure StoreManager has catalog:manage (Fixes manual SQL misses)
+            logger.LogInformation("[RBAC] Running Permission Repair for StoreManager...");
+            var managerPermissions = new[] { Permissions.Catalog.Manage, Permissions.Catalog.View, Permissions.Orders.View };
+            foreach (var code in managerPermissions)
+            {
+                await EnsureMapping(context, managerRole.Id, code);
+            }
+            await context.SaveChangesAsync();
         }
 
         private static async Task EnsureMapping(AppDbContext context, int roleId, string permissionCode)

@@ -12,6 +12,7 @@ using AdminService.Services;
 using AdminService.Repositories;
 using MassTransit;
 using AdminService.Middleware;
+using AdminService.Consumers;
 using RetailPOS.Common.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -77,11 +78,24 @@ builder.Services.AddDbContext<AdminService.Data.AdminDbContext>(dbContextOptions
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddConsumer<DashboardEventsConsumer>();
+    x.AddConsumer<UserRegisteredConsumer>();
+
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host("localhost", "/", h => {
             h.Username("guest");
             h.Password("guest");
+        });
+
+        cfg.ReceiveEndpoint("admin-dashboard-stats", e =>
+        {
+            e.ConfigureConsumer<DashboardEventsConsumer>(context);
+        });
+
+        cfg.ReceiveEndpoint("admin-user-registered", e =>
+        {
+            e.ConfigureConsumer<UserRegisteredConsumer>(context);
         });
     });
 });

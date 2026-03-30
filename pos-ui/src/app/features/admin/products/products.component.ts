@@ -30,7 +30,10 @@ export class ProductsComponent implements OnInit {
     sellingPrice: 0,
     categoryId: 1,
     stockQuantity: 0,
-    categoryName: ''
+    categoryName: '',
+    taxCode: 'GST_18',
+    reorderLevel: 5,
+    isActive: true
   };
 
   constructor(private api: ApiService, private http: HttpClient, private auth: AuthService, private router: Router) { }
@@ -134,6 +137,6 @@ export class ProductsComponent implements OnInit {
     this.isEditing = false;
     this.skuPrefix = 'SKU';
     this.skuSuffix = '';
-    this.newProduct = { id: 0, name: '', sku: '', barcode: '', mrp: 0, sellingPrice: 0, categoryId: this.categories[0]?.id || 1, stockQuantity: 0, categoryName: '' };
+    this.newProduct = { id: 0, name: '', sku: '', barcode: '', mrp: 0, sellingPrice: 0, categoryId: this.categories[0]?.id || 1, stockQuantity: 0, categoryName: '', taxCode: 'GST_18', reorderLevel: 5, isActive: true };
   }
 }

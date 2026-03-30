@@ -4,6 +4,10 @@ namespace RetailPOS.Contracts
     {
         int OrderId { get; }
         int StoreId { get; }
+        decimal TotalAmount { get; }
+        decimal TaxAmount { get; }
+        DateTime Date { get; }
+        string? CustomerMobile { get; }
         List<OrderItemEvent> Items { get; }
     }
 

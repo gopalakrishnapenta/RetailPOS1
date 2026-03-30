@@ -21,14 +21,16 @@ namespace IdentityService.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDto request)
         {
             var result = await _authService.LoginAsync(request);
-            return Ok(result.Data);
+            if (!result.Success) return Unauthorized(new { message = result.Message });
+            return Ok(new { requiresOtp = result.Message == "OTP_SENT", message = result.Message, data = result.Data });
         }
 
         [HttpPost("verify-login-otp")]
         public async Task<IActionResult> VerifyLoginOtp([FromBody] VerifyLoginOtpDto request)
         {
             var result = await _authService.VerifyLoginOtpAsync(request);
-            return Ok(result.Data);
+            if (!result.Success) return Unauthorized(new { message = result.Message });
+            return Ok(result);
         }
 
         [HttpPost("register")]

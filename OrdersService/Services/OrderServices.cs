@@ -102,15 +102,9 @@ namespace OrdersService.Services
             var bill = await _billRepository.GetBillWithItemsAsync(id);
             if (bill == null) throw new NotFoundException($"Bill with ID {id} not found.");
 
-            // Publish OrderPlacedEvent to RabbitMQ
-            await _publishEndpoint.Publish<OrderPlacedEvent>(new
-            {
-                OrderId = bill.Id,
-                StoreId = bill.StoreId,
-                Items = bill.Items.Select(i => new { i.ProductId, i.Quantity }).ToList()
-            });
-
-            bill.Status = "Finalized";
+            // We NO LONGER publish OrderPlacedEvent here!
+            // We wait for the PaymentProcessedEvent from the Payment Service instead.
+            bill.Status = "PendingPayment";
             await _billRepository.SaveChangesAsync();
             return true;
         }

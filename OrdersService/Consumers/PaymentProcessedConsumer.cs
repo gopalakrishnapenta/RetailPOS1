@@ -1,40 +1,71 @@
 using MassTransit;
-using Microsoft.EntityFrameworkCore;
-using OrdersService.Data;
 using RetailPOS.Contracts;
+using OrdersService.Data;
+using OrdersService.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace OrdersService.Consumers
 {
     public class PaymentProcessedConsumer : IConsumer<PaymentProcessedEvent>
     {
         private readonly OrdersDbContext _context;
+        private readonly IPublishEndpoint _publishEndpoint;
         private readonly ILogger<PaymentProcessedConsumer> _logger;
 
-        public PaymentProcessedConsumer(OrdersDbContext context, ILogger<PaymentProcessedConsumer> logger)
+        public PaymentProcessedConsumer(OrdersDbContext context, IPublishEndpoint publishEndpoint, ILogger<PaymentProcessedConsumer> logger)
         {
             _context = context;
+            _publishEndpoint = publishEndpoint;
             _logger = logger;
         }
 
         public async Task Consume(ConsumeContext<PaymentProcessedEvent> context)
         {
-            var message = context.Message;
-            _logger.LogInformation("Processing payment success for Order: {OrderId}", message.OrderId);
+            var data = context.Message;
+            _logger.LogInformation($"Consuming PaymentProcessedEvent for Order {data.OrderId}, Status: {data.Status}");
 
-            // Fetch the bill. We use IgnoreQueryFilters because background consumers don't have a HttpContext tenant.
-            var bill = await _context.Bills
-                .IgnoreQueryFilters() 
-                .FirstOrDefaultAsync(b => b.Id == message.OrderId);
-
-            if (bill != null)
+            try
             {
-                bill.Status = "Paid";
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Bill {BillNumber} marked as Paid.", bill.BillNumber);
+                // Find the bill (ignoring tenant filters if necessary, or using the context)
+                var bill = await _context.Bills.Include(b => b.Items).FirstOrDefaultAsync(b => b.Id == data.OrderId);
+                if (bill == null)
+                {
+                    _logger.LogWarning($"Bill {data.OrderId} not found for payment update.");
+                    return;
+                }
+
+                if (data.Status == "Success")
+                {
+                    _logger.LogInformation($"Payment Success for Bill {bill.Id}. Triggering stock and dashboard updates.");
+
+                    // 1. Update Bill Status locally
+                    bill.Status = "Finalized"; 
+                    await _context.SaveChangesAsync();
+
+                    // 2. NOW trigger the global synchronization events
+                    await _publishEndpoint.Publish<OrderPlacedEvent>(new
+                    {
+                        OrderId = bill.Id,
+                        StoreId = bill.StoreId,
+                        TotalAmount = bill.TotalAmount,
+                        TaxAmount = bill.TaxAmount,
+                        Date = DateTime.UtcNow,
+                        CustomerMobile = bill.CustomerMobile,
+                        Items = bill.Items.Select(i => new { ProductId = i.ProductId, Quantity = i.Quantity }).ToList()
+                    });
+
+                    _logger.LogInformation($"Successfully synchronized Order {bill.Id} after payment.");
+                }
+                else
+                {
+                    _logger.LogWarning($"Payment Failed for Bill {bill.Id}. Reverting to Draft state.");
+                    bill.Status = "Draft"; // Let cashier try again
+                    await _context.SaveChangesAsync();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                _logger.LogWarning("Bill with ID {OrderId} not found for payment processing.", message.OrderId);
+                _logger.LogError(ex, $"Error processing payment update for order {data.OrderId}");
             }
         }
     }
