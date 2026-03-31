@@ -10,6 +10,7 @@ import { InventoryComponent } from './features/admin/inventory/inventory.compone
 import { ProductsComponent } from './features/admin/products/products.component';
 import { StoresComponent } from './features/admin/stores/stores.component';
 import { CategoriesComponent } from './features/admin/categories/categories.component';
+import { AdminNotificationsComponent } from './features/admin/notifications/notifications.component';
 import { inject } from '@angular/core';
 import { AuthService } from './core/services/auth.service';
 import { Router } from '@angular/router';
@@ -50,6 +51,7 @@ export const routes: Routes = [
       { path: 'products', component: ProductsComponent },
       { path: 'stores', component: StoresComponent },
       { path: 'categories', component: CategoriesComponent },
+      { path: 'notifications', component: AdminNotificationsComponent },
       { path: 'returns', loadComponent: () => import('./features/admin/returns/returns.component').then(m => m.AdminReturnsComponent) },
       { path: 'reports', loadComponent: () => import('./features/admin/reports/reports.component').then(m => m.AdminReportsComponent) }
     ]

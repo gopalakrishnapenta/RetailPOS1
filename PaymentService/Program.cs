@@ -9,12 +9,27 @@ using PaymentService.Repositories;
 using MassTransit;
 using Microsoft.OpenApi.Models;
 using RetailPOS.Common.Authorization;
+using RetailPOS.Common.Logging;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Serilog
+builder.ConfigureSerilog("PaymentService");
+
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(x => {
+    x.JsonSerializerOptions.AllowTrailingCommas = true;
+});
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+});
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "PaymentService API", Version = "v1" });
@@ -48,6 +63,7 @@ builder.Services.AddScoped<ITenantProvider, TenantProvider>();
 // Register Repositories and Services
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IPaymentService, PaymentService.Services.PaymentService>();
+builder.Services.AddScoped<IRazorpayService, RazorpayService>();
 
 // MassTransit config
 builder.Services.AddMassTransit(x =>
@@ -91,6 +107,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

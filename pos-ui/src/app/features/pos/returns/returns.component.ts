@@ -60,7 +60,13 @@ export class PosReturnsComponent {
 
   submitReturn() {
     if (!this.reason) return alert('Please enter a reason');
-    const payload = { originalBillId: this.bill.id, productId: this.itemToReturn.productId, quantity: this.itemToReturn.quantity, reason: this.reason };
+    const payload = { 
+      originalBillId: this.bill.id, 
+      productId: this.itemToReturn.productId, 
+      quantity: this.itemToReturn.quantity, 
+      reason: this.reason,
+      customerMobile: this.bill.customerMobile
+    };
     this.api.initiateReturn(payload).subscribe(() => {
       alert('Return initiated!');
       this.router.navigate(['/pos/billing']);

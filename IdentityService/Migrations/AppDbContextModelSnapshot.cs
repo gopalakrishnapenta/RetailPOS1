@@ -46,122 +46,6 @@ namespace IdentityService.Migrations
                         .IsUnique();
 
                     b.ToTable("Permissions");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Code = "all:all",
-                            Description = "Master System Access (Bypass)"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Code = "orders:create",
-                            Description = "Create Sales Bills"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Code = "orders:view",
-                            Description = "View Own Bills"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Code = "orders:view_all",
-                            Description = "View All Bills (Admin/Manager)"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Code = "orders:finalize",
-                            Description = "Finalize and Take Payment"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Code = "orders:hold",
-                            Description = "Hold/Pause Bill"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            Code = "orders:void",
-                            Description = "Cancel/Void Finalized Bill"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            Code = "returns:initiate",
-                            Description = "Start a Return Request"
-                        },
-                        new
-                        {
-                            Id = 9,
-                            Code = "returns:view",
-                            Description = "View Return History"
-                        },
-                        new
-                        {
-                            Id = 10,
-                            Code = "returns:approve",
-                            Description = "Approve Refund/Return"
-                        },
-                        new
-                        {
-                            Id = 11,
-                            Code = "admin:reports:view",
-                            Description = "View Sales/Tax Reports"
-                        },
-                        new
-                        {
-                            Id = 12,
-                            Code = "admin:inventory:adjust",
-                            Description = "Manual Stock Adjustment"
-                        },
-                        new
-                        {
-                            Id = 13,
-                            Code = "admin:stores:manage",
-                            Description = "Add/Edit Stores (Root)"
-                        },
-                        new
-                        {
-                            Id = 14,
-                            Code = "catalog:view",
-                            Description = "Browse Products"
-                        },
-                        new
-                        {
-                            Id = 15,
-                            Code = "catalog:manage",
-                            Description = "Edit Products/Prices"
-                        },
-                        new
-                        {
-                            Id = 16,
-                            Code = "catalog:categories:edit",
-                            Description = "Manage Categories"
-                        },
-                        new
-                        {
-                            Id = 17,
-                            Code = "users:manage",
-                            Description = "Manage Staff Accounts"
-                        },
-                        new
-                        {
-                            Id = 18,
-                            Code = "catalog:delete",
-                            Description = "Delete Products from Catalog"
-                        },
-                        new
-                        {
-                            Id = 19,
-                            Code = "catalog:categories:view",
-                            Description = "View Category List"
-                        });
                 });
 
             modelBuilder.Entity("IdentityService.Models.Role", b =>
@@ -180,23 +64,6 @@ namespace IdentityService.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Roles");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Admin"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "StoreManager"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "Cashier"
-                        });
                 });
 
             modelBuilder.Entity("IdentityService.Models.RolePermission", b =>
@@ -212,143 +79,6 @@ namespace IdentityService.Migrations
                     b.HasIndex("PermissionId");
 
                     b.ToTable("RolePermissions");
-
-                    b.HasData(
-                        new
-                        {
-                            RoleId = 1,
-                            PermissionId = 1
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 2
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 3
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 4
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 5
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 6
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 7
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 8
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 9
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 10
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 11
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 12
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 13
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 14
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 15
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 16
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 17
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 18
-                        },
-                        new
-                        {
-                            RoleId = 2,
-                            PermissionId = 19
-                        },
-                        new
-                        {
-                            RoleId = 3,
-                            PermissionId = 2
-                        },
-                        new
-                        {
-                            RoleId = 3,
-                            PermissionId = 3
-                        },
-                        new
-                        {
-                            RoleId = 3,
-                            PermissionId = 5
-                        },
-                        new
-                        {
-                            RoleId = 3,
-                            PermissionId = 6
-                        },
-                        new
-                        {
-                            RoleId = 3,
-                            PermissionId = 8
-                        },
-                        new
-                        {
-                            RoleId = 3,
-                            PermissionId = 9
-                        },
-                        new
-                        {
-                            RoleId = 3,
-                            PermissionId = 14
-                        },
-                        new
-                        {
-                            RoleId = 3,
-                            PermissionId = 19
-                        });
                 });
 
             modelBuilder.Entity("IdentityService.Models.Store", b =>
@@ -414,6 +144,12 @@ namespace IdentityService.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RefreshTokenExpiry")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("VerificationOtp")
                         .HasColumnType("nvarchar(max)");

@@ -106,9 +106,16 @@ namespace IdentityService.Services
             var perms = mapping.Role.RolePermissions.Select(rp => rp.Permission.Code).ToList();
             var token = GenerateJwt(user, mapping.Role.Name, perms, mapping.StoreId ?? 0, mapping.Store?.StoreCode, verifyDto.ShiftDate ?? DateTime.Today.ToString("yyyy-MM-dd"));
             
+            // [PHASE 2] Generate and Save Refresh Token
+            var refreshToken = GenerateRefreshToken();
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+            await _userRepository.SaveChangesAsync();
+
             return new AuthResult 
             { 
                 Success = true, 
+                RefreshToken = refreshToken,
                 Data = new AuthResponseDto { 
                     Token = token, 
                     Role = mapping.Role.Name, 
@@ -218,7 +225,13 @@ namespace IdentityService.Services
             var perms = map!.Role.RolePermissions.Select(rp => rp.Permission.Code).ToList();
             var token = GenerateJwt(user, map.Role.Name, perms, map.StoreId ?? 0, map.Store?.StoreCode);
 
-            return new AuthResult { Success = true, Data = new AuthResponseDto { Token = token, Role = map.Role.Name, Email = user.Email, StoreId = map.StoreId ?? 0, Permissions = perms } };
+            // [PHASE 2] Generate and Save Refresh Token
+            var refreshToken = GenerateRefreshToken();
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+            await _userRepository.SaveChangesAsync();
+
+            return new AuthResult { Success = true, RefreshToken = refreshToken, Data = new AuthResponseDto { Token = token, Role = map.Role.Name, Email = user.Email, StoreId = map.StoreId ?? 0, Permissions = perms } };
         }
 
         private string GenerateJwt(ModelsUser user, string roleName, List<string> permissions, int storeId, string? storeCode = null, string? shiftDate = null)
@@ -247,10 +260,97 @@ namespace IdentityService.Services
                 _config["Jwt:Issuer"], 
                 null, // Null because we added audiences to the claims list
                 claims, 
-                expires: DateTime.Now.AddHours(8), 
+                expires: DateTime.Now.AddHours(1), // Reduced expiry for Access Token (standard with Refresh flow)
                 signingCredentials: creds);
                 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        private string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[64];
+            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
+
+        private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
+        {
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = false, // Mapping to all services
+                ValidateIssuer = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "super_secret_key_1234567890_pos_system")),
+                ValidateLifetime = false // Here we are saying that we don't care about the token's expiration date
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+            var jwtSecurityToken = securityToken as JwtSecurityToken;
+            if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                throw new SecurityTokenException("Invalid token");
+
+            return principal;
+        }
+
+        public async Task<AuthResult> RefreshTokenAsync(TokenRequestDto tokenRequestDto)
+        {
+            var accessToken = tokenRequestDto.AccessToken;
+            var refreshToken = tokenRequestDto.RefreshToken;
+
+            var principal = GetPrincipalFromExpiredToken(accessToken);
+            var userIdStr = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdStr))
+                throw new ValidationException("Invalid token payload.");
+
+            var user = await _userRepository.GetWithRolesByIdAsync(int.Parse(userIdStr));
+
+            if (user == null || user.RefreshToken != refreshToken || user.RefreshTokenExpiry <= DateTime.UtcNow)
+                throw new ValidationException("Invalid refresh token.");
+
+            // Get mapping for currently logged in store (from claims)
+            var storeIdClaim = principal.Claims.FirstOrDefault(c => c.Type == "StoreId")?.Value;
+            int currentStoreId = int.Parse(storeIdClaim ?? "0");
+            
+            var mapping = user.UserRoles.FirstOrDefault(ur => ur.StoreId == currentStoreId);
+            if (mapping == null) mapping = user.UserRoles.FirstOrDefault(); // Fallback
+
+            if (mapping == null) throw new ValidationException("User has no valid roles for this store.");
+
+            var perms = mapping.Role.RolePermissions.Select(rp => rp.Permission.Code).ToList();
+            var newAccessToken = GenerateJwt(user, mapping.Role.Name, perms, mapping.StoreId ?? 0, mapping.Store?.StoreCode);
+            var newRefreshToken = GenerateRefreshToken();
+
+            user.RefreshToken = newRefreshToken;
+            await _userRepository.SaveChangesAsync();
+
+            return new AuthResult
+            {
+                Success = true,
+                RefreshToken = newRefreshToken,
+                Data = new AuthResponseDto
+                {
+                    Token = newAccessToken,
+                    Role = mapping.Role.Name,
+                    Email = user.Email,
+                    StoreId = mapping.StoreId ?? 0,
+                    StoreCode = mapping.Store?.StoreCode,
+                    Permissions = perms
+                }
+            };
+        }
+
+        public async Task<bool> LogoutAsync(string email)
+        {
+            var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == email);
+            if (user == null) return false;
+
+            user.RefreshToken = null;
+            user.RefreshTokenExpiry = null;
+            await _userRepository.SaveChangesAsync();
+            return true;
         }
 
         public async Task<List<StoreDto>> GetStoresAsync()

@@ -14,6 +14,8 @@ namespace IdentityService.Interfaces
         Task<AuthResult> GoogleLoginAsync(string idToken, int? storeId = null, string? role = null);
         Task<List<StoreDto>> GetStoresAsync();
         Task<bool> TestEmailAsync(string toEmail);
+        Task<AuthResult> RefreshTokenAsync(TokenRequestDto tokenRequestDto);
+        Task<bool> LogoutAsync(string email);
         Task<List<UserSyncDto>> GetUsersAsync();
     }
 

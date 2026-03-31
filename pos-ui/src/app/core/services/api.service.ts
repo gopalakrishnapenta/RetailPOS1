@@ -150,4 +150,8 @@ export class ApiService {
   getBillByNumber(billNumber: string) {
     return this.http.get<any>(`${this.baseUrl}/orders/bills/search/${billNumber}`, this.getHeaders());
   }
+
+  getRecentNotifications(recipient: string) {
+    return this.http.get<any[]>(`${this.baseUrl}/notifications/${recipient}`, this.getHeaders());
+  }
 }

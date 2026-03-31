@@ -26,6 +26,9 @@ namespace IdentityService.Models
         public string? VerificationOtp { get; set; }
         public DateTime? VerificationOtpExpiry { get; set; }
 
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiry { get; set; }
+
         // New relationship for Multi-Tenant RBAC
         public virtual ICollection<UserStoreRole> UserRoles { get; set; } = new List<UserStoreRole>();
     }

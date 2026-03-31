@@ -9,8 +9,13 @@ using MassTransit;
 using OrdersService.Middleware;
 using RetailPOS.Common.Authorization;
 using Microsoft.OpenApi.Models;
+using RetailPOS.Common.Logging;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog
+builder.ConfigureSerilog("OrdersService");
 
 builder.Services.AddMassTransit(x =>
 {
@@ -39,9 +44,20 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
-builder.Services.AddControllers().AddJsonOptions(x => x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+builder.Services.AddControllers().AddJsonOptions(x => {
+    x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    x.JsonSerializerOptions.AllowTrailingCommas = true;
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpClient();
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+});
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "OrdersService API", Version = "v1" });
@@ -123,6 +139,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseExceptionMiddleware();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

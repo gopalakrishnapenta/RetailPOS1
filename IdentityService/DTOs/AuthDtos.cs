@@ -45,6 +45,7 @@ namespace IdentityService.DTOs
     {
         public bool Success { get; set; }
         public string? Message { get; set; }
+        public string? RefreshToken { get; set; }
         public AuthResponseDto? Data { get; set; }
     }
 
@@ -76,5 +77,11 @@ namespace IdentityService.DTOs
     public class ResendVerificationDto
     {
         public string Email { get; set; } = string.Empty;
+    }
+
+    public class TokenRequestDto
+    {
+        public string AccessToken { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
     }
 }

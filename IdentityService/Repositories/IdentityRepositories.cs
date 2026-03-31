@@ -24,6 +24,18 @@ namespace IdentityService.Repositories
                     .ThenInclude(ur => ur.Store)
                 .FirstOrDefaultAsync(u => u.Email == email);
         }
+
+        public async Task<User?> GetWithRolesByIdAsync(int id)
+        {
+            return await _context.Users
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                        .ThenInclude(r => r.RolePermissions)
+                            .ThenInclude(rp => rp.Permission)
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Store)
+                .FirstOrDefaultAsync(u => u.Id == id);
+        }
     }
 
     public class StoreRepository : GenericRepository<Store>, IStoreRepository

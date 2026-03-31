@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using IdentityService.Interfaces;
 using IdentityService.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using RetailPOS.Common.Authorization;
 
 
 namespace IdentityService.Controllers
@@ -30,7 +31,11 @@ namespace IdentityService.Controllers
         {
             var result = await _authService.VerifyLoginOtpAsync(verifyDto);
             if (!result.Success) return Unauthorized(new { message = result.Message });
-            return Ok(result);
+            
+            if (result.RefreshToken != null)
+                SetTokenCookie(result.RefreshToken);
+
+            return Ok(result.Data);
         }
 
         [HttpPost("register")]
@@ -81,6 +86,9 @@ namespace IdentityService.Controllers
                 return Unauthorized(new { message = result.Message });
             }
 
+            if (result.RefreshToken != null)
+                SetTokenCookie(result.RefreshToken);
+
             return Ok(result.Data);
         }
 
@@ -102,6 +110,50 @@ namespace IdentityService.Controllers
         {
             await _authService.TestEmailAsync(email);
             return Ok(new { message = $"Test email sent successfully to {email}" });
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] TokenRequestDto tokenRequestDto)
+        {
+            // Extract refresh token from cookie
+            var refreshToken = Request.Cookies["refreshToken"];
+            if (string.IsNullOrEmpty(refreshToken))
+                return Unauthorized(new { message = "Refresh token missing." });
+
+            tokenRequestDto.RefreshToken = refreshToken;
+            
+            var result = await _authService.RefreshTokenAsync(tokenRequestDto);
+            if (!result.Success) return Unauthorized(new { message = result.Message });
+
+            if (result.RefreshToken != null)
+                SetTokenCookie(result.RefreshToken);
+
+            return Ok(result.Data);
+        }
+
+        [Authorize(Policy = Permissions.Auth.Logout)]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var email = User.Identity?.Name;
+            if (string.IsNullOrEmpty(email)) return Unauthorized();
+
+            await _authService.LogoutAsync(email);
+            Response.Cookies.Delete("refreshToken");
+
+            return Ok(new { message = "Logged out successfully" });
+        }
+
+        private void SetTokenCookie(string token)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Expires = DateTime.UtcNow.AddDays(7),
+                Secure = true, // Ensure this is true in production (HTTPS)
+                SameSite = SameSiteMode.Strict
+            };
+            Response.Cookies.Append("refreshToken", token, cookieOptions);
         }
     }
 }

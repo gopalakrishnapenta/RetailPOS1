@@ -28,6 +28,10 @@ Write-Host "Starting Returns Service on Port 5006..."
 Start-Process "dotnet" -ArgumentList "run --project `"ReturnsService/ReturnsService.csproj`" --urls http://127.0.0.1:5006" -WindowStyle Normal
 Start-Sleep -Seconds 5
 
+Write-Host "Starting Notification Service on Port 5176..."
+Start-Process "dotnet" -ArgumentList "run --project `"NotificationService/NotificationService.csproj`" --urls http://127.0.0.1:5176" -WindowStyle Normal
+Start-Sleep -Seconds 5
+
 Write-Host "Starting Ocelot API Gateway on Port 5000..."
 Start-Process "dotnet" -ArgumentList "run --project `"ApiGateway/ApiGateway.csproj`" --urls http://127.0.0.1:5000" -WindowStyle Normal
 
@@ -42,4 +46,5 @@ Write-Host "  Orders Service    -> http://localhost:5003/swagger"
 Write-Host "  Admin Service     -> http://localhost:5004/swagger"
 Write-Host "  Payment Service   -> http://localhost:5005/swagger"
 Write-Host "  Returns Service   -> http://localhost:5006/swagger"
+Write-Host "  Notification Service -> http://localhost:5176/swagger"
 Write-Host "  Angular POS UI    -> http://localhost:4200"

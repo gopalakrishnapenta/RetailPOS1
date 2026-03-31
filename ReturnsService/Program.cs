@@ -9,12 +9,27 @@ using ReturnsService.Repositories;
 using MassTransit;
 using Microsoft.OpenApi.Models;
 using RetailPOS.Common.Authorization;
+using RetailPOS.Common.Logging;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Serilog
+builder.ConfigureSerilog("ReturnsService");
+
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(x => {
+    x.JsonSerializerOptions.AllowTrailingCommas = true;
+});
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+});
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "ReturnsService API", Version = "v1" });
@@ -91,6 +106,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

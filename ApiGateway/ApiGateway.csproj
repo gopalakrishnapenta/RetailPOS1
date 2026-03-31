@@ -10,4 +10,8 @@
     <PackageReference Include="Ocelot" Version="24.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\RetailPOS.Common\RetailPOS.Common.csproj" />
+  </ItemGroup>
+
 </Project>

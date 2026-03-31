@@ -40,6 +40,7 @@ namespace ReturnsService.Services
                 OrderId = returnRequest.OriginalBillId,
                 ServiceReturnId = returnRequest.Id,
                 StoreId = returnRequest.StoreId,
+                CustomerMobile = returnRequest.CustomerMobile,
                 Items = new[] { new { ProductId = returnRequest.ProductId, Quantity = returnRequest.Quantity } }
             });
 
@@ -63,6 +64,7 @@ namespace ReturnsService.Services
                 ReturnId = r.Id,
                 StoreId = r.StoreId,
                 RefundAmount = 0, // In a real system, compute this based on items
+                CustomerMobile = r.CustomerMobile,
                 Items = new[] { new { ProductId = r.ProductId, Quantity = r.Quantity } }
             });
         }

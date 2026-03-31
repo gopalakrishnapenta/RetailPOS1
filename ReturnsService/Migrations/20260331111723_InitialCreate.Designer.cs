@@ -12,8 +12,8 @@ using ReturnsService.Data;
 namespace ReturnsService.Migrations
 {
     [DbContext(typeof(ReturnsDbContext))]
-    [Migration("20260330101013_AddCustomerMobileToReturns")]
-    partial class AddCustomerMobileToReturns
+    [Migration("20260331111723_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -34,7 +34,6 @@ namespace ReturnsService.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CustomerMobile")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 

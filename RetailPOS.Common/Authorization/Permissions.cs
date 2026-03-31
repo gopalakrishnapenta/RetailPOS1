@@ -8,6 +8,12 @@ namespace RetailPOS.Common.Authorization
             public const string UsersManage = "users:manage";
         }
 
+        public static class Auth
+        {
+            public const string Refresh = "auth:token:refresh";
+            public const string Logout = "auth:logout";
+        }
+
         public static class Orders
         {
             public const string Create = "orders:create";
@@ -25,6 +31,12 @@ namespace RetailPOS.Common.Authorization
             public const string Approve = "returns:approve";
         }
 
+        public static class Payments
+        {
+            public const string CreateOrder = "payments:create_order";
+            public const string Verify = "payments:verify";
+        }
+
         public static class Admin
         {
             public const string ReportsView = "admin:reports:view";
@@ -40,6 +52,11 @@ namespace RetailPOS.Common.Authorization
             public const string Delete = "catalog:delete";
             public const string CategoriesEdit = "catalog:categories:edit";
             public const string CategoriesView = "catalog:categories:view";
+        }
+
+        public static class Notifications
+        {
+            public const string View = "notifications:view";
         }
     }
 }

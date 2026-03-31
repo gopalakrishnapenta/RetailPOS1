@@ -11,8 +11,13 @@ using MassTransit;
 using CatalogService.Consumers;
 using CatalogService.Middleware;
 using RetailPOS.Common.Authorization;
+using RetailPOS.Common.Logging;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog
+builder.ConfigureSerilog("CatalogService");
 
 builder.Services.AddMassTransit(x =>
 {
@@ -50,8 +55,10 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
-builder.Services.AddControllers().AddJsonOptions(x =>
-    x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+builder.Services.AddControllers().AddJsonOptions(x => {
+    x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    x.JsonSerializerOptions.AllowTrailingCommas = true;
+});
 builder.Services.AddEndpointsApiExplorer();
 
 // ── Swagger with Bearer token support ────────────────────────────────────

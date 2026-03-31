@@ -23,6 +23,7 @@ namespace RetailPOS.Contracts
         int ReturnId { get; }
         int StoreId { get; }
         decimal RefundAmount { get; }
+        string? CustomerMobile { get; }
         List<ReturnedItemEvent> Items { get; }
     }
 

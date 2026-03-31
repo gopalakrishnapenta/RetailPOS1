@@ -61,7 +61,9 @@ namespace IdentityService.Data
             var cashierSubset = new[] {
                 Permissions.Orders.Create, Permissions.Orders.View, Permissions.Orders.Finalize,
                 Permissions.Orders.Hold, Permissions.Returns.Initiate, Permissions.Returns.View,
-                Permissions.Catalog.View, Permissions.Catalog.CategoriesView
+                Permissions.Catalog.View, Permissions.Catalog.CategoriesView,
+                Permissions.Auth.Logout, Permissions.Auth.Refresh,
+                Permissions.Payments.CreateOrder, Permissions.Payments.Verify
             };
             foreach (var code in cashierSubset)
             {
@@ -101,7 +103,12 @@ namespace IdentityService.Data
 
             // 6. [REPAIR] Ensure StoreManager has catalog:manage (Fixes manual SQL misses)
             logger.LogInformation("[RBAC] Running Permission Repair for StoreManager...");
-            var managerPermissions = new[] { Permissions.Catalog.Manage, Permissions.Catalog.View, Permissions.Orders.View };
+            var managerPermissions = new[] { 
+                Permissions.Catalog.Manage, 
+                Permissions.Catalog.View, 
+                Permissions.Orders.View,
+                Permissions.Notifications.View
+            };
             foreach (var code in managerPermissions)
             {
                 await EnsureMapping(context, managerRole.Id, code);

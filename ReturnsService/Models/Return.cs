@@ -20,6 +20,9 @@ namespace ReturnsService.Models
         [MaxLength(500)]
         public string ManagerApprovalNote { get; set; } = string.Empty;
 
+        [MaxLength(20)]
+        public string? CustomerMobile { get; set; }
+
         public int StoreId { get; set; }
         public DateTime Date { get; set; } = DateTime.UtcNow;
     }

@@ -1,7 +1,12 @@
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
+using RetailPOS.Common.Logging;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog
+builder.ConfigureSerilog("ApiGateway");
 
 builder.Configuration.AddJsonFile("ocelot.json", optional: true, reloadOnChange: true);
 
@@ -12,9 +17,10 @@ builder.Services.AddOcelot(builder.Configuration);
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy",
-        builder => builder.AllowAnyOrigin()
+        policy => policy.WithOrigins("http://localhost:4200")
         .AllowAnyMethod()
-        .AllowAnyHeader());
+        .AllowAnyHeader()
+        .AllowCredentials());
 });
 
 var app = builder.Build();

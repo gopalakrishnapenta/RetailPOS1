@@ -77,6 +77,8 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean { return !!localStorage.getItem(this.tokenKey); }
+  getToken(): string | null { return localStorage.getItem(this.tokenKey); }
   getRole(): string | null { return localStorage.getItem(this.roleKey); }
+  getStoreId(): number { return parseInt(localStorage.getItem('pos_store_id') || '0'); }
   getStores() { return this.http.get<any[]>(`${this.baseUrl}/stores`); }
 }
