@@ -18,60 +18,60 @@ namespace IdentityService.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto request)
+        public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
-            var result = await _authService.LoginAsync(request);
+            var result = await _authService.LoginAsync(loginDto);
             if (!result.Success) return Unauthorized(new { message = result.Message });
             return Ok(new { requiresOtp = result.Message == "OTP_SENT", message = result.Message, data = result.Data });
         }
 
         [HttpPost("verify-login-otp")]
-        public async Task<IActionResult> VerifyLoginOtp([FromBody] VerifyLoginOtpDto request)
+        public async Task<IActionResult> VerifyLoginOtp([FromBody] VerifyLoginOtpDto verifyDto)
         {
-            var result = await _authService.VerifyLoginOtpAsync(request);
+            var result = await _authService.VerifyLoginOtpAsync(verifyDto);
             if (!result.Success) return Unauthorized(new { message = result.Message });
             return Ok(result);
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto request)
+        public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
         {
-            await _authService.RegisterAsync(request);
+            await _authService.RegisterAsync(registerDto);
             return Ok(new { message = "Registration successful. Please check your email for the verification code." });
         }
 
         [HttpPost("verify-email")]
-        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto request)
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto verifyDto)
         {
-            await _authService.VerifyEmailAsync(request.Email, request.Otp);
+            await _authService.VerifyEmailAsync(verifyDto.Email, verifyDto.Otp);
             return Ok(new { message = "Email verified successfully. You can now log in." });
         }
 
         [HttpPost("resend-verification")]
-        public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationDto request)
+        public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationDto resendDto)
         {
-            await _authService.ResendVerificationOtpAsync(request.Email);
+            await _authService.ResendVerificationOtpAsync(resendDto.Email);
             return Ok(new { message = "Verification code resent successfully." });
         }
 
         [HttpPost("send-otp")]
-        public async Task<IActionResult> SendOtp([FromBody] ForgotPasswordDto request)
+        public async Task<IActionResult> SendOtp([FromBody] ForgotPasswordDto forgotDto)
         {
-            await _authService.SendOtpAsync(request.Email);
+            await _authService.SendOtpAsync(forgotDto.Email);
             return Ok(new { message = "If the email exists, an OTP was sent." });
         }
 
         [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto request)
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto resetDto)
         {
-            await _authService.ResetPasswordAsync(request);
+            await _authService.ResetPasswordAsync(resetDto);
             return Ok(new { message = "Password reset successfully" });
         }
 
         [HttpPost("google-login")]
-        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto request)
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto googleDto)
         {
-            var result = await _authService.GoogleLoginAsync(request.IdToken, request.StoreId, request.Role);
+            var result = await _authService.GoogleLoginAsync(googleDto.IdToken, googleDto.StoreId, googleDto.Role);
             if (!result.Success)
             {
                 if (result.Message == "GOOGLE_SIGNUP_REQUIRED_FIELDS")
@@ -82,6 +82,13 @@ namespace IdentityService.Controllers
             }
 
             return Ok(result.Data);
+        }
+
+        [HttpGet("users")]
+        public async Task<IActionResult> GetUsers()
+        {
+            var users = await _authService.GetUsersAsync();
+            return Ok(users);
         }
 
         [HttpGet("stores")]

@@ -13,7 +13,7 @@ namespace IdentityService.DTOs
     public class RegisterDto
     {
         [Required]
-        [RegularExpression(@"^[a-z0-9.]+@gmail\.com$", ErrorMessage = "Only @gmail.com accounts are allowed.")]
+        [RegularExpression(@"^[a-zA-Z0-9.]+@gmail\.com$", ErrorMessage = "Only @gmail.com accounts are allowed.")]
         public string Email { get; set; } = string.Empty;
 
         [Required]

@@ -29,7 +29,11 @@ namespace AdminService.Data
             modelBuilder.Entity<AdminStoreEntity>().HasQueryFilter(s => s.IsActive && (s.Id == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || s.Id == 0));
             modelBuilder.Entity<AdminCategoryEntity>().HasQueryFilter(c => c.IsActive && (c.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || c.StoreId == 0));
             modelBuilder.Entity<SyncedOrder>().HasQueryFilter(o => o.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || o.StoreId == 0);
-            modelBuilder.Entity<StaffMember>().HasQueryFilter(sm => sm.AssignedStoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || sm.AssignedStoreId == 0);
+            modelBuilder.Entity<StaffMember>().HasQueryFilter(sm => 
+                sm.AssignedStoreId == _tenantProvider.StoreId || 
+                (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || 
+                sm.AssignedStoreId == 0 || 
+                sm.AssignedStoreId == null);
         }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

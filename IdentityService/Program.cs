@@ -69,7 +69,7 @@ builder.Services.AddSwaggerGen(c =>
 // ── JWT Authentication ────────────────────────────────────────────────────
 var jwtKey    = builder.Configuration["Jwt:Key"]      ?? "super_secret_key_1234567890_pos_system";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]   ?? "RetailPOS";
-var jwtAud    = builder.Configuration["Jwt:Audience"] ?? "RetailPOSClients";
+var jwtAud    = "IdentityService";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

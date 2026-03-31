@@ -7,11 +7,11 @@ using IdentityService.Data;
 using IdentityService.Models;
 using IdentityService.DTOs;
 using IdentityService.Interfaces;
-using Google.Apis.Auth;
 using IdentityService.Exceptions;
 using IdentityService.Repositories;
 using MassTransit;
 using RetailPOS.Contracts;
+using ModelsUser = IdentityService.Models.User;
 
 namespace IdentityService.Services
 {
@@ -126,7 +126,7 @@ namespace IdentityService.Services
                 throw new ConflictException("Account exists.");
 
             var otp = new Random().Next(100000, 999999).ToString();
-            var user = new User
+            var user = new ModelsUser
             {
                 Email = registerDto.Email,
                 PasswordHash = registerDto.Password,
@@ -144,6 +144,9 @@ namespace IdentityService.Services
                 UserId = user.Id,
                 Email = user.Email
             });
+            
+            // Actually send the verification email!
+            await _emailService.SendEmailAsync(user.Email, "NexusPOS - Verification Code", $"Your verification code is: {otp}");
 
             return true;
         }
@@ -165,6 +168,9 @@ namespace IdentityService.Services
             user.VerificationOtp = otp;
             user.VerificationOtpExpiry = DateTime.UtcNow.AddMinutes(5);
             await _userRepository.SaveChangesAsync();
+            
+            // Actually send the verification email!
+            await _emailService.SendEmailAsync(user.Email, "NexusPOS - Verification Code (Resent)", $"Your verification code is: {otp}");
             return otp;
         }
 
@@ -176,6 +182,9 @@ namespace IdentityService.Services
             user.Otp = otp;
             user.OtpExpiry = DateTime.UtcNow.AddMinutes(5);
             await _userRepository.SaveChangesAsync();
+            
+            // Actually send the password reset email!
+            await _emailService.SendEmailAsync(user.Email, "NexusPOS - Password Reset Code", $"Your password reset code is: {otp}");
             return otp;
         }
 
@@ -190,7 +199,7 @@ namespace IdentityService.Services
 
         public async Task<AuthResult> GoogleLoginAsync(string idToken, int? storeId = null, string? role = null)
         {
-            var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, new GoogleJsonWebSignature.ValidationSettings { Audience = new List<string> { _config["Google:ClientId"]! } });
+            var payload = await Google.Apis.Auth.GoogleJsonWebSignature.ValidateAsync(idToken, new Google.Apis.Auth.GoogleJsonWebSignature.ValidationSettings { Audience = new List<string> { _config["Google:ClientId"]! } });
             var user = await _userRepository.GetWithRolesByEmailAsync(payload.Email);
             
             if (user == null)
@@ -198,7 +207,7 @@ namespace IdentityService.Services
                 if (!storeId.HasValue || string.IsNullOrEmpty(role)) return new AuthResult { Success = false, Message = "SIGNUP_REQUIRED" };
                 var db = ((UserRepository)_userRepository).GetContext();
                 var roleEnt = await db.Roles.FirstOrDefaultAsync(r => r.Name == role);
-                user = new IdentityService.Models.User { Email = payload.Email, PasswordHash = Guid.NewGuid().ToString(), IsEmailVerified = true };
+                user = new ModelsUser { Email = payload.Email, PasswordHash = Guid.NewGuid().ToString(), IsEmailVerified = true };
                 user.UserRoles.Add(new UserStoreRole { RoleId = roleEnt?.Id ?? 3, StoreId = storeId });
                 await _userRepository.AddAsync(user);
                 await _userRepository.SaveChangesAsync();
@@ -212,7 +221,7 @@ namespace IdentityService.Services
             return new AuthResult { Success = true, Data = new AuthResponseDto { Token = token, Role = map.Role.Name, Email = user.Email, StoreId = map.StoreId ?? 0, Permissions = perms } };
         }
 
-        private string GenerateJwt(IdentityService.Models.User user, string roleName, List<string> permissions, int storeId, string? storeCode = null, string? shiftDate = null)
+        private string GenerateJwt(ModelsUser user, string roleName, List<string> permissions, int storeId, string? storeCode = null, string? shiftDate = null)
         {
             var claims = new List<Claim> {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -227,12 +236,16 @@ namespace IdentityService.Services
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "super_secret_key_1234567890_pos_system"));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             
-            // Realign with unified cluster audience
-            var audience = _config["Jwt:Audience"] ?? "RetailPOS_Services";
+            // Generate token with multiple audiences
+            var audiences = _config.GetSection("Jwt:Audiences").Get<string[]>() ?? new[] { "RetailPOS_Services" };
+            foreach (var aud in audiences)
+            {
+                claims.Add(new Claim(JwtRegisteredClaimNames.Aud, aud));
+            }
 
             var token = new JwtSecurityToken(
                 _config["Jwt:Issuer"], 
-                audience, 
+                null, // Null because we added audiences to the claims list
                 claims, 
                 expires: DateTime.Now.AddHours(8), 
                 signingCredentials: creds);
@@ -250,6 +263,13 @@ namespace IdentityService.Services
         {
             await _emailService.SendEmailAsync(toEmail, "Test", "Success");
             return true;
+        }
+        public async Task<List<UserSyncDto>> GetUsersAsync()
+        {
+            var users = await _userRepository.GetAllAsync();
+            return users
+                .Select(u => new UserSyncDto(u.Id, u.Email, u.IsEmailVerified))
+                .ToList();
         }
     }
 }

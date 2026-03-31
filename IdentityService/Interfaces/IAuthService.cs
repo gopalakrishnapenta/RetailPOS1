@@ -14,7 +14,9 @@ namespace IdentityService.Interfaces
         Task<AuthResult> GoogleLoginAsync(string idToken, int? storeId = null, string? role = null);
         Task<List<StoreDto>> GetStoresAsync();
         Task<bool> TestEmailAsync(string toEmail);
+        Task<List<UserSyncDto>> GetUsersAsync();
     }
 
     public record StoreDto(int Id, string StoreCode, string Name);
+    public record UserSyncDto(int Id, string Email, bool IsEmailVerified);
 }
