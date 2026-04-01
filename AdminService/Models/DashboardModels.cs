@@ -24,4 +24,15 @@ namespace AdminService.Models
         public int LowStockAlerts { get; set; }
         public DateTime LastUpdated { get; set; }
     }
+
+    public class SyncedReturn
+    {
+        [Key]
+        public int Id { get; set; }
+        public int OrderId { get; set; }
+        public int ReturnId { get; set; }
+        public decimal RefundAmount { get; set; }
+        public int StoreId { get; set; }
+        public DateTime Date { get; set; }
+    }
 }

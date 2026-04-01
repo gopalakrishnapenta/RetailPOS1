@@ -63,7 +63,7 @@ namespace ReturnsService.Services
                 OrderId = r.OriginalBillId,
                 ReturnId = r.Id,
                 StoreId = r.StoreId,
-                RefundAmount = 0, // In a real system, compute this based on items
+                RefundAmount = r.RefundAmount, 
                 CustomerMobile = r.CustomerMobile,
                 Items = new[] { new { ProductId = r.ProductId, Quantity = r.Quantity } }
             });

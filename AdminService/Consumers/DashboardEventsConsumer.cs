@@ -55,12 +55,22 @@ namespace AdminService.Consumers
 
             try
             {
-                // Find the original order to update stats if necessary, or just log the return
-                // In a true read-model, we might just store a 'SyncedReturn' entry as well.
-                // For now, calculating Net Sales dynamically from SyncedOrders - SyncedReturns is best.
-                
-                // (Future: implementing SyncedReturn model if dashboard needs specific return trends)
-                _logger.LogInformation($"Return for Order {data.OrderId} detected. Net Sales will be updated.");
+                // Check if this return is already synced
+                var existing = await _context.SyncedReturns.IgnoreQueryFilters().FirstOrDefaultAsync(r => r.ReturnId == data.ReturnId);
+                if (existing != null) return;
+
+                var syncedReturn = new SyncedReturn
+                {
+                    OrderId = data.OrderId,
+                    ReturnId = data.ReturnId,
+                    StoreId = data.StoreId,
+                    RefundAmount = data.RefundAmount,
+                    Date = DateTime.UtcNow
+                };
+
+                _context.SyncedReturns.Add(syncedReturn);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"Synced Return {data.ReturnId} for Order {data.OrderId} to Dashboard.");
             }
             catch (Exception ex)
             {

@@ -24,6 +24,13 @@ namespace CatalogService.Controllers
             return Ok(await _productService.GetAllProductsAsync());
         }
 
+        [HttpGet("all")]
+        [Authorize(Policy = Permissions.Catalog.View)]
+        public async Task<IActionResult> GetAllUnfiltered()
+        {
+            return Ok(await _productService.GetAllUnfilteredProductsAsync());
+        }
+
         [HttpPost]
         [Authorize(Policy = Permissions.Catalog.Manage)]
         public async Task<IActionResult> Create([FromBody] ProductDto productDto)
@@ -46,6 +53,14 @@ namespace CatalogService.Controllers
         {
             await _productService.DeleteProductAsync(id);
             return Ok(new { message = "Product deleted successfully" });
+        }
+
+        [HttpPost("{id}/restore")]
+        [Authorize(Policy = Permissions.Catalog.Manage)]
+        public async Task<IActionResult> Restore(int id)
+        {
+            await _productService.RestoreProductAsync(id);
+            return Ok(new { message = "Product restored successfully" });
         }
     }
 }

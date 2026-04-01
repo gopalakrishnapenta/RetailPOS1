@@ -60,7 +60,12 @@ namespace AdminService.Controllers
         [Authorize(Policy = RetailPOS.Common.Authorization.Permissions.Admin.StoresManage)]
         public async Task<IActionResult> UpdateStore(int id, AdminStoreEntity store)
         {
-            if (id != store.Id) return BadRequest();
+            // Set ID from path if missing in body
+            if (store.Id == 0) store.Id = id;
+
+            if (id != store.Id) 
+                return BadRequest(new { message = "Path ID and Body ID mismatch." });
+
             _context.Entry(store).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 

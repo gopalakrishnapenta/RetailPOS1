@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ReturnsService.Data;
 
@@ -11,9 +12,11 @@ using ReturnsService.Data;
 namespace ReturnsService.Migrations
 {
     [DbContext(typeof(ReturnsDbContext))]
-    partial class ReturnsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260401184544_AddRefundAmount")]
+    partial class AddRefundAmount
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

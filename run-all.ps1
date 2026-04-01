@@ -35,11 +35,8 @@ Start-Sleep -Seconds 5
 Write-Host "Starting Ocelot API Gateway on Port 5000..."
 Start-Process "dotnet" -ArgumentList "run --project `"ApiGateway/ApiGateway.csproj`" --urls http://127.0.0.1:5000" -WindowStyle Normal
 
-Write-Host "Starting Angular POS UI (dev server)..."
-Start-Process "cmd.exe" -ArgumentList "/k `"cd pos-ui && npm start`"" -WindowStyle Normal
-
 Write-Host ""
-Write-Host "All services launched sequentially! Swagger UIs available at:"
+Write-Host "All backend services launched sequentially! Swagger UIs available at:"
 Write-Host "  Identity Service  -> http://localhost:5001/swagger"
 Write-Host "  Catalog Service   -> http://localhost:5002/swagger"
 Write-Host "  Orders Service    -> http://localhost:5003/swagger"
@@ -47,4 +44,4 @@ Write-Host "  Admin Service     -> http://localhost:5004/swagger"
 Write-Host "  Payment Service   -> http://localhost:5005/swagger"
 Write-Host "  Returns Service   -> http://localhost:5006/swagger"
 Write-Host "  Notification Service -> http://localhost:5176/swagger"
-Write-Host "  Angular POS UI    -> http://localhost:4200"
+Write-Host "  API Gateway       -> http://localhost:5000"

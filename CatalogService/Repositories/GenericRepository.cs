@@ -50,5 +50,7 @@ namespace CatalogService.Repositories
         {
             await _context.SaveChangesAsync();
         }
+
+        public CatalogDbContext GetContext() => _context;
     }
 }

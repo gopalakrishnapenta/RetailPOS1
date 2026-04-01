@@ -24,12 +24,27 @@ namespace CatalogService.Controllers
             return Ok(await _categoryService.GetAllCategoriesAsync());
         }
 
+        [HttpGet("all")]
+        [Authorize(Policy = Permissions.Catalog.CategoriesView)]
+        public async Task<IActionResult> GetAllUnfiltered()
+        {
+            return Ok(await _categoryService.GetAllUnfilteredCategoriesAsync());
+        }
+
         [HttpGet("{id}")]
         [Authorize(Policy = Permissions.Catalog.CategoriesView)]
         public async Task<IActionResult> Get(int id)
         {
             var category = await _categoryService.GetCategoryByIdAsync(id);
             return Ok(category);
+        }
+
+        [HttpPost("{id}/restore")]
+        [Authorize(Policy = Permissions.Catalog.CategoriesEdit)]
+        public async Task<IActionResult> Restore(int id)
+        {
+            await _categoryService.RestoreCategoryAsync(id);
+            return Ok(new { message = "Category restored successfully" });
         }
     }
 }

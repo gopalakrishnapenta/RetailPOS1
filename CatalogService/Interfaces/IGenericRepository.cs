@@ -11,5 +11,6 @@ namespace CatalogService.Interfaces
         void Update(T entity);
         void Delete(T entity);
         Task SaveChangesAsync();
+        CatalogService.Data.CatalogDbContext GetContext();
     }
 }

@@ -19,6 +19,7 @@ namespace AdminService.Data
         public DbSet<SyncedOrder> SyncedOrders { get; set; }
         public DbSet<DashboardStats> DashboardStats { get; set; }
         public DbSet<StaffMember> StaffMembers { get; set; }
+        public DbSet<SyncedReturn> SyncedReturns { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -29,6 +30,13 @@ namespace AdminService.Data
             modelBuilder.Entity<AdminStoreEntity>().HasQueryFilter(s => s.IsActive && (s.Id == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || s.Id == 0));
             modelBuilder.Entity<AdminCategoryEntity>().HasQueryFilter(c => c.IsActive && (c.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || c.StoreId == 0));
             modelBuilder.Entity<SyncedOrder>().HasQueryFilter(o => o.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || o.StoreId == 0);
+            modelBuilder.Entity<SyncedReturn>().HasQueryFilter(r => r.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || r.StoreId == 0);
+            
+            // Disable identity generation for the synced key (we use the ID from OrdersService)
+            modelBuilder.Entity<SyncedOrder>()
+                .Property(o => o.OrderId)
+                .ValueGeneratedNever();
+
             modelBuilder.Entity<StaffMember>().HasQueryFilter(sm => 
                 sm.AssignedStoreId == _tenantProvider.StoreId || 
                 (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || 

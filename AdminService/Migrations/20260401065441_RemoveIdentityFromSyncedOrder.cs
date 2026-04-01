@@ -5,13 +5,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AdminService.Migrations
 {
     /// <inheritdoc />
-    public partial class RemoveStaffMemberIdentity : Migration
+    public partial class RemoveIdentityFromSyncedOrder : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
         }
-
         protected override void Down(MigrationBuilder migrationBuilder)
         {
         }

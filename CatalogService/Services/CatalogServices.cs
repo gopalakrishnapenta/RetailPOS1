@@ -19,8 +19,16 @@ namespace CatalogService.Services
         public async Task<IEnumerable<ProductDto>> GetAllProductsAsync()
         {
             var products = await _productRepository.GetProductsWithCategoryAsync();
-            // Filter: Hide products where Category IsActive is false
+            // Filter: Hide products where Category IsActive is false (and the product itself via global filter)
             return products.Where(p => p.Category == null || p.Category.IsActive).Select(MapToDto);
+        }
+
+        public async Task<IEnumerable<ProductDto>> GetAllUnfilteredProductsAsync()
+        {
+            // Ignore query filters to see soft-deleted (IsActive = false) items
+            var db = ((CatalogService.Repositories.ProductRepository)_productRepository).GetContext();
+            var products = await db.Products.IgnoreQueryFilters().Include(p => p.Category).ToListAsync();
+            return products.Select(MapToDto);
         }
 
 
@@ -110,7 +118,20 @@ namespace CatalogService.Services
         {
             var p = await _productRepository.GetByIdAsync(id);
             if (p == null) throw new NotFoundException($"Product with ID {id} not found.");
-            _productRepository.Delete(p);
+            
+            p.IsActive = false; // Soft delete
+            _productRepository.Update(p);
+            await _productRepository.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RestoreProductAsync(int id)
+        {
+            var p = await _productRepository.GetByIdIgnoringFiltersAsync(id);
+            if (p == null) throw new NotFoundException($"Product with ID {id} not found.");
+            
+            p.IsActive = true;
+            _productRepository.Update(p);
             await _productRepository.SaveChangesAsync();
             return true;
         }
@@ -136,6 +157,16 @@ namespace CatalogService.Services
             var categories = await _categoryRepository.GetAllAsync();
             // Filter: Only return active categories
             return categories.Where(c => c.IsActive).Select(c => new CategoryDto
+            {
+                Id = c.Id, Name = c.Name, Description = c.Description, IsActive = c.IsActive
+            });
+        }
+
+        public async Task<IEnumerable<CategoryDto>> GetAllUnfilteredCategoriesAsync()
+        {
+            var db = ((CatalogService.Repositories.CategoryRepository)_categoryRepository).GetContext();
+            var categories = await db.Categories.IgnoreQueryFilters().ToListAsync();
+            return categories.Select(c => new CategoryDto
             {
                 Id = c.Id, Name = c.Name, Description = c.Description, IsActive = c.IsActive
             });
@@ -172,9 +203,23 @@ namespace CatalogService.Services
         {
             var c = await _categoryRepository.GetByIdAsync(id);
             if (c == null) throw new NotFoundException($"Category with ID {id} not found.");
-            _categoryRepository.Delete(c);
+            
+            c.IsActive = false; // Soft delete
+            _categoryRepository.Update(c);
             await _categoryRepository.SaveChangesAsync();
             return true;
         }
+
+        public async Task<bool> RestoreCategoryAsync(int id)
+        {
+            var c = await _categoryRepository.GetByIdIgnoringFiltersAsync(id);
+            if (c == null) throw new NotFoundException($"Category with ID {id} not found.");
+            
+            c.IsActive = true;
+            _categoryRepository.Update(c);
+            await _categoryRepository.SaveChangesAsync();
+            return true;
+        }
+        
     }
 }

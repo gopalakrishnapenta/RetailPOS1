@@ -26,17 +26,23 @@ namespace AdminService.Services
 
             // Fetch local synced data (already filtered by StoreId via Global Query Filter)
             var bills = await _context.SyncedOrders.AsNoTracking().ToListAsync();
+            var returns = await _context.SyncedReturns.AsNoTracking().ToListAsync();
             
             // For Low Stock Alerts, we still reference our local Categories/Inventory count if available
-            // but we can also use a simplified count for now.
             var lowStockCount = await _context.InventoryAdjustments.CountAsync(a => a.Quantity < 10); // Simplified logic
 
             var todayBills = bills.Where(b => b.Date.Date == today).ToList();
             var yesterdayBills = bills.Where(b => b.Date.Date == startOfYesterday).ToList();
 
-            var todaySales = todayBills.Sum(b => b.TotalAmount);
-            var yesterdaySales = yesterdayBills.Sum(b => b.TotalAmount);
-            var totalSales = bills.Sum(b => b.TotalAmount);
+            var todayReturns = returns.Where(r => r.Date.Date == today).ToList();
+            var yesterdayReturns = returns.Where(r => r.Date.Date == startOfYesterday).ToList();
+
+            var todaySales = todayBills.Sum(b => b.TotalAmount) - todayReturns.Sum(r => r.RefundAmount);
+            var yesterdaySales = yesterdayBills.Sum(b => b.TotalAmount) - yesterdayReturns.Sum(r => r.RefundAmount);
+            
+            var totalGrossSales = bills.Sum(b => b.TotalAmount);
+            var totalRefunded = returns.Sum(r => r.RefundAmount);
+            var totalNetSales = totalGrossSales - totalRefunded;
 
             double salesChange = yesterdaySales > 0 
                 ? Math.Round((double)((todaySales - yesterdaySales) / yesterdaySales * 100), 1) 
@@ -51,14 +57,17 @@ namespace AdminService.Services
             }).ToList();
 
             var hourlyTrend = todayBills.GroupBy(b => b.Date.ToLocalTime().Hour).OrderBy(g => g.Key)
-                .Select(g => new HourlyTrendDto { Hour = $"{g.Key:D2}:00", Sales = g.Sum(b => b.TotalAmount) }).ToList();
+                .Select(g => new HourlyTrendDto { 
+                    Hour = $"{g.Key:D2}:00", 
+                    Sales = g.Sum(b => b.TotalAmount) - todayReturns.Where(r => r.Date.ToLocalTime().Hour == g.Key).Sum(r => r.RefundAmount)
+                }).ToList();
 
             return new DashboardDto
             {
-                TotalSales = totalSales,
+                TotalSales = totalNetSales,
                 TodaySales = todaySales,
-                GrossSales = totalSales,
-                RefundedAmount = 0, // Returns handled separately
+                GrossSales = totalGrossSales,
+                RefundedAmount = totalRefunded, 
                 TotalBills = bills.Count,
                 TodayBills = todayBills.Count,
                 SalesChangePercent = salesChange,

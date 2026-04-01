@@ -10,6 +10,7 @@ namespace ReturnsService.Models
         public int OriginalBillId { get; set; }
         public int ProductId { get; set; }
         public int Quantity { get; set; }
+        public decimal RefundAmount { get; set; }
 
         [MaxLength(500)]
         public string Reason { get; set; } = string.Empty;

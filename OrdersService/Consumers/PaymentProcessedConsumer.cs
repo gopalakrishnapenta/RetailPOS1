@@ -26,8 +26,10 @@ namespace OrdersService.Consumers
 
             try
             {
-                // Find the bill (ignoring tenant filters if necessary, or using the context)
-                var bill = await _context.Bills.Include(b => b.Items).FirstOrDefaultAsync(b => b.Id == data.OrderId);
+                // Find the bill (ignoring tenant filters to ensuring background processing reaches the record)
+                var bill = await _context.Bills.IgnoreQueryFilters()
+                    .Include(b => b.Items)
+                    .FirstOrDefaultAsync(b => b.Id == data.OrderId);
                 if (bill == null)
                 {
                     _logger.LogWarning($"Bill {data.OrderId} not found for payment update.");

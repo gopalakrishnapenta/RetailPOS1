@@ -73,19 +73,8 @@ namespace IdentityService.Services
             user.OtpExpiry = null;
             await _userRepository.SaveChangesAsync();
 
-            IdentityService.Models.UserStoreRole? mapping = null;
-            if (!string.IsNullOrEmpty(verifyDto.StoreCode))
-            {
-                mapping = user.UserRoles.FirstOrDefault(ur => ur.Store?.StoreCode == verifyDto.StoreCode);
-                if (mapping == null && user.UserRoles.Any(ur => ur.StoreId == null && ur.Role.Name == "Admin"))
-                {
-                    mapping = user.UserRoles.First(ur => ur.StoreId == null);
-                }
-            }
-            else
-            {
-                mapping = user.UserRoles.OrderBy(ur => ur.StoreId == null ? 0 : 1).FirstOrDefault();
-            }
+            // Automatically pick the primary store mapping (Admin has null StoreId, which we prefer first)
+            var mapping = user.UserRoles.OrderBy(ur => ur.StoreId == null ? 0 : 1).FirstOrDefault();
 
             if (mapping == null) 
             {
@@ -104,7 +93,7 @@ namespace IdentityService.Services
             }
 
             var perms = mapping.Role.RolePermissions.Select(rp => rp.Permission.Code).ToList();
-            var token = GenerateJwt(user, mapping.Role.Name, perms, mapping.StoreId ?? 0, mapping.Store?.StoreCode, verifyDto.ShiftDate ?? DateTime.Today.ToString("yyyy-MM-dd"));
+            var token = GenerateJwt(user, mapping.Role.Name, perms, mapping.StoreId ?? 0, mapping.Store?.StoreCode, DateTime.Today.ToString("yyyy-MM-dd"));
             
             // [PHASE 2] Generate and Save Refresh Token
             var refreshToken = GenerateRefreshToken();

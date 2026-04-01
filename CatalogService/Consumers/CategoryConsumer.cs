@@ -19,36 +19,9 @@ namespace CatalogService.Consumers
         public async Task Consume(ConsumeContext<CategoryCreatedEvent> context)
         {
             var data = context.Message;
-            _logger.LogInformation($"Consuming CategoryCreatedEvent: {data.Name}");
+            _logger.LogInformation($"Consuming CategoryCreatedEvent: {data.Id} -> {data.Name}");
 
-            var existing = await _categoryRepository.GetByIdIgnoringFiltersAsync(data.Id);
-            if (existing == null)
-            {
-                var category = new Category
-                {
-                    Id = data.Id,
-                    Name = data.Name,
-                    Description = data.Description,
-                    IsActive = data.IsActive,
-                    StoreId = data.StoreId
-                };
-
-                await _categoryRepository.AddAsync(category);
-                await _categoryRepository.SaveChangesAsync();
-                _logger.LogInformation($"Category {data.Name} synced successfully (Created) in CatalogService.");
-            }
-            else
-            {
-                // UPSERT: Update if it already exists (useful for resync)
-                existing.Name = data.Name;
-                existing.Description = data.Description;
-                existing.IsActive = data.IsActive;
-                existing.StoreId = data.StoreId;
-                _categoryRepository.Update(existing);
-
-                await _categoryRepository.SaveChangesAsync();
-                _logger.LogInformation($"Category {data.Name} synced successfully (Updated) in CatalogService.");
-            }
+            await UpsertCategory(data.Id, data.Name, data.Description, data.IsActive, data.StoreId);
         }
 
         public async Task Consume(ConsumeContext<CategoryUpdatedEvent> context)
@@ -56,18 +29,36 @@ namespace CatalogService.Consumers
             var data = context.Message;
             _logger.LogInformation($"Consuming CategoryUpdatedEvent: {data.Id} -> {data.Name}");
 
-            var category = await _categoryRepository.GetByIdAsync(data.Id);
-            if (category != null)
-            {
-                category.Name = data.Name;
-                category.Description = data.Description;
-                category.IsActive = data.IsActive;
-                category.StoreId = data.StoreId;
-                _categoryRepository.Update(category);
+            await UpsertCategory(data.Id, data.Name, data.Description, data.IsActive, data.StoreId);
+        }
 
-                await _categoryRepository.SaveChangesAsync();
-                _logger.LogInformation($"Category {data.Id} updated successfully in CatalogService (Active: {data.IsActive}).");
+        private async Task UpsertCategory(int id, string name, string description, bool isActive, int storeId)
+        {
+            var category = await _categoryRepository.GetByIdIgnoringFiltersAsync(id);
+            if (category == null)
+            {
+                category = new Category
+                {
+                    Id = id,
+                    Name = name,
+                    Description = description,
+                    IsActive = isActive,
+                    StoreId = storeId
+                };
+                await _categoryRepository.AddAsync(category);
+                _logger.LogInformation($"Category {id} created via synchronization.");
             }
+            else
+            {
+                category.Name = name;
+                category.Description = description;
+                category.IsActive = isActive;
+                category.StoreId = storeId;
+                _categoryRepository.Update(category);
+                _logger.LogInformation($"Category {id} updated via synchronization.");
+            }
+
+            await _categoryRepository.SaveChangesAsync();
         }
 
         public async Task Consume(ConsumeContext<CategoryDeletedEvent> context)
@@ -75,7 +66,7 @@ namespace CatalogService.Consumers
             var data = context.Message;
             _logger.LogInformation($"Consuming CategoryDeletedEvent: {data.Id}");
 
-            var category = await _categoryRepository.GetByIdAsync(data.Id);
+            var category = await _categoryRepository.GetByIdIgnoringFiltersAsync(data.Id);
             if (category != null)
             {
                 _categoryRepository.Delete(category);
