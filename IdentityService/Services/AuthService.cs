@@ -11,6 +11,7 @@ using IdentityService.Exceptions;
 using IdentityService.Repositories;
 using MassTransit;
 using RetailPOS.Contracts;
+using BCryptNet = BCrypt.Net.BCrypt;
 using ModelsUser = IdentityService.Models.User;
 
 namespace IdentityService.Services
@@ -37,14 +38,38 @@ namespace IdentityService.Services
         public async Task<AuthResult> LoginAsync(LoginDto loginDto)
         {
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == loginDto.Email);
-            if (user == null || user.PasswordHash != loginDto.Password)
+            if (user == null)
+                throw new ValidationException("Invalid email or password.");
+
+            bool isValid = false;
+
+            // Check if it's a BCrypt hash (starts with $2a$, $2b$, or $2y$)
+            if (!string.IsNullOrEmpty(user.PasswordHash) && 
+                (user.PasswordHash.StartsWith("$2a$") || user.PasswordHash.StartsWith("$2b$") || user.PasswordHash.StartsWith("$2y$")))
+            {
+                isValid = BCryptNet.Verify(loginDto.Password, user.PasswordHash);
+            }
+            else
+            {
+                // Legacy plain-text check
+                if (user.PasswordHash == loginDto.Password)
+                {
+                    isValid = true;
+                    // Auto-migrate to hash!
+                    _logger.LogInformation($"Migrating legacy plain-text password for user: {user.Email}");
+                    user.PasswordHash = BCryptNet.HashPassword(loginDto.Password);
+                    await _userRepository.SaveChangesAsync();
+                }
+            }
+
+            if (!isValid)
                 throw new ValidationException("Invalid email or password.");
 
             if (!user.IsEmailVerified)
                 throw new ValidationException("EMAIL_NOT_VERIFIED");
 
             var otp = new Random().Next(100000, 999999).ToString();
-            user.Otp = otp;
+            user.Otp = otp; 
             user.OtpExpiry = DateTime.UtcNow.AddMinutes(10);
             await _userRepository.SaveChangesAsync();
 
@@ -125,7 +150,7 @@ namespace IdentityService.Services
             var user = new ModelsUser
             {
                 Email = registerDto.Email,
-                PasswordHash = registerDto.Password,
+                PasswordHash = BCryptNet.HashPassword(registerDto.Password),
                 EmployeeCode = $"E{new Random().Next(100, 999)}",
                 VerificationOtp = otp,
                 VerificationOtpExpiry = DateTime.UtcNow.AddMinutes(5)
@@ -188,7 +213,7 @@ namespace IdentityService.Services
         {
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == resetDto.Email);
             if (user == null || user.Otp != resetDto.Otp) return false;
-            user.PasswordHash = resetDto.NewPassword;
+            user.PasswordHash = BCryptNet.HashPassword(resetDto.NewPassword);
             await _userRepository.SaveChangesAsync();
             return true;
         }
@@ -203,7 +228,7 @@ namespace IdentityService.Services
                 if (!storeId.HasValue || string.IsNullOrEmpty(role)) return new AuthResult { Success = false, Message = "SIGNUP_REQUIRED" };
                 var db = ((UserRepository)_userRepository).GetContext();
                 var roleEnt = await db.Roles.FirstOrDefaultAsync(r => r.Name == role);
-                user = new ModelsUser { Email = payload.Email, PasswordHash = Guid.NewGuid().ToString(), IsEmailVerified = true };
+                user = new ModelsUser { Email = payload.Email, PasswordHash = BCryptNet.HashPassword(Guid.NewGuid().ToString()), IsEmailVerified = true };
                 user.UserRoles.Add(new UserStoreRole { RoleId = roleEnt?.Id ?? 3, StoreId = storeId });
                 await _userRepository.AddAsync(user);
                 await _userRepository.SaveChangesAsync();

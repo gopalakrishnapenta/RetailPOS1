@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using BCryptNet = BCrypt.Net.BCrypt;
 using IdentityService.Models;
 using RetailPOS.Common.Authorization;
 using System.Reflection;
@@ -82,7 +83,7 @@ namespace IdentityService.Data
                 adminUser = new User
                 {
                     Email = adminEmail,
-                    PasswordHash = "Admin@123", // Provided by user
+                    PasswordHash = BCryptNet.HashPassword("Admin@123"), // Seeded as BCrypt hash
                     IsEmailVerified = true,
                     EmployeeCode = "ADM001"
                 };

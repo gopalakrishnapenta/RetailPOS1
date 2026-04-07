@@ -52,3 +52,10 @@ Thumbs.db
 # Project specific
 build_errors.txt
 run-all-output.txt
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.log
+.tmp-chrome-profile/

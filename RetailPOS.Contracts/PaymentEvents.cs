@@ -6,7 +6,7 @@ namespace RetailPOS.Contracts
         int OrderId { get; }
         decimal Amount { get; }
         string PaymentMode { get; }
-        string Status { get; } // Success, Failed
+        string Status { get; } 
     }
 
     public interface PaymentFailedEvent

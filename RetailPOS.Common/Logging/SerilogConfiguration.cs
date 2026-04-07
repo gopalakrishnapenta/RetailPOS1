@@ -12,7 +12,7 @@ namespace RetailPOS.Common.Logging
         public static void ConfigureSerilog(this WebApplicationBuilder builder, string serviceName)
         {
             Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Information()
+                .MinimumLevel.Verbose()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
                 .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
                 .Enrich.FromLogContext()

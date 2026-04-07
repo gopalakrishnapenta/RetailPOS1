@@ -17,10 +17,29 @@ namespace AdminService.DTOs
         public List<CategoryBreakdownDto> CategoryBreakdown { get; set; } = new();
     }
 
-    public class RecentBillDto { public int Id { get; set; } public string Customer { get; set; } = string.Empty; public decimal Total { get; set; } public string Time { get; set; } = string.Empty; }
-    public class LowStockItemDto { public string Name { get; set; } = string.Empty; public string SKU { get; set; } = string.Empty; public int Stock { get; set; } }
-    public class HourlyTrendDto { public string Hour { get; set; } = string.Empty; public decimal Sales { get; set; } }
-    public class CategoryBreakdownDto { public string Category { get; set; } = string.Empty; public int Percent { get; set; } }
+    public class RecentBillDto
+    { 
+        public int Id { get; set; }
+        public string Customer { get; set; } = string.Empty; 
+        public decimal Total { get; set; } 
+        public string Time { get; set; } = string.Empty;
+    }
+    public class LowStockItemDto 
+    {
+        public string Name { get; set; } = string.Empty;
+        public string SKU { get; set; } = string.Empty; 
+        public int Stock { get; set; } 
+    }
+    public class HourlyTrendDto
+    {
+        public string Hour { get; set; } = string.Empty;
+        public decimal Sales { get; set; }
+    }
+    public class CategoryBreakdownDto
+    {
+        public string Category { get; set; } = string.Empty; 
+        public int Percent { get; set; } 
+    }
 
     public class InventoryAdjustmentDto
     {
@@ -45,7 +64,11 @@ namespace AdminService.DTOs
         public List<TaxPeriodDto> TaxByPeriod { get; set; } = new();
     }
 
-    public class TaxPeriodDto { public string Period { get; set; } = string.Empty; public decimal Amount { get; set; } }
+    public class TaxPeriodDto 
+    {
+        public string Period { get; set; } = string.Empty;
+        public decimal Amount { get; set; } 
+    }
 
     public class PaginatedResult<T>
     {
