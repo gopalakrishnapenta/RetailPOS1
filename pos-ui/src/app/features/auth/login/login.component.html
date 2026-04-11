@@ -1,0 +1,117 @@
+<div class="login-container">
+  <div class="login-card" [class.step-2-active]="showOtp">
+    <div class="logo-wrapper">
+      <div class="square-logo">N</div>
+      <h1 class="brand-title">NexusPOS</h1>
+      <p class="brand-subtitle">Sign in to your account to continue</p>
+    </div>
+
+    <!-- Step 1: Login Credentials -->
+    <div class="auth-step-1" *ngIf="!showOtp">
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="text" class="input-field" placeholder="admin@gmail.com" [(ngModel)]="email">
+      </div>
+      
+      <div class="form-group">
+        <div class="label-row">
+          <label>Password</label>
+          <button class="forgot-password link-button" type="button" (click)="openForgotPassword()">Forgot password?</button>
+        </div>
+        <div class="password-input-wrapper">
+          <input [type]="showPassword ? 'text' : 'password'" class="input-field" placeholder="•••••" [(ngModel)]="password">
+          <span class="password-toggle" (click)="togglePasswordVisibility()">
+            {{ showPassword ? '🔓' : '👁️' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="error-msg" *ngIf="authError">
+        {{ authError }}
+      </div>
+      
+      <button class="btn btn-primary w-full login-btn" (click)="onSubmit()" [disabled]="isLoading">
+        {{ isLoading ? 'Signing In...' : 'Sign In' }}
+      </button>
+
+      <div class="divider">
+        <span>OR</span>
+      </div>
+
+      <div id="googleBtn" class="google-btn-container"></div>
+    </div>
+
+    <!-- Step 2: OTP Verification -->
+    <div class="auth-step-2 animate-fade-in" *ngIf="showOtp">
+      <div class="step-header">
+        <button class="btn-back" (click)="showOtp = false">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <h2>Verify Identity</h2>
+      </div>
+
+      <p class="verification-msg">We've sent a 6-digit code to <strong>{{ email }}</strong></p>
+
+      <div class="form-group">
+        <label>Enter Login OTP</label>
+        <input type="text" class="input-field otp-input" placeholder="000000" maxlength="6" [(ngModel)]="otp">
+      </div>
+      
+      <button class="btn btn-primary w-full" (click)="onSubmit()" [disabled]="isLoading">
+        {{ isLoading ? 'Verifying...' : 'Verify & Login' }}
+      </button>
+
+      <div class="resend-container">
+        <p *ngIf="resendCooldown > 0">Resend code in <span>{{ resendCooldown }}s</span></p>
+        <button *ngIf="resendCooldown <= 0" class="btn-link" (click)="resendOtp()">Resend Code</button>
+      </div>
+    </div>
+
+    <div class="auth-footer" *ngIf="!showOtp">
+      <p>Don't have an account? <a routerLink="/signup">Sign up</a></p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="showForgotPassword">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>Reset Password</h2>
+      <button class="icon-btn" type="button" (click)="closeForgotPassword()">×</button>
+    </div>
+    <p class="modal-subtitle">We'll send a 6-digit code to your email, then you can set a new password.</p>
+
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" class="input-field" [(ngModel)]="resetEmail" placeholder="you@gmail.com">
+    </div>
+
+    <div class="form-group">
+      <label>OTP Code</label>
+      <div class="otp-row">
+        <input type="text" class="input-field otp-input" maxlength="6" [(ngModel)]="resetOtp" placeholder="000000">
+        <button class="btn btn-secondary" type="button" (click)="sendResetOtp()" [disabled]="resetOtpCooldown > 0">
+          {{ resetOtpCooldown > 0 ? 'Resend in ' + resetOtpCooldown + 's' : 'Send Code' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>New Password</label>
+      <input [type]="showResetPassword ? 'text' : 'password'" class="input-field" [(ngModel)]="resetPassword" placeholder="New password">
+      <button class="link-button small-link" type="button" (click)="showResetPassword = !showResetPassword">
+        {{ showResetPassword ? 'Hide' : 'Show' }}
+      </button>
+    </div>
+
+    <div class="error-msg" *ngIf="resetError">
+      {{ resetError }}
+    </div>
+
+    <button class="btn btn-primary w-full" type="button" (click)="submitPasswordReset()" [disabled]="resetBusy">
+      {{ resetBusy ? 'Updating...' : 'Reset Password' }}
+    </button>
+  </div>
+</div>

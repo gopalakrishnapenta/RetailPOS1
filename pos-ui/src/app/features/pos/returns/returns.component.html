@@ -1,0 +1,125 @@
+<div class="returns-container">
+  <!-- Search & Filters -->
+  <header class="search-header glass-panel">
+    <div class="search-box">
+      <input type="text" class="input-field" placeholder="Search by Bill ID, Phone, or Customer Name..." [(ngModel)]="searchQuery" (input)="onSearchChange()">
+    </div>
+    <div class="filter-chips">
+      <button class="chip" [class.active]="activeTab === 'All Bills'" (click)="setTab('All Bills')">All Bills</button>
+      <button class="chip" [class.active]="activeTab === 'Held Bills'" (click)="setTab('Held Bills')">Held Bills</button>
+      <button class="chip" [class.active]="activeTab === 'Past Bills'" (click)="setTab('Past Bills')">Past Bills</button>
+      <button class="chip" [class.active]="activeTab === 'Return Requests'" (click)="setTab('Return Requests')">Return Requests</button>
+    </div>
+  </header>
+
+  <main class="returns-content">
+    <!-- List of Bills -->
+    <section class="bills-list-section glass-panel">
+      <div class="list-header">
+        <h3>Transactions ({{ filteredBills.length }})</h3>
+      </div>
+      <div class="bill-queue">
+        <div class="bill-entry" *ngFor="let bill of filteredBills" [class.active]="selectedBill?.id === bill.id" (click)="selectBill(bill)">
+          <div class="entry-header">
+            <span class="bill-id">#{{ bill.billNumber || bill.id }}</span>
+            <span class="time">{{ bill.date | date:'shortTime' }}</span>
+          </div>
+          <div class="entry-details">
+            <span class="customer">{{ bill.customerName }}</span>
+            <span class="amount">{{ bill.totalAmount | currency }}</span>
+          </div>
+          <div class="status-badge" [ngClass]="bill.status?.toLowerCase()">
+            {{ bill.status }}
+          </div>
+        </div>
+        <p *ngIf="!bills.length" class="empty-msg">No bills found.</p>
+      </div>
+    </section>
+
+    <!-- Bill Details & Return Wizard -->
+    <section class="details-section glass-panel" *ngIf="selectedBill">
+      <div class="details-header">
+        <h3>Bill Details</h3>
+        <div class="actions">
+          <button class="btn btn-secondary">Reprint</button>
+          <button class="btn btn-primary">Resume</button>
+        </div>
+      </div>
+
+      <div class="bill-info-grid">
+         <div class="info-block">
+           <label>Customer</label>
+           <span>{{ selectedBill.customerName }} ({{ selectedBill.customerMobile }})</span>
+         </div>
+         <div class="info-block">
+           <label>Date/Time</label>
+           <span>{{ selectedBill.date | date:'medium' }}</span>
+         </div>
+         <div class="info-block">
+           <label>Payment Method</label>
+           <span>Handled</span>
+         </div>
+      </div>
+
+      <div class="items-table-container">
+        <h4>Items Eligible for Return</h4>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox"></th>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Refundable</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of selectedBill.items">
+              <td><input type="checkbox" [(ngModel)]="item.selected"></td>
+              <td>{{ item.productName }}</td>
+              <td>{{ item.quantity }}</td>
+              <td>{{ item.unitPrice | currency }}</td>
+              <td>{{ item.subTotal | currency }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="return-form">
+        <div class="form-group">
+          <label>Reason for Return</label>
+          <select class="input-field" [(ngModel)]="returnReason">
+            <option>Damaged Item</option>
+            <option>Wrong Item</option>
+            <option>Customer Dissatisfied</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Refund Mode</label>
+          <div class="radio-group">
+            <label><input type="radio" value="Original Mode" [(ngModel)]="refundMode"> Original Mode</label>
+            <label><input type="radio" value="Cash" [(ngModel)]="refundMode"> Cash</label>
+            <label><input type="radio" value="Store Credit" [(ngModel)]="refundMode"> Store Credit</label>
+          </div>
+        </div>
+        <div class="approval-status info-block" [ngClass]="getStatusClass()">
+          <label>Approval Status</label>
+          <span>{{ getDisplayStatus() }}</span>
+        </div>
+        <button *ngIf="canInitiate()" class="btn btn-danger w-full submit-return" (click)="initiateReturn()" [disabled]="isProcessing">
+          {{ isProcessing ? 'Processing...' : 'Initiate Return' }}
+        </button>
+      </div>
+    </section>
+
+    <!-- Placeholder for when no bill is selected -->
+    <section class="details-section glass-panel empty-selection" *ngIf="!selectedBill">
+       <div class="empty-state-content">
+         <div class="empty-icon">📊</div>
+         <h3>Select a transaction to initiate return</h3>
+         <p>Choose an invoice from the left panel to see its details and eligible items.</p>
+       </div>
+    </section>
+  </main>
+</div>

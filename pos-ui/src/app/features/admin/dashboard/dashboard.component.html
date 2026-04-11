@@ -1,0 +1,123 @@
+<div class="admin-container" [class.is-loading]="isLoading">
+  <!-- Top Header -->
+  <header class="admin-header glass-panel">
+    <div class="title-section">
+      <h2>Admin Dashboard</h2>
+      <p>Real-time retail performance overview</p>
+    </div>
+    <div class="actions-section">
+      <div class="store-selector" *ngIf="isAdmin && stores.length > 0">
+        <div class="selector-label">
+          <span class="icon">🏠</span> Change Store:
+        </div>
+        <div class="select-wrapper">
+          <select id="storeSelect" [(ngModel)]="selectedStoreId" (change)="onStoreChange()" class="premium-select">
+            <option [ngValue]="0">🌍 All Stores (Global)</option>
+            <option *ngFor="let store of stores" [ngValue]="store.id">
+              {{ store.name }}
+            </option>
+          </select>
+          <span class="select-arrow"></span>
+        </div>
+      </div>
+      <button class="btn btn-secondary" (click)="loadStats()" [class.btn-loading]="isLoading">
+        <span class="icon">🔄</span> Reload Data
+      </button>
+    </div>
+  </header>
+
+  <!-- KPI Cards -->
+  <section class="kpi-grid">
+    <div class="kpi-card glass-panel">
+      <div class="kpi-label">Total Net Sales</div>
+      <div class="kpi-value">{{ (stats?.totalSales ?? 0) | currency }}</div>
+      <div class="kpi-trend" [ngClass]="getTrendClass(stats?.salesChangePercent)">
+        {{ stats?.salesChangePercent > 0 ? '+' : '' }}{{ stats?.salesChangePercent }}% vs last month
+      </div>
+    </div>
+    <div class="kpi-card glass-panel">
+      <div class="kpi-label">Today's Transactions</div>
+      <div class="kpi-value">{{ stats?.todayBills ?? 0 }}</div>
+      <div class="kpi-trend">Live Sync</div>
+    </div>
+    <div class="kpi-card glass-panel">
+      <div class="kpi-label">Refunded Amount</div>
+      <div class="kpi-value">{{ (stats?.refundedAmount ?? 0) | currency }}</div>
+      <div class="kpi-trend down">Total Approved</div>
+    </div>
+    <div class="kpi-card glass-panel">
+      <div class="kpi-label">Low Stock Alerts</div>
+      <div class="kpi-value">{{ stats?.lowStockAlerts ?? 0 }}</div>
+      <div class="kpi-trend danger">Attention needed</div>
+    </div>
+  </section>
+
+  <!-- Middle Row -->
+  <section class="dashboard-row">
+    <div class="chart-container glass-panel">
+      <h3>Hourly Sales Trend</h3>
+      <div class="trend-chart">
+        <div class="trend-bar-wrapper" *ngFor="let h of stats?.hourlyTrend">
+          <div class="trend-bar" [style.height.%]="(h.sales / (stats?.todaySales || 1)) * 300"></div>
+          <span class="trend-label">{{ h.hour }}</span>
+        </div>
+        <p *ngIf="!stats?.hourlyTrend?.length" class="empty-msg">No transactions yet today</p>
+      </div>
+    </div>
+    <div class="revenue-split glass-panel">
+      <h3>Store-wise Share</h3>
+      <div class="split-list">
+        <div class="split-item">
+          <span class="store-name">Current Store</span>
+          <div class="progress-bar">
+            <div class="progress" [style.width.%]="100"></div>
+          </div>
+          <span class="amount">{{ (stats?.todaySales ?? 0) | currency }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom Row -->
+  <section class="dashboard-row bottom-row">
+    <div class="alerts-section glass-panel">
+      <h3>Inventory Health</h3>
+      <div class="alert-list">
+        <div class="alert-item" *ngFor="let item of stats?.lowStockItems" [class.warning]="item.stock > 0" [class.danger]="item.stock <= 0">
+          <span class="icon">{{ item.stock <= 0 ? '❌' : '⚠️' }}</span>
+          <div class="alert-info">
+            <span class="item-name">{{ item.name }}</span>
+            <span class="stock-info">Current Stock: {{ item.stock }}</span>
+          </div>
+        </div>
+        <p *ngIf="!stats?.lowStockItems?.length" class="all-good">✅ All stock levels healthy</p>
+      </div>
+    </div>
+
+    <div class="recent-bills glass-panel">
+       <div class="section-header">
+        <h3>Recent Transactions</h3>
+        <button class="btn btn-secondary btn-sm">Export All</button>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Customer</th>
+            <th>Amount</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let bill of stats?.recentBills">
+            <td>#{{ bill.id }}</td>
+            <td>{{ bill.customer }}</td>
+            <td>{{ bill.total | currency }}</td>
+            <td><span class="badge info">{{ bill.time }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p *ngIf="!stats?.recentBills?.length" class="empty-msg">No recent activity</p>
+    </div>
+  </section>
+</div>

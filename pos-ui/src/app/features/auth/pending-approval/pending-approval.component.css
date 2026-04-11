@@ -1,0 +1,51 @@
+.status-card {
+  align-items: center;
+  text-align: center;
+  gap: var(--spacing-md);
+}
+
+.status-icon {
+  color: var(--accent-primary);
+  background: rgba(var(--accent-primary-rgb), 0.1);
+  padding: var(--spacing-lg);
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  margin-bottom: var(--spacing-sm);
+}
+
+.status-msg {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.info-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  margin: var(--spacing-sm) 0;
+  width: 100%;
+}
+
+.info-box p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 4px 0;
+}
+
+.info-box strong {
+  color: var(--text-primary);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  transition: var(--transition-fast);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}

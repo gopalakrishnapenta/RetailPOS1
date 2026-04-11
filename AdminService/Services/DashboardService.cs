@@ -19,17 +19,28 @@ namespace AdminService.Services
             _logger = logger;
         }
 
-        public async Task<DashboardDto> GetDashboardAsync()
+        public async Task<DashboardDto> GetDashboardAsync(int? storeId = null)
         {
             var today = DateTime.UtcNow.Date;
             var startOfYesterday = today.AddDays(-1);
 
-            // Fetch local synced data (already filtered by StoreId via Global Query Filter)
-            var bills = await _context.SyncedOrders.AsNoTracking().ToListAsync();
-            var returns = await _context.SyncedReturns.AsNoTracking().ToListAsync();
+            // Bypass global query filters to allow global admin view or specific store filtering
+            var orderQuery = _context.SyncedOrders.IgnoreQueryFilters();
+            var returnQuery = _context.SyncedReturns.IgnoreQueryFilters();
+            var inventoryQuery = _context.InventoryAdjustments.IgnoreQueryFilters();
+
+            if (storeId.HasValue && storeId.Value != 0)
+            {
+                orderQuery = orderQuery.Where(o => o.StoreId == storeId.Value);
+                returnQuery = returnQuery.Where(r => r.StoreId == storeId.Value);
+                inventoryQuery = inventoryQuery.Where(a => a.StoreId == storeId.Value);
+            }
+
+            var bills = await orderQuery.AsNoTracking().ToListAsync();
+            var returns = await returnQuery.AsNoTracking().ToListAsync();
             
-            // For Low Stock Alerts, we still reference our local Categories/Inventory count if available
-            var lowStockCount = await _context.InventoryAdjustments.CountAsync(a => a.Quantity < 10); // Simplified logic
+            // For Low Stock Alerts
+            var lowStockCount = await inventoryQuery.CountAsync(a => a.Quantity < 10);
 
             var todayBills = bills.Where(b => b.Date.Date == today).ToList();
             var yesterdayBills = bills.Where(b => b.Date.Date == startOfYesterday).ToList();

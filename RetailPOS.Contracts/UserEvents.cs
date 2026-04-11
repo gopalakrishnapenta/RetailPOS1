@@ -4,6 +4,9 @@ namespace RetailPOS.Contracts
     {
         int UserId { get; }
         string Email { get; }
+        string? FullName { get; }
+        string? RoleName { get; }
+        int? StoreId { get; }
     }
 
     public interface StaffAssignedEvent

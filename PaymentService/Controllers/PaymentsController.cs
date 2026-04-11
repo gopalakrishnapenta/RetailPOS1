@@ -23,6 +23,7 @@ namespace PaymentService.Controllers
         [Authorize(Policy = Permissions.Orders.Finalize)]
         public async Task<IActionResult> Collect([FromBody] Payment payment)
         {
+            Console.WriteLine($"[DIAGNOSTIC] PaymentsController: Received request to collect payment for Bill ID: {payment.BillId} at {DateTime.Now}");
             var result = await _paymentService.ProcessPaymentAsync(payment);
             return Ok(new { message = "Payment collected successfully", payment = result });
         }

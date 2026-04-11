@@ -18,9 +18,9 @@ namespace AdminService.Controllers
 
         [HttpGet("stats")]
         [Authorize(Policy = RetailPOS.Common.Authorization.Permissions.Admin.ReportsView)]
-        public async Task<IActionResult> GetStats()
+        public async Task<IActionResult> GetStats([FromQuery] int? storeId = null)
         {
-            return Ok(await _dashboardService.GetDashboardAsync());
+            return Ok(await _dashboardService.GetDashboardAsync(storeId));
         }
     }
 }

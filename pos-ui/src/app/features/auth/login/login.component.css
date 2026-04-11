@@ -1,0 +1,265 @@
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  background-color: var(--bg-primary);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--panel-bg);
+  padding: 48px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  flex-direction: column;
+  gap: 24px;
+  align-self: center; /* Ensure it stays centered */
+}
+
+.logo-wrapper {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.square-logo {
+  width: 64px;
+  height: 64px;
+  background-color: var(--accent-primary);
+  color: white;
+  font-size: 32px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  margin: 0 auto 20px auto;
+}
+
+.brand-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.brand-subtitle {
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.forgot-password {
+  color: var(--accent-primary);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.password-input-wrapper {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  opacity: 0.7;
+  font-size: 18px;
+  transition: opacity 0.2s, transform 0.2s;
+  user-select: none;
+}
+
+.password-toggle:hover {
+  opacity: 1;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.input-field {
+  padding: 12px 14px;
+  font-size: 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.error-msg {
+  color: var(--accent-danger);
+  font-size: 13px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.login-btn {
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  margin: 16px 0;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--border-color);
+}
+
+.google-btn-container {
+  display: flex;
+  justify-content: center;
+}
+
+.auth-footer {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border-color);
+  padding-top: 24px;
+  margin-top: 8px;
+}
+
+.auth-footer a {
+  color: var(--accent-primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* Step 2 Specific */
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.btn-back {
+  background: var(--bg-tertiary);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.verification-msg {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.otp-input {
+  text-align: center;
+  letter-spacing: 8px;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 420px;
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  color: #f8fafc;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.modal-subtitle {
+  font-size: 13px;
+  color: #cbd5f5;
+  margin-bottom: 20px;
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.otp-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.otp-row .input-field {
+  flex: 1;
+}
+
+.btn-secondary {
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.small-link {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #93c5fd;
+}

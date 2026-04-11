@@ -28,8 +28,17 @@ namespace OrdersService.Controllers
         [Authorize(Policy = Permissions.Orders.View)]
         public async Task<IActionResult> GetById(int id)
         {
+            Console.WriteLine($"[DIAGNOSTIC] BillsController: RECEIVED request for Bill ID: {id} at {DateTime.Now}");
             var bill = await _billService.GetBillByIdAsync(id);
             return Ok(bill);
+        }
+
+        [HttpPost]
+        [Authorize(Policy = Permissions.Orders.Create)]
+        public async Task<IActionResult> Create([FromBody] BillDto billDto)
+        {
+            var result = await _billService.CreateOrUpdateCartAsync(billDto);
+            return Ok(result);
         }
 
         [HttpPost("cart/items")]

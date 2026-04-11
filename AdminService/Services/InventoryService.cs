@@ -55,6 +55,23 @@ namespace AdminService.Services
             return true;
         }
 
+        public async Task<IEnumerable<InventoryItemDto>> GetInventorySummaryAsync()
+        {
+            var adjustments = await _adjustmentRepository.GetQueryable()
+                .AsNoTracking()
+                .GroupBy(a => a.ProductId)
+                .Select(g => new InventoryItemDto
+                {
+                    ProductId = g.Key,
+                    StockQuantity = g.Sum(a => a.Quantity),
+                    Name = $"Product {g.Key}", // Place-holder until product names are synced
+                    SKU = $"SKU-{g.Key:D4}"
+                })
+                .ToListAsync();
+
+            return adjustments;
+        }
+
         public async Task<PaginatedResult<InventoryAdjustmentDto>> GetAdjustmentsAsync(int page = 1, int pageSize = 5)
         {
             var query = _adjustmentRepository.GetQueryable().AsNoTracking();

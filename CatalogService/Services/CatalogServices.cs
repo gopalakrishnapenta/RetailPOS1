@@ -18,8 +18,13 @@ namespace CatalogService.Services
 
         public async Task<IEnumerable<ProductDto>> GetAllProductsAsync()
         {
-            var products = await _productRepository.GetProductsWithCategoryAsync();
-            // Filter: Hide products where Category IsActive is false (and the product itself via global filter)
+            var db = ((CatalogService.Repositories.ProductRepository)_productRepository).GetContext();
+            // Always IgnoreQueryFilters — this method is behind [Authorize] already.
+            // Manually filter IsActive so soft-deleted products are excluded.
+            var products = await db.Products.IgnoreQueryFilters()
+                .Include(p => p.Category)
+                .Where(p => p.IsActive)
+                .ToListAsync();
             return products.Where(p => p.Category == null || p.Category.IsActive).Select(MapToDto);
         }
 
@@ -79,7 +84,8 @@ namespace CatalogService.Services
 
         public async Task<bool> UpdateProductAsync(int id, ProductDto dto)
         {
-            var p = await _productRepository.GetByIdAsync(id);
+            var db = ((CatalogService.Repositories.ProductRepository)_productRepository).GetContext();
+            var p = await db.Products.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == id);
             if (p == null) throw new NotFoundException($"Product with ID {id} not found.");
 
             p.Name = dto.Name; p.MRP = dto.MRP; p.SellingPrice = dto.SellingPrice;
@@ -116,7 +122,8 @@ namespace CatalogService.Services
 
         public async Task<bool> DeleteProductAsync(int id)
         {
-            var p = await _productRepository.GetByIdAsync(id);
+            var db = ((CatalogService.Repositories.ProductRepository)_productRepository).GetContext();
+            var p = await db.Products.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == id);
             if (p == null) throw new NotFoundException($"Product with ID {id} not found.");
             
             p.IsActive = false; // Soft delete
@@ -154,9 +161,13 @@ namespace CatalogService.Services
 
         public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync()
         {
-            var categories = await _categoryRepository.GetAllAsync();
-            // Filter: Only return active categories
-            return categories.Where(c => c.IsActive).Select(c => new CategoryDto
+            var db = ((CatalogService.Repositories.CategoryRepository)_categoryRepository).GetContext();
+            // Always IgnoreQueryFilters — Admins call this, and also non-admins need to see categories
+            // for the POS. Manually filter IsActive so soft-deleted categories are excluded.
+            var categories = await db.Categories.IgnoreQueryFilters()
+                .Where(c => c.IsActive)
+                .ToListAsync();
+            return categories.Select(c => new CategoryDto
             {
                 Id = c.Id, Name = c.Name, Description = c.Description, IsActive = c.IsActive
             });
@@ -191,21 +202,21 @@ namespace CatalogService.Services
 
         public async Task<bool> UpdateCategoryAsync(int id, CategoryDto dto)
         {
-            var c = await _categoryRepository.GetByIdAsync(id);
+            var db = ((CatalogService.Repositories.CategoryRepository)_categoryRepository).GetContext();
+            var c = await db.Categories.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == id);
             if (c == null) throw new NotFoundException($"Category with ID {id} not found.");
             c.Name = dto.Name; c.Description = dto.Description; c.IsActive = dto.IsActive;
-            _categoryRepository.Update(c);
             await _categoryRepository.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> DeleteCategoryAsync(int id)
         {
-            var c = await _categoryRepository.GetByIdAsync(id);
+            var db = ((CatalogService.Repositories.CategoryRepository)_categoryRepository).GetContext();
+            var c = await db.Categories.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == id);
             if (c == null) throw new NotFoundException($"Category with ID {id} not found.");
             
             c.IsActive = false; // Soft delete
-            _categoryRepository.Update(c);
             await _categoryRepository.SaveChangesAsync();
             return true;
         }

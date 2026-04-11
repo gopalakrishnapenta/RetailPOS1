@@ -26,8 +26,12 @@ namespace AdminService.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<StaffMember>>> GetStaff()
         {
-            // Admin can see all, Store Manager sees only their assigned staff (due to query filters)
-            return await _context.StaffMembers.ToListAsync();
+            var query = _context.StaffMembers.AsQueryable();
+            if (User.IsInRole("Admin"))
+            {
+                query = query.IgnoreQueryFilters();
+            }
+            return await query.ToListAsync();
         }
 
         [HttpGet("pending")]

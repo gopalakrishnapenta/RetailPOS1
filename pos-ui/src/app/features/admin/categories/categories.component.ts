@@ -1,0 +1,199 @@
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ApiService } from '../../../core/services/api.service';
+
+@Component({
+  selector: 'app-categories',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
+    <div class="admin-container">
+      <header class="admin-header glass-panel">
+        <div class="title-section">
+          <h2>Categories</h2>
+          <p>Manage product classifications</p>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" (click)="openModal()">+ New Category</button>
+        </div>
+      </header>
+
+      <section class="table-section glass-panel">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">ID</th>
+              <th>Name</th>
+              <th>Description</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let cat of categories" class="animate-fade-in">
+              <td class="text-muted">#{{ cat.id }}</td>
+              <td><strong class="text-primary">{{ cat.name }}</strong></td>
+              <td class="text-secondary">{{ cat.description || 'No description provided' }}</td>
+              <td class="text-center">
+                <div class="action-buttons">
+                  <button class="btn-icon edit" (click)="openModal(cat)" title="Edit">
+                    <i class="icon">✏️</i>
+                  </button>
+                  <button class="btn-icon delete" (click)="deleteCategory(cat.id)" title="Delete">
+                    <i class="icon">🗑️</i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="!categories.length && !isLoading">
+              <td colspan="4" class="empty-state">
+                <div class="empty-content">
+                  <span>📂</span>
+                  <p>No categories found.</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Category Modal -->
+      <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+        <div class="modal-content glass-panel animate-slide-up" (click)="$event.stopPropagation()">
+          <header class="modal-header">
+            <h3>{{ isEdit ? 'Edit Category' : 'Create New Category' }}</h3>
+            <button class="close-btn" (click)="closeModal()">×</button>
+          </header>
+          
+          <form (submit)="saveCategory()" #catForm="ngForm">
+            <div class="form-container">
+              <div class="form-group mb-4">
+                <label>Category Name</label>
+                <input type="text" name="name" [(ngModel)]="currentCategory.name" required class="input-field" placeholder="E.g. Electronics">
+              </div>
+              <div class="form-group">
+                <label>Description (Optional)</label>
+                <textarea name="description" [(ngModel)]="currentCategory.description" rows="4" class="input-field" placeholder="Brief details about this category..."></textarea>
+              </div>
+            </div>
+
+            <footer class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary" [disabled]="!catForm.form.valid || isSaving">
+                {{ isSaving ? 'Saving...' : 'Save Category' }}
+              </button>
+            </footer>
+          </form>
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .admin-container { padding: var(--spacing-xl); display: flex; flex-direction: column; gap: var(--spacing-xl); }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-lg); }
+    .table-section { padding: 0; overflow: hidden; }
+    
+    .admin-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .admin-table th { padding: var(--spacing-md) var(--spacing-lg); background: var(--bg-tertiary); color: var(--text-secondary); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
+    .admin-table td { padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border-color); font-size: 0.875rem; vertical-align: middle; }
+    .admin-table tr:hover { background: rgba(248, 250, 252, 0.5); }
+    
+    .action-buttons { display: flex; gap: 8px; justify-content: center; }
+    .btn-icon { width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .btn-icon.edit:hover { background: var(--bg-tertiary); color: var(--accent-primary); border-color: var(--accent-primary); }
+    .btn-icon.delete:hover { background: #fef2f2; color: var(--accent-danger); border-color: var(--accent-danger); }
+    
+    /* Modal Styles */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { width: 100%; max-width: 450px; padding: 24px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
+    .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted); }
+    
+    .modal-footer { margin-top: 32px; display: flex; justify-content: flex-end; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border-color); }
+    
+    .mb-4 { margin-bottom: 1rem; }
+    .text-center { text-align: center; }
+    .text-muted { color: var(--text-muted); }
+    .text-secondary { color: var(--text-secondary); }
+    .text-primary { color: var(--accent-primary); }
+    
+    textarea.input-field { resize: none; padding-top: 12px; }
+  `]
+})
+export class CategoriesComponent implements OnInit {
+  categories: any[] = [];
+  isLoading = true;
+  isSaving = false;
+  showModal = false;
+  isEdit = false;
+
+  currentCategory: any = { name: '', description: '', isActive: true };
+
+  constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
+
+  ngOnInit() {
+    this.loadCategories();
+  }
+
+  loadCategories() {
+    this.isLoading = true;
+    this.api.getCategories().subscribe({
+      next: (data) => {
+        this.categories = data;
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading categories', err);
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  openModal(category?: any) {
+    if (category) {
+      this.isEdit = true;
+      this.currentCategory = { ...category };
+    } else {
+      this.isEdit = false;
+      this.currentCategory = { name: '', description: '', isActive: true };
+    }
+    this.showModal = true;
+  }
+
+  closeModal() {
+    this.showModal = false;
+  }
+
+  saveCategory() {
+    this.isSaving = true;
+    const request = this.isEdit 
+      ? this.api.updateCategory(this.currentCategory.id, this.currentCategory)
+      : this.api.createCategory(this.currentCategory);
+
+    request.subscribe({
+      next: () => {
+        alert(this.isEdit ? 'Category updated!' : 'Category created!');
+        this.loadCategories();
+        this.closeModal();
+      },
+      error: (err) => {
+        alert('Error saving category: ' + (err.error?.message || 'Server error'));
+      },
+      complete: () => this.isSaving = false
+    });
+  }
+
+  deleteCategory(id: number) {
+    if (confirm('Are you sure you want to delete this category?')) {
+      this.api.deleteCategory(id).subscribe({
+        next: () => {
+          alert('Category deleted');
+          this.loadCategories();
+        },
+        error: (err) => alert('Error deleting category')
+      });
+    }
+  }
+}

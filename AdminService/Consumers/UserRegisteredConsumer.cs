@@ -25,21 +25,40 @@ namespace AdminService.Consumers
             try
             {
                 // Global check: Ignore query filters to see if they are already in the system
-                var existing = await _context.StaffMembers.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.UserId == data.UserId);
-                if (existing != null) return;
-
-                var staff = new StaffMember
+                var staff = await _context.StaffMembers.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.UserId == data.UserId);
+                
+                bool isNew = false;
+                if (staff == null)
                 {
-                    UserId = data.UserId,
-                    Email = data.Email,
-                    FullName = data.Email.Split('@')[0], // Default name from email
-                    IsAssigned = false,
-                    RegisteredDate = DateTime.UtcNow
-                };
+                    isNew = true;
+                    staff = new StaffMember
+                    {
+                        UserId = data.UserId,
+                        Email = data.Email,
+                        RegisteredDate = DateTime.UtcNow
+                    };
+                }
 
-                _context.StaffMembers.Add(staff);
+                // Update fields if provided
+                if (!string.IsNullOrEmpty(data.FullName)) staff.FullName = data.FullName;
+                if (data.StoreId.HasValue) staff.AssignedStoreId = data.StoreId;
+                if (!string.IsNullOrEmpty(data.RoleName)) 
+                {
+                    staff.AssignedRole = data.RoleName;
+                    staff.IsAssigned = true; // Mark as assigned if role exists
+                }
+
+                if (isNew)
+                {
+                    _context.StaffMembers.Add(staff);
+                    _logger.LogInformation($"Added New Staff Member: {data.Email}");
+                }
+                else
+                {
+                    _logger.LogInformation($"Updated Existing Staff Member: {data.Email} (Assigned: {staff.IsAssigned})");
+                }
+
                 await _context.SaveChangesAsync();
-                _logger.LogInformation($"Added New Pending Staff Member: {data.Email}");
             }
             catch (Exception ex)
             {

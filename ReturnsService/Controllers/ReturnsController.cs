@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ReturnsService.Models;
 using ReturnsService.Services;
+using ReturnsService.DTOs;
 using ReturnsService.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using RetailPOS.Common.Authorization;
@@ -25,9 +26,9 @@ namespace ReturnsService.Controllers
             return Ok(await _returnService.GetAllReturnsAsync());
         }
 
-        [HttpPost("initiate")]
+        [HttpPost]
         [Authorize(Policy = Permissions.Returns.Initiate)]
-        public async Task<IActionResult> Initiate([FromBody] Return returnRequest)
+        public async Task<IActionResult> Initiate([FromBody] ReturnInitiationDto returnRequest)
         {
             var result = await _returnService.InitiateReturnAsync(returnRequest);
             return Ok(new { message = "Return initiated successfully", returnRequest = result });
@@ -35,17 +36,19 @@ namespace ReturnsService.Controllers
 
         [HttpPost("{id}/approve")]
         [Authorize(Policy = Permissions.Returns.Approve)]
-        public async Task<IActionResult> Approve(int id, [FromBody] string? note)
+        public async Task<IActionResult> Approve(int id, [FromBody] ReturnActionDto dto)
         {
-            await _returnService.ApproveReturnAsync(id, note);
+            Console.WriteLine($"[ReturnsController] Attempting to approve return ID: {id}. Note: {dto.Note}");
+            await _returnService.ApproveReturnAsync(id, dto.Note);
             return Ok(new { message = "Return approved successfully" });
         }
 
         [HttpPost("{id}/reject")]
         [Authorize(Policy = Permissions.Returns.Approve)]
-        public async Task<IActionResult> Reject(int id, [FromBody] string? note)
+        public async Task<IActionResult> Reject(int id, [FromBody] ReturnActionDto dto)
         {
-            await _returnService.RejectReturnAsync(id, note);
+            Console.WriteLine($"[ReturnsController] Attempting to reject return ID: {id}. Note: {dto.Note}");
+            await _returnService.RejectReturnAsync(id, dto.Note);
             return Ok(new { message = "Return rejected successfully" });
         }
     }

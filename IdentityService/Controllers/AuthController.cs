@@ -59,6 +59,14 @@ namespace IdentityService.Controllers
             return Ok(new { message = "Verification code resent successfully." });
         }
 
+        [HttpPost("resend-login-otp")]
+        public async Task<IActionResult> ResendLoginOtp([FromBody] ResendVerificationDto resendDto)
+        {
+            var success = await _authService.ResendLoginOtpAsync(resendDto.Email);
+            if (!success) return NotFound(new { message = "User not found." });
+            return Ok(new { message = "Login code resent successfully." });
+        }
+
         [HttpPost("send-otp")]
         public async Task<IActionResult> SendOtp([FromBody] ForgotPasswordDto forgotDto)
         {
@@ -129,6 +137,13 @@ namespace IdentityService.Controllers
                 SetTokenCookie(result.RefreshToken);
 
             return Ok(result.Data);
+        }
+
+        [HttpPost("sync-users")]
+        public async Task<IActionResult> SyncUsers()
+        {
+            var count = await _authService.SyncAllUsersAsync();
+            return Ok(new { message = $"Successfully published {count} sync events." });
         }
 
         [Authorize(Policy = Permissions.Auth.Logout)]

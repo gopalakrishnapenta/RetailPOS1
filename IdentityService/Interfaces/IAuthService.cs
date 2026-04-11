@@ -14,9 +14,11 @@ namespace IdentityService.Interfaces
         Task<AuthResult> GoogleLoginAsync(string idToken, int? storeId = null, string? role = null);
         Task<List<StoreDto>> GetStoresAsync();
         Task<bool> TestEmailAsync(string toEmail);
+        Task<bool> ResendLoginOtpAsync(string email);
         Task<AuthResult> RefreshTokenAsync(TokenRequestDto tokenRequestDto);
         Task<bool> LogoutAsync(string email);
         Task<List<UserSyncDto>> GetUsersAsync();
+        Task<int> SyncAllUsersAsync();
     }
 
     public record StoreDto(int Id, string StoreCode, string Name);

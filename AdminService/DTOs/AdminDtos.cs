@@ -50,6 +50,17 @@ namespace AdminService.DTOs
         public DateTime AdjustmentDate { get; set; }
     }
 
+    public class InventoryItemDto
+    {
+        public int Id { get; set; }
+        public int ProductId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string SKU { get; set; } = string.Empty;
+        public string CategoryName { get; set; } = string.Empty;
+        public int StockQuantity { get; set; }
+        public string Status => StockQuantity > 10 ? "In Stock" : (StockQuantity > 0 ? "Low Stock" : "Out of Stock");
+    }
+
     public class SalesReportDto
     {
         public string Date { get; set; } = string.Empty;

@@ -87,13 +87,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
-    });
-});
+// builder.Services.AddCors(...) removed to centralize CORS in ApiGateway
 
 builder.Services.AddDbContext<CatalogDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -154,7 +148,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseExceptionMiddleware();
-app.UseCors();
+// app.UseCors(); removed to centralize CORS in ApiGateway
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

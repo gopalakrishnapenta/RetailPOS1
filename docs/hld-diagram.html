@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RetailPOS HLD Diagram</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+
+    .frame {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      padding: 24px;
+      width: max-content;
+      min-width: 100%;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      margin: 0 0 16px;
+      font-size: 24px;
+    }
+
+    .mermaid {
+      width: max-content;
+    }
+  </style>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      flowchart: {
+        useMaxWidth: false,
+        htmlLabels: true,
+        curve: 'basis'
+      }
+    });
+  </script>
+</head>
+<body>
+  <div class="frame">
+    <h1>RetailPOS High-Level Design (HLD)</h1>
+    <div class="mermaid">
+flowchart TB
+    U["Clients (Web / POS / Mobile)"]
+    G["ApiGateway (Ocelot)"]
+
+    subgraph Core["Core Business Services"]
+        ID["IdentityService"]
+        ADM["AdminService"]
+        CAT["CatalogService"]
+        ORD["OrdersService"]
+        PAY["PaymentService"]
+        RET["ReturnsService"]
+        NOTI["NotificationService"]
+    end
+
+    subgraph Data["Service Datastores (SQL Server)"]
+        IDDB["Identity DB"]
+        ADMDB["Admin DB"]
+        CATDB["Catalog DB"]
+        ORDDB["Orders DB"]
+        PAYDB["Payments DB"]
+        RETDB["Returns DB"]
+        NOTIDB["Notifications DB"]
+    end
+
+    MQ["RabbitMQ (MassTransit)"]
+    AUTH["JWT + Permissions (RetailPOS.Common)"]
+    HUB["SignalR Hub (Notifications)"]
+
+    U --> G
+    G --> ID
+    G --> ADM
+    G --> CAT
+    G --> ORD
+    G --> PAY
+    G --> RET
+    G --> NOTI
+
+    ID --> IDDB
+    ADM --> ADMDB
+    CAT --> CATDB
+    ORD --> ORDDB
+    PAY --> PAYDB
+    RET --> RETDB
+    NOTI --> NOTIDB
+
+    ID -- "Issues JWT" --> AUTH
+    AUTH -- "Validates Claims" --> ADM
+    AUTH -- "Validates Claims" --> CAT
+    AUTH -- "Validates Claims" --> ORD
+    AUTH -- "Validates Claims" --> PAY
+    AUTH -- "Validates Claims" --> RET
+    AUTH -- "Validates Claims" --> NOTI
+
+    ADM -- "Events" --> MQ
+    ID -- "Events" --> MQ
+    ORD -- "Events" --> MQ
+    PAY -- "Events" --> MQ
+    RET -- "Events" --> MQ
+    MQ -- "Consumers" --> ADM
+    MQ -- "Consumers" --> ID
+    MQ -- "Consumers" --> CAT
+    MQ -- "Consumers" --> ORD
+    MQ -- "Consumers" --> NOTI
+
+    NOTI --> HUB
+    U --> HUB
+    </div>
+  </div>
+</body>
+</html>

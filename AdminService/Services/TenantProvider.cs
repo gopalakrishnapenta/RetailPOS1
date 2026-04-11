@@ -40,7 +40,11 @@ namespace AdminService.Services
             get
             {
                 var context = _httpContextAccessor.HttpContext;
-                return context?.User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+                if (context?.User == null) return string.Empty;
+                var roleClaim = context.User.FindFirst(ClaimTypes.Role) ?? 
+                                context.User.FindFirst("role") ?? 
+                                context.User.FindFirst("Role");
+                return roleClaim?.Value ?? string.Empty;
             }
         }
 

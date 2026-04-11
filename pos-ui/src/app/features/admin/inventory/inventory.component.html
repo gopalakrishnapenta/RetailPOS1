@@ -1,0 +1,47 @@
+<div class="inventory-container">
+  <header class="inventory-header glass-panel">
+    <h2>Inventory Management</h2>
+    <div class="actions">
+      <button class="btn btn-primary">+ Add New Product</button>
+      <button class="btn btn-secondary">Sync from Catalog</button>
+    </div>
+  </header>
+
+  <section class="inventory-table-section glass-panel">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Product Name</th>
+          <th>Category</th>
+          <th>Stock level</th>
+          <th>Price</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="animate-fade-in" *ngFor="let item of inventoryItems">
+          <td>#{{ item.productSku }}</td>
+          <td>{{ item.productName }}</td>
+          <td>{{ item.categoryName }}</td>
+          <td>
+            <span [class.low-stock]="item.stockQuantity < 10">{{ item.stockQuantity }} Units</span>
+          </td>
+          <td>{{ item.sellingPrice | currency }}</td>
+          <td>
+            <span class="badge" [ngClass]="item.stockQuantity > 0 ? 'success' : 'danger'">
+              {{ item.stockQuantity > 0 ? 'Active' : 'Out of Stock' }}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-secondary">Edit</button>
+          </td>
+        </tr>
+        <tr *ngIf="!inventoryItems.length && !isLoading">
+          <td colspan="7" class="empty-state">No inventory records found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</div>

@@ -32,7 +32,7 @@ namespace IdentityService.Data
             var roles = new[] { 
                 (Id: 1, Name: "Admin"), 
                 (Id: 2, Name: "StoreManager"), 
-                (Id: 4, Name: "Cashier") // Note: Database might have 3 or 4, we match by Name normally
+                (Id: 4, Name: "Cashier") 
             };
 
             foreach (var r in roles)
@@ -44,23 +44,23 @@ namespace IdentityService.Data
             }
             await context.SaveChangesAsync();
 
-            // 4. Role-Permission Mappings (Source of Truth for Defaults)
+            // 4. Role-Permission Mappings
             var adminRole = await context.Roles.FirstAsync(r => r.Name == "Admin");
             var managerRole = await context.Roles.FirstAsync(r => r.Name == "StoreManager");
             var cashierRole = await context.Roles.FirstAsync(r => r.Name == "Cashier");
 
-            // Mapping: Admin (Master Key)
+            // Mapping: Admin
             await EnsureMapping(context, adminRole.Id, Permissions.System.All);
 
-            // Mapping: Manager (Operational, but no Master Key or Category Management)
+            // Mapping: Manager
             foreach (var code in permissionCodes.Where(c => c != Permissions.System.All && c != Permissions.Catalog.CategoriesEdit))
             {
                  await EnsureMapping(context, managerRole.Id, code);
             }
 
-            // Mapping: Cashier (Safe Subset)
+            // Mapping: Cashier
             var cashierSubset = new[] {
-                Permissions.Orders.Create, Permissions.Orders.View, Permissions.Orders.Finalize,
+                Permissions.Orders.Create, Permissions.Orders.View, Permissions.Orders.ViewAll, Permissions.Orders.Finalize,
                 Permissions.Orders.Hold, Permissions.Returns.Initiate, Permissions.Returns.View,
                 Permissions.Catalog.View, Permissions.Catalog.CategoriesView,
                 Permissions.Auth.Logout, Permissions.Auth.Refresh,
@@ -83,7 +83,7 @@ namespace IdentityService.Data
                 adminUser = new User
                 {
                     Email = adminEmail,
-                    PasswordHash = BCryptNet.HashPassword("Admin@123"), // Seeded as BCrypt hash
+                    PasswordHash = BCryptNet.HashPassword("Admin@123"),
                     IsEmailVerified = true,
                     EmployeeCode = "ADM001"
                 };
@@ -97,22 +97,36 @@ namespace IdentityService.Data
                 adminUser.UserRoles.Add(new UserStoreRole
                 {
                     RoleId = adminRole.Id,
-                    StoreId = null // Global Admin
+                    StoreId = null 
                 });
                 await context.SaveChangesAsync();
             }
 
-            // 6. [REPAIR] Ensure StoreManager has catalog:manage (Fixes manual SQL misses)
-            logger.LogInformation("[RBAC] Running Permission Repair for StoreManager...");
-            var managerPermissions = new[] { 
+            // 6. Repair
+            var managerRepair = new[] { 
                 Permissions.Catalog.Manage, 
                 Permissions.Catalog.View, 
                 Permissions.Orders.View,
                 Permissions.Notifications.View
             };
-            foreach (var code in managerPermissions)
+            foreach (var code in managerRepair)
             {
                 await EnsureMapping(context, managerRole.Id, code);
+            }
+
+            var cashierRepair = new[] {
+                Permissions.Catalog.View,
+                Permissions.Catalog.CategoriesView,
+                Permissions.Payments.CreateOrder,
+                Permissions.Payments.Verify,
+                Permissions.Orders.Create,
+                Permissions.Orders.View,
+                Permissions.Orders.ViewAll,
+                Permissions.Orders.Finalize
+            };
+            foreach (var code in cashierRepair)
+            {
+                await EnsureMapping(context, cashierRole.Id, code);
             }
             await context.SaveChangesAsync();
         }
@@ -130,14 +144,11 @@ namespace IdentityService.Data
         {
             var codes = new List<string>();
             var type = typeof(Permissions);
-
-            // Get nested classes (Orders, Returns, etc.)
             var nestedTypes = type.GetNestedTypes(BindingFlags.Public | BindingFlags.Static);
             foreach (var nested in nestedTypes)
             {
                 var fields = nested.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
                                    .Where(f => f.IsLiteral && !f.IsInitOnly);
-                
                 foreach (var field in fields)
                 {
                     var val = field.GetRawConstantValue()?.ToString();

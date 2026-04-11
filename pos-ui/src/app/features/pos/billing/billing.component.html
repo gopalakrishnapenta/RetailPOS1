@@ -1,0 +1,147 @@
+<div class="billing-wrapper" [class.is-loading]="isLoading">
+  <!-- Success Summary Overlay -->
+
+  <!-- System Header -->
+  <header class="sys-header">
+    <div class="header-left">
+      <div class="mini-logo">N</div>
+      <h2 class="brand-name">NexusPOS</h2>
+    </div>
+    
+    <div class="header-center">
+      <div class="info-chip">
+        <span class="label">Store:</span>
+        <span class="value">{{ storeCode }}</span>
+      </div>
+      <div class="info-chip">
+        <span class="label">Shift:</span>
+        <span class="value">{{ shiftDate }}</span>
+      </div>
+      <div class="info-chip">
+        <span class="label">User:</span>
+        <span class="value user-link">{{ userName }}</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button class="logout-btn" (click)="logout()">
+        Logout <span class="logout-icon">/</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="billing-main">
+    <!-- Catalog Section -->
+    <section class="catalog-section">
+      <div class="search-wrap">
+        <input type="text" class="search-input" placeholder="Scan Barcode or Search Product..." 
+               [(ngModel)]="searchQuery" (ngModelChange)="applyFilters()">
+        <button class="search-submit">
+          <span class="search-icon">🔍</span>
+        </button>
+      </div>
+
+      <div class="category-filters">
+        <button class="cat-chip" [class.active]="!selectedCategory" (click)="selectCategory(null)">All</button>
+        <button class="cat-chip" *ngFor="let cat of categories" 
+                [class.active]="selectedCategory?.id === cat.id"
+                (click)="selectCategory(cat)">
+          {{ cat.name }}
+        </button>
+      </div>
+
+      <div class="product-list">
+        <div class="product-row animate-fade-in" *ngFor="let p of filteredProducts">
+          <div class="p-thumb">📦</div>
+          <div class="p-details">
+            <h4 class="p-name">{{ p.name }}</h4>
+            <p class="p-sku">SKU: {{ p.sku || 'SKU000' }}</p>
+          </div>
+          <div class="p-action-group">
+            <div class="p-price-status">
+              <span class="p-price">{{ p.sellingPrice | currency }}</span>
+              <span class="p-status" [class.low]="p.stockQuantity < 10">In Stock</span>
+            </div>
+            <button class="add-btn" (click)="addToCart(p)">Add +</button>
+          </div>
+        </div>
+        <div *ngIf="!filteredProducts.length && !isLoading" class="empty-state">No products found...</div>
+      </div>
+    </section>
+
+    <!-- Sidebar Section -->
+    <aside class="bill-sidebar">
+      <div class="bill-header">
+        <h3>Current Bill</h3>
+      </div>
+
+      <div class="customer-fields">
+        <input type="text" class="side-input" placeholder="Customer Mobile (Req)" [(ngModel)]="customerMobile">
+        <input type="text" class="side-input" placeholder="Customer Name (Req)" [(ngModel)]="customerName">
+      </div>
+
+      <div class="bill-items-area">
+        <div *ngIf="!cart.length" class="empty-bill">
+          <div class="empty-icon">🛒</div>
+          <p>Scan items to start billing</p>
+        </div>
+
+        <div class="cart-item-row" *ngFor="let item of cart; let i = index">
+          <div class="item-main">
+            <span class="item-name">{{ item.name }}</span>
+            <span class="item-calc">{{ item.sellingPrice | currency }} × {{ item.quantity }}</span>
+          </div>
+          <div class="item-actions">
+            <button class="qty-btn" (click)="updateQuantity(i, item.quantity - 1)">-</button>
+            <span class="qty-val">{{ item.quantity }}</span>
+            <button class="qty-btn" (click)="updateQuantity(i, item.quantity + 1)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bill-footer">
+        <div class="footer-totals">
+          <div class="total-line">
+            <span>Subtotal</span>
+            <span>{{ subtotal | currency }}</span>
+          </div>
+          <div class="total-line">
+            <span>Discount (0%)</span>
+            <span>$0.00</span>
+          </div>
+          <div class="total-line">
+            <span>Taxes (10%)</span>
+            <span>{{ tax | currency }}</span>
+          </div>
+          <div class="net-total-line">
+            <span>Net Total</span>
+            <span class="net-val">{{ total | currency }}</span>
+          </div>
+        </div>
+
+        <div class="payment-selection">
+          <label>Payment Mode:</label>
+          <div class="mode-chips">
+            <button type="button" class="mode-chip" [class.active]="paymentMode === 'Cash'" (click)="paymentMode = 'Cash'">
+              <span class="chip-icon">💵</span> Cash
+            </button>
+            <button type="button" class="mode-chip" [class.active]="paymentMode === 'Online'" (click)="paymentMode = 'Online'">
+              <span class="chip-icon">💳</span> Online
+            </button>
+          </div>
+        </div>
+
+        <div class="footer-btns">
+          <button class="h-btn" (click)="holdBill()" [disabled]="isProcessing">Hold Bill</button>
+          <button class="p-btn" (click)="processPayment()" [disabled]="isProcessing || !cart.length" [class.loading]="isProcessing">
+            <span *ngIf="!isProcessing">
+              {{ paymentMode === 'Cash' ? 'Finalize Cash' : 'Proceed to Razorpay' }} 
+              ({{ total | currency }})
+            </span>
+            <span *ngIf="isProcessing">Processing...</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>

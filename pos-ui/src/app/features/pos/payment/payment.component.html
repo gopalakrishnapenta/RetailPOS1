@@ -1,0 +1,149 @@
+<div class="payment-wrapper" [class.success]="paymentSuccess">
+  <div class="container" *ngIf="!isLoading">
+    
+    <!-- Left Side: Order Summary -->
+    <div class="summary-card glass-panel" *ngIf="bill">
+      <div class="brand">
+        <span class="logo">N</span>
+        <h2>NexusPOS Checkout</h2>
+      </div>
+
+      <div class="bill-meta">
+        <div class="meta-item">
+          <label>Bill Number</label>
+          <span>{{ bill.billNumber || bill.id }}</span>
+        </div>
+        <div class="meta-item">
+          <label>Customer</label>
+          <span>{{ bill.customerName }} ({{ bill.customerMobile }})</span>
+        </div>
+      </div>
+
+      <div class="items-list">
+        <table class="receipt-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th class="text-center">Qty</th>
+              <th class="text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of bill.items">
+              <td>{{ item.productName }}</td>
+              <td class="text-center">{{ item.quantity }}</td>
+              <td class="text-right">{{ item.subTotal | currency }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="totals-section">
+        <div class="line">
+          <span>Subtotal</span>
+          <span>{{ (bill.totalAmount - bill.taxAmount) | currency }}</span>
+        </div>
+        <div class="line">
+          <span>Tax (10%)</span>
+          <span>{{ bill.taxAmount | currency }}</span>
+        </div>
+        <div class="grand-total">
+          <span>Amount Payable</span>
+          <span>{{ bill.totalAmount | currency }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Side: Interaction Area -->
+    <div class="action-card glass-panel" *ngIf="!paymentSuccess">
+      <div class="header">
+        <h3>Complete Payment</h3>
+        <p>Select a payment method and finalize</p>
+      </div>
+
+      <div class="payment-modes">
+        <button class="mode-btn" [class.active]="paymentMode === 'Cash'" (click)="paymentMode = 'Cash'">
+          <span class="icon">💵</span>
+          <span>Cash Payment</span>
+        </button>
+        <button class="mode-btn" [class.active]="paymentMode === 'Online'" (click)="paymentMode = 'Online'">
+          <span class="icon">💳</span>
+          <span>Online / Razorpay</span>
+        </button>
+      </div>
+
+      <div class="cash-logic" *ngIf="paymentMode === 'Cash'">
+        <div class="form-group">
+          <label>Tendered Amount ($)</label>
+          <input type="number" [(ngModel)]="tenderedAmount" (input)="calculateChange()" class="main-input" placeholder="0.00">
+        </div>
+        
+        <div class="change-display" [class.has-change]="changeAmount > 0">
+          <label>Balance to Return</label>
+          <div class="amount">{{ changeAmount | currency }}</div>
+        </div>
+      </div>
+
+      <div class="online-logic" *ngIf="paymentMode === 'Online'">
+        <div class="secure-chip">
+          <span class="sec-icon">🔒</span>
+          Secure Razorpay Integration
+        </div>
+        <p class="online-hint">Payment will be verified in real-time before finalizing the order.</p>
+      </div>
+
+      <div class="footer-actions">
+        <button class="btn-cancel" routerLink="/pos/billing">Cancel</button>
+        <button class="btn-finalize" (click)="processPayment()" [disabled]="isProcessing">
+          {{ isProcessing ? 'Processing Transaction...' : 'Confirm & Finalize' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Success State View (Receipt) -->
+    <div class="success-card glass-panel animate-scale-up" *ngIf="paymentSuccess">
+      <div class="success-header">
+        <div class="success-icon">✓</div>
+        <h2>Payment Successful!</h2>
+        <p>A message has been sent to {{ bill.customerMobile }}</p>
+      </div>
+
+      <div class="receipt-print-area">
+        <div class="p-header">
+          <h3>OFFICIAL RECEIPT</h3>
+          <p>NexusPOS Retail Store</p>
+          <p>{{ bill.date | date:'medium' }}</p>
+        </div>
+        <hr>
+        <div class="p-details">
+          <p><strong>Bill #:</strong> {{ bill.billNumber || bill.id }}</p>
+          <p><strong>Mode:</strong> {{ bill.paymentMode }}</p>
+          <p><strong>Ref:</strong> {{ bill.referenceNumber }}</p>
+        </div>
+        <table class="p-table">
+           <tr *ngFor="let item of bill.items">
+             <td>{{ item.productName }} x {{ item.quantity }}</td>
+             <td class="text-right">{{ item.subTotal | currency }}</td>
+           </tr>
+        </table>
+        <hr>
+        <div class="p-totals">
+           <div class="p-row"><span>Total Paid:</span> <strong>{{ bill.totalAmount | currency }}</strong></div>
+           <div class="p-row" *ngIf="bill.paymentMode === 'Cash'"><span>Tendered:</span> <span>{{ tenderedAmount | currency }}</span></div>
+           <div class="p-row" *ngIf="bill.paymentMode === 'Cash'"><span>Change:</span> <span>{{ changeAmount | currency }}</span></div>
+        </div>
+      </div>
+
+      <div class="success-footer">
+        <button class="btn-new" (click)="newSale()">Start New Sale</button>
+        <p class="auto-print-hint">Receipt printing triggered automatically...</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading transaction context...</p>
+  </div>
+</div>

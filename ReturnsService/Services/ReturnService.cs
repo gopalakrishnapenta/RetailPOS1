@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ReturnsService.Data;
 using ReturnsService.Models;
+using ReturnsService.DTOs;
 using ReturnsService.Interfaces;
 using MassTransit;
 using RetailPOS.Contracts;
@@ -25,26 +26,44 @@ namespace ReturnsService.Services
             return await _returnRepository.GetQueryable().OrderByDescending(r => r.Date).ToListAsync();
         }
 
-        public async Task<Return> InitiateReturnAsync(Return returnRequest)
+        public async Task<Return> InitiateReturnAsync(ReturnInitiationDto returnDto)
         {
-            returnRequest.Status = "Initiated";
-            returnRequest.Date = DateTime.UtcNow;
-            returnRequest.StoreId = _tenantProvider.StoreId;
-            
-            await _returnRepository.AddAsync(returnRequest);
+            var createdReturns = new List<Return>();
+
+            foreach (var item in returnDto.Items)
+            {
+                var r = new Return
+                {
+                    OriginalBillId = returnDto.BillId,
+                    Reason = returnDto.Reason,
+                    Status = "Initiated",
+                    Date = DateTime.UtcNow,
+                    StoreId = _tenantProvider.StoreId,
+                    ProductId = item.BillItemId, // In a more complex system, map BillItemId -> ProductId
+                    Quantity = item.Quantity,
+                    RefundAmount = item.RefundAmount,
+                    CustomerMobile = returnDto.CustomerMobile
+                };
+
+                await _returnRepository.AddAsync(r);
+                createdReturns.Add(r);
+            }
+
             await _returnRepository.SaveChangesAsync();
 
-            // Notify OrdersService that a return has been initiated
-            await _publishEndpoint.Publish<ReturnInitiatedEvent>(new
+            // Notify OrdersService for EACH item return initiated
+            foreach (var r in createdReturns)
             {
-                OrderId = returnRequest.OriginalBillId,
-                ServiceReturnId = returnRequest.Id,
-                StoreId = returnRequest.StoreId,
-                CustomerMobile = returnRequest.CustomerMobile,
-                Items = new[] { new { ProductId = returnRequest.ProductId, Quantity = returnRequest.Quantity } }
-            });
+                await _publishEndpoint.Publish<ReturnInitiatedEvent>(new
+                {
+                    OrderId = r.OriginalBillId,
+                    ServiceReturnId = r.Id,
+                    StoreId = r.StoreId,
+                    Items = new[] { new { ProductId = r.ProductId, Quantity = r.Quantity } }
+                });
+            }
 
-            return returnRequest;
+            return createdReturns.FirstOrDefault() ?? new Return();
         }
 
         public async Task ApproveReturnAsync(int id, string? note)

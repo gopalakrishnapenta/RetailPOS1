@@ -25,5 +25,13 @@ namespace AdminService.Controllers
             await _inventoryService.AdjustInventoryAsync(adjustment);
             return Ok(new { message = "Stock adjusted successfully" });
         }
+
+        [HttpGet]
+        [Authorize(Policy = RetailPOS.Common.Authorization.Permissions.Admin.ReportsView)]
+        public async Task<IActionResult> GetInventory()
+        {
+            var summary = await _inventoryService.GetInventorySummaryAsync();
+            return Ok(summary);
+        }
     }
 }

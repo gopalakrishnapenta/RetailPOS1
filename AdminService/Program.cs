@@ -133,10 +133,14 @@ var app = builder.Build();
             logger.LogInformation("Attempting to apply Admin Service migrations...");
             await context.Database.MigrateAsync();
             logger.LogInformation("Admin Service migrations applied successfully.");
+
+            logger.LogInformation("🚀 Starting Admin Data Seeding...");
+            await AdminService.Data.DbInitializer.InitAsync(context, logger);
+            logger.LogInformation("Admin Data Seeding completed successfully.");
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Admin Service migration failed or already applied: {Message}", ex.Message);
+            logger.LogError(ex, "Admin Service initialization failed.");
         }
     }
 

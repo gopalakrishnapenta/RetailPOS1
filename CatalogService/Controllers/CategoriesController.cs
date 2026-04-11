@@ -39,6 +39,30 @@ namespace CatalogService.Controllers
             return Ok(category);
         }
 
+        [HttpPost]
+        [Authorize(Policy = Permissions.Catalog.CategoriesEdit)]
+        public async Task<IActionResult> Create([FromBody] CategoryDto dto)
+        {
+            var result = await _categoryService.CreateCategoryAsync(dto);
+            return Ok(result);
+        }
+
+        [HttpPut("{id}")]
+        [Authorize(Policy = Permissions.Catalog.CategoriesEdit)]
+        public async Task<IActionResult> Update(int id, [FromBody] CategoryDto dto)
+        {
+            await _categoryService.UpdateCategoryAsync(id, dto);
+            return Ok(new { message = "Category updated successfully" });
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Policy = Permissions.Catalog.CategoriesEdit)]
+        public async Task<IActionResult> Delete(int id)
+        {
+            await _categoryService.DeleteCategoryAsync(id);
+            return Ok(new { message = "Category deleted successfully" });
+        }
+
         [HttpPost("{id}/restore")]
         [Authorize(Policy = Permissions.Catalog.CategoriesEdit)]
         public async Task<IActionResult> Restore(int id)

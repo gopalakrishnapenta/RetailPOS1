@@ -159,11 +159,14 @@ namespace IdentityService.Services
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
 
-            // Notify Admin Service that a new staff member registered
+            // Notify Admin Service that a new staff member registered (Initial registration is always pending)
             await _publishEndpoint.Publish<UserRegisteredEvent>(new
             {
                 UserId = user.Id,
-                Email = user.Email
+                Email = user.Email,
+                FullName = (string?)null,
+                RoleName = (string?)null,
+                StoreId = (int?)null
             });
             
             // Actually send the verification email!
@@ -209,6 +212,29 @@ namespace IdentityService.Services
             return otp;
         }
 
+        public async Task<bool> ResendLoginOtpAsync(string email)
+        {
+            var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == email);
+            if (user == null) return false;
+
+            var otp = new Random().Next(100000, 999999).ToString();
+            user.Otp = otp;
+            user.OtpExpiry = DateTime.UtcNow.AddMinutes(10);
+            await _userRepository.SaveChangesAsync();
+
+            var testAccounts = _config.GetSection("TestAccounts").Get<string[]>() ?? Array.Empty<string>();
+            if (testAccounts.Any(a => a.Equals(user.Email, StringComparison.OrdinalIgnoreCase)))
+            {
+                _logger.LogInformation($"[TEST OTP RESEND] Login OTP for {user.Email}: {otp}");
+            }
+            else
+            {
+                await _emailService.SendEmailAsync(user.Email, "NexusPOS Login (New Code)", $"Your new login code is: {otp}");
+            }
+
+            return true;
+        }
+
         public async Task<bool> ResetPasswordAsync(ResetPasswordDto resetDto)
         {
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == resetDto.Email);
@@ -225,18 +251,45 @@ namespace IdentityService.Services
             
             if (user == null)
             {
-                if (!storeId.HasValue || string.IsNullOrEmpty(role)) return new AuthResult { Success = false, Message = "SIGNUP_REQUIRED" };
-                var db = ((UserRepository)_userRepository).GetContext();
-                var roleEnt = await db.Roles.FirstOrDefaultAsync(r => r.Name == role);
-                user = new ModelsUser { Email = payload.Email, PasswordHash = BCryptNet.HashPassword(Guid.NewGuid().ToString()), IsEmailVerified = true };
-                user.UserRoles.Add(new UserStoreRole { RoleId = roleEnt?.Id ?? 3, StoreId = storeId });
+                user = new ModelsUser 
+                { 
+                    Email = payload.Email, 
+                    PasswordHash = BCryptNet.HashPassword(Guid.NewGuid().ToString()), 
+                    IsEmailVerified = true,
+                    EmployeeCode = $"E{new Random().Next(100, 999)}"
+                };
+
+                if (storeId.HasValue && !string.IsNullOrEmpty(role))
+                {
+                    var db = ((UserRepository)_userRepository).GetContext();
+                    var roleEnt = await db.Roles.FirstOrDefaultAsync(r => r.Name == role);
+                    user.UserRoles.Add(new UserStoreRole { RoleId = roleEnt?.Id ?? 3, StoreId = storeId });
+                }
+
                 await _userRepository.AddAsync(user);
                 await _userRepository.SaveChangesAsync();
                 user = await _userRepository.GetWithRolesByEmailAsync(payload.Email);
             }
 
             var map = user!.UserRoles.OrderBy(ur => ur.StoreId == null ? 0 : 1).FirstOrDefault();
-            var perms = map!.Role.RolePermissions.Select(rp => rp.Permission.Code).ToList();
+            
+            if (map == null)
+            {
+                _logger.LogWarning($"Google User {user.Email} has no Store Assignment. Returning PENDING_STAFF.");
+                return new AuthResult 
+                { 
+                    Success = true, 
+                    Data = new AuthResponseDto { 
+                        Token = null, 
+                        Role = "PENDING_STAFF", 
+                        Email = user.Email, 
+                        StoreId = 0,
+                        Permissions = new List<string>()
+                    } 
+                };
+            }
+
+            var perms = map.Role.RolePermissions.Select(rp => rp.Permission.Code).ToList();
             var token = GenerateJwt(user, map.Role.Name, perms, map.StoreId ?? 0, map.Store?.StoreCode);
 
             // [PHASE 2] Generate and Save Refresh Token
@@ -384,6 +437,25 @@ namespace IdentityService.Services
             return users
                 .Select(u => new UserSyncDto(u.Id, u.Email, u.IsEmailVerified))
                 .ToList();
+        }
+
+        public async Task<int> SyncAllUsersAsync()
+        {
+            var users = await _userRepository.GetAllAsync();
+            int count = 0;
+
+            foreach (var user in users)
+            {
+                await _publishEndpoint.Publish<UserRegisteredEvent>(new
+                {
+                    UserId = user.Id,
+                    Email = user.Email
+                });
+                count++;
+            }
+
+            _logger.LogInformation($"Manual Sync: Published UserRegisteredEvent for {count} users.");
+            return count;
         }
     }
 }

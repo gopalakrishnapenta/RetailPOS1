@@ -1,0 +1,39 @@
+.inventory-container {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  background: var(--bg-primary);
+  min-height: 100vh;
+}
+
+.inventory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.inventory-table-section {
+  padding: 24px;
+}
+
+.admin-table td, .admin-table th {
+  padding: 16px 20px;
+  white-space: nowrap;
+}
+
+.low-stock {
+  color: var(--accent-danger);
+  font-weight: 700;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-secondary);
+}

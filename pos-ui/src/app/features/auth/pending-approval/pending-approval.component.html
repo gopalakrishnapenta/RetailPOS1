@@ -1,0 +1,29 @@
+<div class="login-container">
+  <div class="header glass-panel animate-fade-in">
+    <h1>Account Pending</h1>
+    <p>Premium Billing Solution</p>
+  </div>
+
+  <div class="login-card glass-panel status-card">
+    <div class="status-icon">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" />
+        <path d="M12 6V12L16 14" />
+      </svg>
+    </div>
+    
+    <h3>Waiting for Approval</h3>
+    <p class="status-msg">
+      Your account registration was successful. For security reasons, an administrator must assign your account to a store and a role before you can access the POS system.
+    </p>
+
+    <div class="info-box">
+      <p><strong>Registered Email:</strong> {{ userEmail }}</p>
+      <p>Please contact your store administrator to complete the setup.</p>
+    </div>
+    
+    <button class="btn btn-secondary w-full" (click)="logout()">
+      Sign Out
+    </button>
+  </div>
+</div>

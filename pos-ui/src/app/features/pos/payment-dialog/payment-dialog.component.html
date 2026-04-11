@@ -1,0 +1,82 @@
+<div class="modal-overlay">
+  <div class="payment-modal glass-panel">
+    <header class="modal-header">
+      <div class="bill-info">
+        <h3>Payment & Receipt</h3>
+        <p>Bill #1024 | Customer: Walk-in</p>
+      </div>
+      <button class="close-btn">×</button>
+    </header>
+
+    <div class="modal-body">
+      <!-- Payment Methods -->
+      <div class="payment-methods">
+        <h4>Choose Payment Method</h4>
+        <div class="method-grid">
+          <button class="method-card active">
+            <span class="icon">💵</span>
+            <span>Cash</span>
+          </button>
+          <button class="method-card">
+            <span class="icon">💳</span>
+            <span>Card</span>
+          </button>
+          <button class="method-card">
+            <span class="icon">📱</span>
+            <span>UPI / QR</span>
+          </button>
+          <button class="method-card">
+            <span class="icon">⚖️</span>
+            <span>Split</span>
+          </button>
+        </div>
+
+        <div class="payment-details">
+          <div class="form-group">
+            <label>Amount to Pay</label>
+            <div class="amount-display">$31.32</div>
+          </div>
+          <div class="form-group">
+            <label>Tendered Amount</label>
+            <input type="number" class="input-field" placeholder="0.00">
+          </div>
+          <div class="balance-v">
+            <div class="label">Balance to Return</div>
+            <div class="value">$0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Receipt Preview -->
+      <div class="receipt-preview">
+        <h4>Receipt Preview</h4>
+        <div class="receipt-paper">
+          <div class="receipt-header">
+            <strong>RetailPOS - Main</strong>
+            <p>123 Business St, City</p>
+          </div>
+          <div class="receipt-items">
+            <div class="receipt-item" *ngFor="let i of [1,2,3]">
+              <span>Product {{i}} x 1</span>
+              <span>$9.99</span>
+            </div>
+          </div>
+          <div class="receipt-summary">
+            <div class="row"><span>Net Amount</span><span>$31.32</span></div>
+            <div class="row"><span>Tax (10%)</span><span>$2.85</span></div>
+          </div>
+          <div class="receipt-footer">
+            <div class="barcode-placeholder">|||| || |||||</div>
+            <p>Thank you for shopping!</p>
+          </div>
+        </div>
+        
+        <div class="receipt-actions">
+           <button class="btn btn-secondary">Email</button>
+           <button class="btn btn-secondary">SMS</button>
+           <button class="btn btn-primary">Print Receipt</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

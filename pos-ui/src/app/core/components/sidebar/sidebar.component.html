@@ -1,0 +1,66 @@
+<aside class="sidebar glass-panel">
+  <div class="sidebar-header">
+    <div class="logo">
+      <span class="logo-icon">POS</span>
+      <h1>Retail</h1>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <!-- Admin & Store Manager Links -->
+    <div class="nav-section" *ngIf="hasAccess(['Admin', 'StoreManager'])">
+      <p class="section-title">ADMINISTRATION</p>
+      <a routerLink="/admin/dashboard" routerLinkActive="active" class="nav-item">
+        <span class="icon">📊</span> Dashboard
+      </a>
+      <a routerLink="/admin/inventory" routerLinkActive="active" class="nav-item">
+        <span class="icon">📦</span> Inventory
+      </a>
+      <a routerLink="/admin/products" routerLinkActive="active" class="nav-item">
+        <span class="icon">🛒</span> Products
+      </a>
+      <!-- Categories only for Admin -->
+      <a *ngIf="userRole === 'Admin'" routerLink="/admin/categories" routerLinkActive="active" class="nav-item">
+        <span class="icon">🏷️</span> Categories
+      </a>
+      <!-- Staff only for Admin -->
+      <a *ngIf="userRole === 'Admin'" routerLink="/admin/staff" routerLinkActive="active" class="nav-item">
+        <span class="icon">👥</span> Staff
+      </a>
+      <!-- Returns for Admin & Manager -->
+      <a routerLink="/admin/returns" routerLinkActive="active" class="nav-item">
+        <span class="icon">🔄</span> Returns
+      </a>
+    </div>
+
+    <!-- POS / Cashier Links - Strictly for Cashiers -->
+    <div class="nav-section" *ngIf="userRole === 'Cashier'">
+      <p class="section-title">POS TERMINAL</p>
+      <a routerLink="/pos/billing" routerLinkActive="active" class="nav-item">
+        <span class="icon">💸</span> Billing
+      </a>
+      <a routerLink="/pos/returns" routerLinkActive="active" class="nav-item">
+        <span class="icon">🔄</span> Returns
+      </a>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="theme-toggle">
+      <span class="theme-label">Theme</span>
+      <button class="theme-btn" (click)="toggleTheme()">
+        {{ theme === 'dark' ? 'Dark' : 'Light' }}
+      </button>
+    </div>
+    <div class="user-profile">
+      <div class="avatar">{{ userName[0]?.toUpperCase() }}</div>
+      <div class="user-details">
+        <span class="name">{{ userName }}</span>
+        <span class="role">{{ userRole }}</span>
+      </div>
+    </div>
+    <button class="btn-logout" (click)="logout()">
+      <span class="icon">🚪</span> Logout
+    </button>
+  </div>
+</aside>
