@@ -19,7 +19,7 @@ namespace AdminService.Data
 
             foreach (var store in defaultStores)
             {
-                if (!await context.Stores.AnyAsync(s => s.Id == store.Id))
+                if (!await context.Stores.IgnoreQueryFilters().AnyAsync(s => s.Id == store.Id))
                 {
                     logger.LogInformation($"[AdminSync] Seeding DEFAULT Store: {store.StoreCode} (ID: {store.Id})");
                     
@@ -38,8 +38,25 @@ namespace AdminService.Data
                     }
                 }
             }
+            
+            // 2. Seed DEFAULT ADMIN STAFF (if missing from event flow)
+            var adminEmail = "admin@gmail.com";
+            if (!await context.StaffMembers.IgnoreQueryFilters().AnyAsync(sm => sm.Email == adminEmail))
+            {
+                logger.LogInformation($"[AdminSync] Seeding DEFAULT ADMIN STAFF: {adminEmail}");
+                context.StaffMembers.Add(new StaffMember
+                {
+                    UserId = 1, // Matches Identity Service seeded admin
+                    Email = adminEmail,
+                    FullName = "Global Admin",
+                    AssignedRole = "Admin",
+                    IsAssigned = true,
+                    RegisteredDate = DateTime.UtcNow
+                });
+                await context.SaveChangesAsync();
+            }
 
-            logger.LogInformation("✅ [AdminSync] Store Synchronization Complete.");
+            logger.LogInformation("✅ [AdminSync] Store and Staff Synchronization Complete.");
         }
     }
 }

@@ -190,6 +190,15 @@
 }
 
 .submit-return {
-  grid-column: span 2;
   margin-top: var(--spacing-md);
+}
+
+.return-action-panel {
+  grid-column: span 2;
+}
+
+.return-hint {
+  margin: var(--spacing-sm) 0 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }

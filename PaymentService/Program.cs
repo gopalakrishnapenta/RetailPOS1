@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -11,6 +12,8 @@ using Microsoft.OpenApi.Models;
 using RetailPOS.Common.Authorization;
 using RetailPOS.Common.Logging;
 using Serilog;
+
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,6 +65,7 @@ builder.Services.AddScoped<IRazorpayService, RazorpayService>();
 // MassTransit config
 builder.Services.AddMassTransit(x =>
 {
+    x.AddConsumer<PaymentService.Consumers.CheckoutSagaCommandsConsumer>();
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host("localhost", "/", h =>

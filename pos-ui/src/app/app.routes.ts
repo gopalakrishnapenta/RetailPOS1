@@ -11,6 +11,7 @@ import { CategoriesComponent } from './features/admin/categories/categories.comp
 import { StaffComponent } from './features/admin/staff/staff.component';
 import { ReturnsComponent } from './features/pos/returns/returns.component';
 import { ReturnsManagementComponent } from './features/admin/returns/returns.component';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -20,6 +21,7 @@ export const routes: Routes = [
   { path: 'pending-approval', component: PendingApprovalComponent },
   { 
     path: 'pos', 
+    canActivate: [authGuard],
     children: [
       { path: 'billing', component: BillingComponent },
       { path: 'returns', component: ReturnsComponent },
@@ -28,6 +30,7 @@ export const routes: Routes = [
   },
   {
     path: 'admin',
+    canActivate: [authGuard],
     children: [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'inventory', component: InventoryComponent },

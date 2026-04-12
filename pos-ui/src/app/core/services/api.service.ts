@@ -97,6 +97,10 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/orders/bills`, billData);
   }
 
+  finalizeBill(id: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/orders/bills/${id}/finalize`, {});
+  }
+
   getBills(): Observable<any> {
     return this.http.get(`${this.baseUrl}/orders/bills`);
   }

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using OrdersService.Data;
@@ -12,6 +13,8 @@ using Microsoft.OpenApi.Models;
 using RetailPOS.Common.Logging;
 using Serilog;
 
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog
@@ -19,9 +22,16 @@ builder.ConfigureSerilog("OrdersService");
 
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumer<OrdersService.Consumers.PaymentProcessedConsumer>();
     x.AddConsumer<OrdersService.Consumers.ReturnInitiatedConsumer>();
     x.AddConsumer<OrdersService.Consumers.OrderReturnedConsumer>();
+    x.AddConsumer<OrdersService.Consumers.SagaOrderCommandsConsumer>();
+
+    x.AddSagaStateMachine<OrdersService.Sagas.CheckoutStateMachine, OrdersService.Sagas.CheckoutSagaState>()
+        .EntityFrameworkRepository(r =>
+        {
+            r.ExistingDbContext<OrdersService.Data.OrdersSagaDbContext>();
+            r.UseSqlServer();
+        });
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -30,17 +40,9 @@ builder.Services.AddMassTransit(x =>
             h.Password("guest");
         });
         
-        cfg.ReceiveEndpoint("orders-payment-queue", e => {
-            e.ConfigureConsumer<OrdersService.Consumers.PaymentProcessedConsumer>(context);
-        });
+        cfg.ConfigureEndpoints(context);
         
-        cfg.ReceiveEndpoint("orders-return-init-queue", e => {
-            e.ConfigureConsumer<OrdersService.Consumers.ReturnInitiatedConsumer>(context);
-        });
 
-        cfg.ReceiveEndpoint("orders-return-complete-queue", e => {
-            e.ConfigureConsumer<OrdersService.Consumers.OrderReturnedConsumer>(context);
-        });
     });
 });
 
@@ -77,6 +79,9 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddDbContext<OrdersDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddDbContext<OrdersService.Data.OrdersSagaDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddHttpContextAccessor();
@@ -117,7 +122,11 @@ try
         logger.LogInformation("Applying Migrations and Seeding Orders Database...");
         var context = scope.ServiceProvider.GetRequiredService<OrdersService.Data.OrdersDbContext>();
         await context.Database.MigrateAsync();
-        logger.LogInformation("Orders Database initialized successfully.");
+
+        var sagaContext = scope.ServiceProvider.GetRequiredService<OrdersService.Data.OrdersSagaDbContext>();
+        await sagaContext.Database.MigrateAsync();
+        
+        logger.LogInformation("Orders & Saga Databases initialized successfully.");
     }
 }
 catch (Exception ex)

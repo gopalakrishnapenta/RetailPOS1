@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -16,6 +17,8 @@ using AdminService.Consumers;
 using RetailPOS.Common.Authorization;
 using RetailPOS.Common.Logging;
 using Serilog;
+
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -85,14 +88,23 @@ builder.Services.AddScoped<ITenantProvider, TenantProvider>();
 // Project-Wide Granular Authorization (Enterprise RBAC)
 builder.Services.AddRetailPOSAuthorization();
 
-builder.Services.AddDbContext<AdminService.Data.AdminDbContext>(dbContextOptions => {
-    dbContextOptions.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-});
+builder.Services.AddDbContext<AdminDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddDbContext<AdminService.Data.AdminSagaDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddSagaStateMachine<AdminService.Sagas.OnboardingStateMachine, AdminService.Sagas.OnboardingSagaState>()
+        .EntityFrameworkRepository(r =>
+        {
+            r.ExistingDbContext<AdminService.Data.AdminSagaDbContext>();
+            r.UseSqlServer();
+        });
+
     x.AddConsumer<DashboardEventsConsumer>();
-    x.AddConsumer<UserRegisteredConsumer>();
+    x.AddConsumer<SagaUserOnboardingConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -101,15 +113,8 @@ builder.Services.AddMassTransit(x =>
             h.Password("guest");
         });
 
-        cfg.ReceiveEndpoint("admin-dashboard-stats", e =>
-        {
-            e.ConfigureConsumer<DashboardEventsConsumer>(context);
-        });
+        cfg.ConfigureEndpoints(context);
 
-        cfg.ReceiveEndpoint("admin-user-registered", e =>
-        {
-            e.ConfigureConsumer<UserRegisteredConsumer>(context);
-        });
     });
 });
 
@@ -158,5 +163,27 @@ app.UseExceptionMiddleware();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+// Migration and Initial Setup logic
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<AdminDbContext>();
+        await context.Database.MigrateAsync();
+
+        var sagaContext = services.GetRequiredService<AdminService.Data.AdminSagaDbContext>();
+        await sagaContext.Database.MigrateAsync();
+        
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("Admin & Saga Databases initialized successfully.");
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating the database.");
+    }
+}
+
 app.MapControllers();
 app.Run();

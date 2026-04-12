@@ -76,15 +76,11 @@ namespace ReturnsService.Services
 
             await _returnRepository.SaveChangesAsync();
 
-            // Publish OrderReturnedEvent for Catalog restocking and Order status update
-            await _publishEndpoint.Publish<OrderReturnedEvent>(new
+            // SAGA: TRIGGER APPROVAL
+            await _publishEndpoint.Publish<ReturnApprovedEvent>(new
             {
-                OrderId = r.OriginalBillId,
                 ReturnId = r.Id,
-                StoreId = r.StoreId,
-                RefundAmount = r.RefundAmount, 
-                CustomerMobile = r.CustomerMobile,
-                Items = new[] { new { ProductId = r.ProductId, Quantity = r.Quantity } }
+                Note = r.ManagerApprovalNote
             });
         }
 
@@ -97,6 +93,13 @@ namespace ReturnsService.Services
             r.ManagerApprovalNote = note ?? string.Empty;
 
             await _returnRepository.SaveChangesAsync();
+
+            // SAGA: TRIGGER REJECTION
+            await _publishEndpoint.Publish<ReturnRejectedEvent>(new
+            {
+                ReturnId = r.Id,
+                Reason = r.ManagerApprovalNote
+            });
         }
     }
 }

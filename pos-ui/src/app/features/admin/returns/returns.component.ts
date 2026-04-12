@@ -1,7 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
+import { SignalrService } from '../../../core/services/signalr.service';
+import { Subject, timer } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-returns',
@@ -140,53 +143,78 @@ import { ApiService } from '../../../core/services/api.service';
     .empty-content span { font-size: 48px; display: block; margin-bottom: 16px; }
   `]
 })
-export class ReturnsManagementComponent implements OnInit {
+export class ReturnsManagementComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   returns: any[] = [];
   isLoading = true;
   showNoteModal = false;
   actionNote = '';
   actionType: 'approve' | 'reject' = 'approve';
-  currentReturn: any = null;
+  selectedReturn: any = null;
+  note = '';
   isActionLoading = false;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private cdr: ChangeDetectorRef, private signalr: SignalrService) {}
 
   ngOnInit() {
     this.loadReturns();
+    this.startAutoRefresh();
   }
 
-  loadReturns() {
-    this.isLoading = true;
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  startAutoRefresh() {
+    this.signalr.notifications$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((notif) => {
+        console.log('Admin Returns: SignalR Trigger', notif.message);
+        // Refresh when returns are initiated
+        if (notif.message.includes('RETURN') || notif.message.includes('REFUND')) {
+          this.loadReturns(true);
+        }
+      });
+  }
+
+  loadReturns(isSilent: boolean = false) {
+    if (!isSilent) this.isLoading = true;
     this.api.getReturns().subscribe({
       next: (data: any[]) => {
         this.returns = data;
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error loading returns', err);
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }
 
   getStatusClass(status: string): string {
+    if (!status) return 'info';
     switch (status.toLowerCase()) {
       case 'initiated': return 'warning';
-      case 'approved': return 'success';
+      case 'approved': 
+      case 'refunded': return 'success';
+      case 'refunding': return 'info';
       case 'rejected': return 'danger';
       default: return 'info';
     }
   }
 
   onApprove(ret: any) {
-    this.currentReturn = ret;
+    this.selectedReturn = ret;
     this.actionType = 'approve';
     this.showNoteModal = true;
     this.actionNote = '';
   }
 
   onReject(ret: any) {
-    this.currentReturn = ret;
+    this.selectedReturn = ret;
     this.actionType = 'reject';
     this.showNoteModal = true;
     this.actionNote = '';
@@ -194,27 +222,30 @@ export class ReturnsManagementComponent implements OnInit {
 
   closeModal() {
     this.showNoteModal = false;
-    this.currentReturn = null;
+    this.selectedReturn = null;
   }
 
   confirmAction() {
-    if (!this.currentReturn) return;
+    if (!this.selectedReturn) return;
     this.isActionLoading = true;
     
     const obs = this.actionType === 'approve' 
-      ? this.api.approveReturn(this.currentReturn.id, this.actionNote)
-      : this.api.rejectReturn(this.currentReturn.id, this.actionNote);
+      ? this.api.approveReturn(this.selectedReturn.id, this.actionNote)
+      : this.api.rejectReturn(this.selectedReturn.id, this.actionNote);
 
     obs.subscribe({
       next: () => {
+        // Force immediate UI update and closure
         this.isActionLoading = false;
         this.closeModal();
         this.loadReturns();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error processing return', err);
         alert('Failed to process return: ' + (err.error?.message || err.message || 'Unknown error'));
         this.isActionLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }

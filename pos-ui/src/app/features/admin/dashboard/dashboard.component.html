@@ -109,7 +109,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let bill of stats?.recentBills">
+          <tr *ngFor="let bill of stats?.recentBills" (click)="viewBillReceipt(bill.id)" style="cursor: pointer;" class="clickable-row">
             <td>#{{ bill.id }}</td>
             <td>{{ bill.customer }}</td>
             <td>{{ bill.total | currency }}</td>
@@ -120,4 +120,57 @@
       <p *ngIf="!stats?.recentBills?.length" class="empty-msg">No recent activity</p>
     </div>
   </section>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal-overlay" *ngIf="showReceiptModal">
+  <div class="receipt-card glass-panel animate-slide-up" [class.loading]="isReceiptLoading">
+    <div class="receipt-header">
+      <div class="logo">POS<span>Retail</span></div>
+      <h4>Sales Receipt</h4>
+      <p class="bill-num">Order #{{ selectedBill?.billNumber || selectedBill?.id }}</p>
+      <p class="date">{{ selectedBill?.date | date:'medium' }}</p>
+    </div>
+
+    <div class="receipt-body" *ngIf="selectedBill">
+      <div class="customer-info">
+        <span>Customer:</span> {{ selectedBill.customerName || 'Walk-in' }} ({{ selectedBill.customerMobile }})
+      </div>
+      
+      <table class="receipt-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Qty</th>
+            <th class="text-right">Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of selectedBill.items">
+            <td>{{ item.productName }}</td>
+            <td>{{ item.quantity }}</td>
+            <td class="text-right">{{ item.subTotal | currency }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="receipt-summary">
+        <div class="summary-line">
+          <span>Tax Breakdown</span>
+          <span>{{ selectedBill.taxAmount | currency }}</span>
+        </div>
+        <div class="summary-line total">
+          <span>Total Amount</span>
+          <span>{{ selectedBill.totalAmount | currency }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="receipt-footer">
+      <div class="loading-spinner" *ngIf="isReceiptLoading">
+        <span>🔄 Fetching Details...</span>
+      </div>
+      <button class="btn btn-primary w-100" (click)="closeReceiptModal()">Close Receipt</button>
+    </div>
+  </div>
 </div>

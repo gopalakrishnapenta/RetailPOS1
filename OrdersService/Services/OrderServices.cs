@@ -106,6 +106,19 @@ namespace OrdersService.Services
             // We wait for the PaymentProcessedEvent from the Payment Service instead.
             bill.Status = "PendingPayment";
             await _billRepository.SaveChangesAsync();
+
+            // TRIGGER SAGA
+            await _publishEndpoint.Publish<CheckoutInitiatedEvent>(new
+            {
+                OrderId = bill.Id,
+                StoreId = bill.StoreId,
+                TotalAmount = bill.TotalAmount,
+                TaxAmount = bill.TaxAmount,
+                Date = DateTime.UtcNow,
+                CustomerMobile = bill.CustomerMobile,
+                Items = bill.Items.Select(i => new { ProductId = i.ProductId, Quantity = i.Quantity }).ToList()
+            });
+
             return true;
         }
 

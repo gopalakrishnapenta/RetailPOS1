@@ -20,17 +20,35 @@ namespace ReturnsService.Services
                 var context = _httpContextAccessor.HttpContext;
                 if (context == null) return 0;
 
-                if (context.User.IsInRole("Admin") && context.Request.Headers.TryGetValue("X-Store-Id", out var headerStoreId))
+                // Check Role robustly to determine if we should allow header override
+                string role = this.Role;
+
+                if (role == "Admin" && context.Request.Headers.TryGetValue("X-Store-Id", out var headerStoreId))
                 {
                     if (int.TryParse(headerStoreId, out int sid)) return sid;
                 }
 
-                var claim = context.User.FindFirst("StoreId");
+                var claim = context.User.FindFirst("StoreId") ?? 
+                            context.User.FindFirst("storeid") ??
+                            context.User.FindFirst("Storeid");
+
                 return (claim != null && int.TryParse(claim.Value, out int storeId)) ? storeId : 0;
             }
         }
 
-        public string Role => _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        public string Role
+        {
+            get
+            {
+                var context = _httpContextAccessor.HttpContext;
+                if (context?.User == null) return string.Empty;
+                var roleClaim = context.User.FindFirst(ClaimTypes.Role) ?? 
+                                context.User.FindFirst("role") ?? 
+                                context.User.FindFirst("Role") ??
+                                context.User.FindFirst("http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
+                return roleClaim?.Value ?? string.Empty;
+            }
+        }
 
         public string? Token
         {

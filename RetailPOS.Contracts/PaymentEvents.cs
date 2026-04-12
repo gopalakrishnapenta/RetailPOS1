@@ -14,4 +14,12 @@ namespace RetailPOS.Contracts
         int OrderId { get; }
         string Reason { get; }
     }
+
+    public interface PaymentRefundedEvent
+    {
+        int OrderId { get; }
+        int? ReturnId { get; }
+        int PaymentId { get; }
+        decimal RefundedAmount { get; }
+    }
 }

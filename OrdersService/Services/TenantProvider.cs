@@ -20,13 +20,19 @@ namespace OrdersService.Services
                 var context = _httpContextAccessor.HttpContext;
                 if (context == null) return 0;
 
+                // Check Role robustly to determine if we should allow header override
+                string role = this.Role;
+
                 // Admin Override from Header
-                if (context.User.IsInRole("Admin") && context.Request.Headers.TryGetValue("X-Store-Id", out var headerStoreId))
+                if (role == "Admin" && context.Request.Headers.TryGetValue("X-Store-Id", out var headerStoreId))
                 {
                     if (int.TryParse(headerStoreId, out int sid)) return sid;
                 }
 
-                var claim = context.User.FindFirst("StoreId");
+                var claim = context.User.FindFirst("StoreId") ?? 
+                            context.User.FindFirst("storeid") ??
+                            context.User.FindFirst("Storeid");
+
                 if (claim != null && int.TryParse(claim.Value, out int storeId))
                 {
                     return storeId;
@@ -40,7 +46,12 @@ namespace OrdersService.Services
             get
             {
                 var context = _httpContextAccessor.HttpContext;
-                return context?.User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+                if (context?.User == null) return string.Empty;
+                var roleClaim = context.User.FindFirst(ClaimTypes.Role) ?? 
+                                context.User.FindFirst("role") ?? 
+                                context.User.FindFirst("Role") ??
+                                context.User.FindFirst("http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
+                return roleClaim?.Value ?? string.Empty;
             }
         }
 

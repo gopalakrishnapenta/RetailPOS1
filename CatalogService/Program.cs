@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -14,6 +15,8 @@ using RetailPOS.Common.Authorization;
 using RetailPOS.Common.Logging;
 using Serilog;
 
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog
@@ -21,10 +24,11 @@ builder.ConfigureSerilog("CatalogService");
 
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumer<OrderPlacedConsumer>();
-    x.AddConsumer<CategoryConsumer>();
-    x.AddConsumer<OrderReturnedConsumer>();
-    x.AddConsumer<StockAdjustedConsumer>();
+    x.AddConsumer<CatalogService.Consumers.CategoryConsumer>();
+    x.AddConsumer<CatalogService.Consumers.OrderPlacedConsumer>();
+    x.AddConsumer<CatalogService.Consumers.OrderReturnedConsumer>();
+    x.AddConsumer<CatalogService.Consumers.StockAdjustedConsumer>();
+    x.AddConsumer<CatalogService.Consumers.SagaDeductStockConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -51,6 +55,11 @@ builder.Services.AddMassTransit(x =>
         cfg.ReceiveEndpoint("catalog-inventory-adjusted", e =>
         {
             e.ConfigureConsumer<StockAdjustedConsumer>(context);
+        });
+
+        cfg.ReceiveEndpoint("catalog-saga-commands", e =>
+        {
+            e.ConfigureConsumer<SagaDeductStockConsumer>(context);
         });
     });
 });

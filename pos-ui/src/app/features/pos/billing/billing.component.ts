@@ -187,7 +187,24 @@ export class BillingComponent implements OnInit {
 
     this.api.createBill(billData).subscribe({
       next: (billRes) => {
-        this.handlePaymentSuccess(billRes);
+        // Essential Step: Finalize the bill to trigger the backend Checkout Saga before navigating to payment.
+        const billId = billRes.id || billRes.Id || 0;
+        if (billId === 0) {
+          this.isProcessing = false;
+          alert('Invalid Bill ID received.');
+          return;
+        }
+
+        this.api.finalizeBill(billId).subscribe({
+          next: () => {
+            this.handlePaymentSuccess(billRes);
+          },
+          error: (finalizeErr) => {
+            console.error('Finalization failure:', finalizeErr);
+            this.isProcessing = false;
+            alert('Checkout initiation failed. Please try again.');
+          }
+        });
       },
       error: (err) => {
         this.isProcessing = false;

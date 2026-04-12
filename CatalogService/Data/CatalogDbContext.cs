@@ -34,10 +34,9 @@ namespace CatalogService.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             // ── Multi-tenant Global Query Filters ────────────────────────────────────
-            modelBuilder.Entity<Product>().HasQueryFilter(p => 
-                (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) // Admin sees everything
-                || p.StoreId == _tenantProvider.StoreId // Others see their OWN store
-                || p.StoreId == 0); // AND Global items
+            modelBuilder.Entity<Product>().HasQueryFilter(p =>
+                (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0)
+                || p.StoreId == _tenantProvider.StoreId);
 
             modelBuilder.Entity<Category>().HasQueryFilter(c => 
                 c.IsActive && (
@@ -58,11 +57,11 @@ namespace CatalogService.Data
             );
 
             modelBuilder.Entity<Product>().HasData(
-                new Product { Id = 1, Sku = "SKU-001", Name = "Laptop", CategoryId = 1, MRP = 50000, SellingPrice = 45000, StoreId = 0, StockQuantity = 10 },
-                new Product { Id = 2, Sku = "SKU-002", Name = "Mechanical Keyboard", CategoryId = 1, MRP = 3000, SellingPrice = 2500, StoreId = 0, StockQuantity = 50 },
-                new Product { Id = 3, Sku = "SKU-003", Name = "Mouse", CategoryId = 1, MRP = 1000, SellingPrice = 800, StoreId = 0, StockQuantity = 100 },
-                new Product { Id = 4, Sku = "SKU-004", Name = "Milk", CategoryId = 2, MRP = 50, SellingPrice = 48, StoreId = 0, StockQuantity = 500 },
-                new Product { Id = 5, Sku = "SKU-005", Name = "Bread", CategoryId = 2, MRP = 40, SellingPrice = 38, StoreId = 0, StockQuantity = 200 }
+                new Product { Id = 1, Sku = "SKU-S1-001", Name = "Laptop (S1)", CategoryId = 1, MRP = 50000, SellingPrice = 45000, StoreId = 1, StockQuantity = 10 },
+                new Product { Id = 2, Sku = "SKU-S1-002", Name = "Mechanical Keyboard (S1)", CategoryId = 1, MRP = 3000, SellingPrice = 2500, StoreId = 1, StockQuantity = 50 },
+                new Product { Id = 3, Sku = "SKU-S2-003", Name = "Mouse (S2)", CategoryId = 1, MRP = 1000, SellingPrice = 800, StoreId = 2, StockQuantity = 100 },
+                new Product { Id = 4, Sku = "SKU-S2-004", Name = "Milk (S2)", CategoryId = 2, MRP = 50, SellingPrice = 48, StoreId = 2, StockQuantity = 500 },
+                new Product { Id = 5, Sku = "SKU-S2-005", Name = "Bread (S2)", CategoryId = 2, MRP = 40, SellingPrice = 38, StoreId = 2, StockQuantity = 200 }
             );
         }
 

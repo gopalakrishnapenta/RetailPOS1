@@ -1,5 +1,22 @@
 namespace RetailPOS.Contracts
 {
+    public interface CheckoutInitiatedEvent
+    {
+        int OrderId { get; }
+        int StoreId { get; }
+        decimal TotalAmount { get; }
+        decimal TaxAmount { get; }
+        DateTime Date { get; }
+        string? CustomerMobile { get; }
+        List<OrderItemContract> Items { get; }
+    }
+
+    public interface OrderItemContract
+    {
+        int ProductId { get; }
+        int Quantity { get; }
+    }
+
     public interface OrderPlacedEvent
     {
         int OrderId { get; }
@@ -38,6 +55,30 @@ namespace RetailPOS.Contracts
         int OrderId { get; }
         int ServiceReturnId { get; }
         int StoreId { get; }
+        string? CustomerMobile { get; }
         List<ReturnedItemEvent> Items { get; }
+    }
+
+    public interface FinalizeOrderCommand
+    {
+        int OrderId { get; }
+    }
+
+    public interface ReturnApprovedEvent
+    {
+        int ReturnId { get; }
+        string Note { get; }
+    }
+
+    public interface ReturnRejectedEvent
+    {
+        int ReturnId { get; }
+        string Reason { get; }
+    }
+
+    public interface FinalizeReturnCommand
+    {
+        int ReturnId { get; }
+        string NewStatus { get; }
     }
 }

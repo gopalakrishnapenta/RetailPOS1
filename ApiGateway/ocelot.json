@@ -11,13 +11,15 @@
                                                   ],
                        "UpstreamPathTemplate":  "/gateway/payments/create-order",
                        "UpstreamHttpMethod":  [
-                                                 "POST",
-                                                 "OPTIONS"
+                                                  "POST",
+                                                  "OPTIONS"
                                               ],
-                       "AuthenticationOptions": {
-                           "AuthenticationProviderKey": "Bearer",
-                           "AllowedScopes": []
-                       }
+                       "AuthenticationOptions":  {
+                                                     "AuthenticationProviderKey":  "Bearer",
+                                                     "AllowedScopes":  [
+
+                                                                       ]
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/Payments/collect",
@@ -30,13 +32,15 @@
                                                   ],
                        "UpstreamPathTemplate":  "/gateway/payments/collect",
                        "UpstreamHttpMethod":  [
-                                                 "POST",
-                                                 "OPTIONS"
+                                                  "POST",
+                                                  "OPTIONS"
                                               ],
-                       "AuthenticationOptions": {
-                           "AuthenticationProviderKey": "Bearer",
-                           "AllowedScopes": []
-                       }
+                       "AuthenticationOptions":  {
+                                                     "AuthenticationProviderKey":  "Bearer",
+                                                     "AllowedScopes":  [
+
+                                                                       ]
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/Auth/login",
@@ -53,7 +57,6 @@
                                                   "OPTIONS"
                                               ]
                    },
-
                    {
                        "DownstreamPathTemplate":  "/api/Auth/verify-login-otp",
                        "DownstreamScheme":  "http",
@@ -187,7 +190,13 @@
                        "UpstreamHttpMethod":  [
                                                   "POST",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/auth/google-login",
@@ -217,7 +226,13 @@
                        "UpstreamHttpMethod":  [
                                                   "POST",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/auth/users",
@@ -232,7 +247,13 @@
                        "UpstreamHttpMethod":  [
                                                   "GET",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/auth/stores",
@@ -248,7 +269,13 @@
                                                   "GET",
                                                   "OPTIONS"
                                               ],
-                       "Priority":  11
+                       "Priority":  11,
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/stores/active",
@@ -296,7 +323,13 @@
                                                   "GET",
                                                   "POST",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/products/{id}",
@@ -313,7 +346,13 @@
                                                   "PUT",
                                                   "DELETE",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/categories",
@@ -329,7 +368,13 @@
                                                   "GET",
                                                   "POST",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/categories/{id}",
@@ -346,7 +391,13 @@
                                                   "PUT",
                                                   "DELETE",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/customers",
@@ -362,7 +413,13 @@
                                                   "GET",
                                                   "POST",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/customers/{id}",
@@ -379,7 +436,13 @@
                                                   "PUT",
                                                   "DELETE",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/bills",
@@ -390,12 +453,19 @@
                                                           "Port":  5003
                                                       }
                                                   ],
-                       "UpstreamPathTemplate":  "/gateway/orders/bills", "Priority": 5,
+                       "UpstreamPathTemplate":  "/gateway/orders/bills",
+                       "Priority":  5,
                        "UpstreamHttpMethod":  [
                                                   "GET",
                                                   "POST",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/Bills/cart/items",
@@ -411,10 +481,12 @@
                                                   "POST",
                                                   "OPTIONS"
                                               ],
-                       "AuthenticationOptions": {
-                           "AuthenticationProviderKey": "Bearer",
-                           "AllowedScopes": []
-                       }
+                       "AuthenticationOptions":  {
+                                                     "AuthenticationProviderKey":  "Bearer",
+                                                     "AllowedScopes":  [
+
+                                                                       ]
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/Bills/{id}",
@@ -425,17 +497,20 @@
                                                           "Port":  5003
                                                       }
                                                   ],
-                       "UpstreamPathTemplate":  "/gateway/orders/bills/{id}", "Priority": 10,
+                       "UpstreamPathTemplate":  "/gateway/orders/bills/{id}",
+                       "Priority":  10,
                        "UpstreamHttpMethod":  [
-                                                 "GET",
-                                                 "PUT",
-                                                 "DELETE",
-                                                 "OPTIONS"
+                                                  "GET",
+                                                  "PUT",
+                                                  "DELETE",
+                                                  "OPTIONS"
                                               ],
-                       "AuthenticationOptions": {
-                           "AuthenticationProviderKey": "Bearer",
-                           "AllowedScopes": []
-                       }
+                       "AuthenticationOptions":  {
+                                                     "AuthenticationProviderKey":  "Bearer",
+                                                     "AllowedScopes":  [
+
+                                                                       ]
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/Bills/{id}/finalize",
@@ -451,10 +526,12 @@
                                                   "POST",
                                                   "OPTIONS"
                                               ],
-                       "AuthenticationOptions": {
-                           "AuthenticationProviderKey": "Bearer",
-                           "AllowedScopes": []
-                       }
+                       "AuthenticationOptions":  {
+                                                     "AuthenticationProviderKey":  "Bearer",
+                                                     "AllowedScopes":  [
+
+                                                                       ]
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/Bills/{id}/hold",
@@ -470,10 +547,12 @@
                                                   "POST",
                                                   "OPTIONS"
                                               ],
-                       "AuthenticationOptions": {
-                           "AuthenticationProviderKey": "Bearer",
-                           "AllowedScopes": []
-                       }
+                       "AuthenticationOptions":  {
+                                                     "AuthenticationProviderKey":  "Bearer",
+                                                     "AllowedScopes":  [
+
+                                                                       ]
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/Bills/{id}/void",
@@ -489,52 +568,139 @@
                                                   "POST",
                                                   "OPTIONS"
                                               ],
-                       "AuthenticationOptions": {
-                           "AuthenticationProviderKey": "Bearer",
-                           "AllowedScopes": []
-                       }
+                       "AuthenticationOptions":  {
+                                                     "AuthenticationProviderKey":  "Bearer",
+                                                     "AllowedScopes":  [
+
+                                                                       ]
+                                                 }
                    },
                    {
-                       "DownstreamPathTemplate": "/api/Dashboard/stats",
-                       "DownstreamScheme": "http",
-                       "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5004 } ],
-                       "UpstreamPathTemplate": "/gateway/admin/dashboard/stats",
-                       "UpstreamHttpMethod": [ "GET", "OPTIONS" ]
+                       "DownstreamPathTemplate":  "/api/Dashboard/stats",
+                       "DownstreamScheme":  "http",
+                       "DownstreamHostAndPorts":  [
+                                                      {
+                                                          "Host":  "localhost",
+                                                          "Port":  5004
+                                                      }
+                                                  ],
+                       "UpstreamPathTemplate":  "/gateway/admin/dashboard/stats",
+                       "UpstreamHttpMethod":  [
+                                                  "GET",
+                                                  "OPTIONS"
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
-                       "DownstreamPathTemplate": "/api/Inventory",
-                       "DownstreamScheme": "http",
-                       "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5004 } ],
-                       "UpstreamPathTemplate": "/gateway/admin/inventory",
-                       "UpstreamHttpMethod": [ "GET", "OPTIONS" ]
+                       "DownstreamPathTemplate":  "/api/Inventory",
+                       "DownstreamScheme":  "http",
+                       "DownstreamHostAndPorts":  [
+                                                      {
+                                                          "Host":  "localhost",
+                                                          "Port":  5004
+                                                      }
+                                                  ],
+                       "UpstreamPathTemplate":  "/gateway/admin/inventory",
+                       "UpstreamHttpMethod":  [
+                                                  "GET",
+                                                  "OPTIONS"
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
-                       "DownstreamPathTemplate": "/api/Inventory/adjustments",
-                       "DownstreamScheme": "http",
-                       "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5004 } ],
-                       "UpstreamPathTemplate": "/gateway/admin/inventory/adjustments",
-                       "UpstreamHttpMethod": [ "GET", "OPTIONS" ]
+                       "DownstreamPathTemplate":  "/api/Inventory/adjustments",
+                       "DownstreamScheme":  "http",
+                       "DownstreamHostAndPorts":  [
+                                                      {
+                                                          "Host":  "localhost",
+                                                          "Port":  5004
+                                                      }
+                                                  ],
+                       "UpstreamPathTemplate":  "/gateway/admin/inventory/adjustments",
+                       "UpstreamHttpMethod":  [
+                                                  "GET",
+                                                  "OPTIONS"
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
-                       "DownstreamPathTemplate": "/api/Staff",
-                       "DownstreamScheme": "http",
-                       "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5004 } ],
-                       "UpstreamPathTemplate": "/gateway/admin/staff",
-                       "UpstreamHttpMethod": [ "GET", "POST", "OPTIONS" ]
+                       "DownstreamPathTemplate":  "/api/Staff",
+                       "DownstreamScheme":  "http",
+                       "DownstreamHostAndPorts":  [
+                                                      {
+                                                          "Host":  "localhost",
+                                                          "Port":  5004
+                                                      }
+                                                  ],
+                       "UpstreamPathTemplate":  "/gateway/admin/staff",
+                       "UpstreamHttpMethod":  [
+                                                  "GET",
+                                                  "POST",
+                                                  "OPTIONS"
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
-                       "DownstreamPathTemplate": "/api/Staff/assign",
-                       "DownstreamScheme": "http",
-                       "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5004 } ],
-                       "UpstreamPathTemplate": "/gateway/admin/staff/assign",
-                       "UpstreamHttpMethod": [ "POST", "OPTIONS" ]
+                       "DownstreamPathTemplate":  "/api/Staff/assign",
+                       "DownstreamScheme":  "http",
+                       "DownstreamHostAndPorts":  [
+                                                      {
+                                                          "Host":  "localhost",
+                                                          "Port":  5004
+                                                      }
+                                                  ],
+                       "UpstreamPathTemplate":  "/gateway/admin/staff/assign",
+                       "UpstreamHttpMethod":  [
+                                                  "POST",
+                                                  "OPTIONS"
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
-                       "DownstreamPathTemplate": "/api/Staff/pending",
-                       "DownstreamScheme": "http",
-                       "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5004 } ],
-                       "UpstreamPathTemplate": "/gateway/admin/staff/pending",
-                       "UpstreamHttpMethod": [ "GET", "OPTIONS" ]
+                       "DownstreamPathTemplate":  "/api/Staff/pending",
+                       "DownstreamScheme":  "http",
+                       "DownstreamHostAndPorts":  [
+                                                      {
+                                                          "Host":  "localhost",
+                                                          "Port":  5004
+                                                      }
+                                                  ],
+                       "UpstreamPathTemplate":  "/gateway/admin/staff/pending",
+                       "UpstreamHttpMethod":  [
+                                                  "GET",
+                                                  "OPTIONS"
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/payments/verify",
@@ -547,13 +713,15 @@
                                                   ],
                        "UpstreamPathTemplate":  "/gateway/payments/verify",
                        "UpstreamHttpMethod":  [
-                                                 "POST",
-                                                 "OPTIONS"
+                                                  "POST",
+                                                  "OPTIONS"
                                               ],
-                       "AuthenticationOptions": {
-                           "AuthenticationProviderKey": "Bearer",
-                           "AllowedScopes": []
-                       }
+                       "AuthenticationOptions":  {
+                                                     "AuthenticationProviderKey":  "Bearer",
+                                                     "AllowedScopes":  [
+
+                                                                       ]
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/payments",
@@ -569,7 +737,13 @@
                                                   "GET",
                                                   "POST",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/payments/{id}",
@@ -584,7 +758,13 @@
                        "UpstreamHttpMethod":  [
                                                   "GET",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/returns",
@@ -600,7 +780,13 @@
                                                   "GET",
                                                   "POST",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/returns/{id}/approve",
@@ -615,7 +801,13 @@
                        "UpstreamHttpMethod":  [
                                                   "POST",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/returns/{id}/reject",
@@ -630,7 +822,13 @@
                        "UpstreamHttpMethod":  [
                                                   "POST",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/returns/{id}",
@@ -645,7 +843,13 @@
                        "UpstreamHttpMethod":  [
                                                   "GET",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/notifications/{everything}",
@@ -661,9 +865,14 @@
                                                   "GET",
                                                   "POST",
                                                   "OPTIONS"
-                                              ]
-                   },
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
 
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
+                   },
                    {
                        "DownstreamPathTemplate":  "/notificationHub",
                        "DownstreamScheme":  "http",
@@ -678,7 +887,13 @@
                                                   "GET",
                                                   "POST",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    },
                    {
                        "DownstreamPathTemplate":  "/api/notifications",
@@ -693,7 +908,13 @@
                        "UpstreamHttpMethod":  [
                                                   "GET",
                                                   "OPTIONS"
-                                              ]
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    }
                ],
     "GlobalConfiguration":  {

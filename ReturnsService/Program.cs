@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -11,6 +12,8 @@ using Microsoft.OpenApi.Models;
 using RetailPOS.Common.Authorization;
 using RetailPOS.Common.Logging;
 using Serilog;
+
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +57,9 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddDbContext<ReturnsService.Data.ReturnsSagaDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddDbContext<ReturnsDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -67,6 +73,13 @@ builder.Services.AddScoped<IReturnService, ReturnsService.Services.ReturnService
 // MassTransit config
 builder.Services.AddMassTransit(x =>
 {
+    x.AddConsumer<ReturnsService.Consumers.SagaReturnCommandsConsumer>();
+    x.AddSagaStateMachine<ReturnsService.Sagas.ReturnStateMachine, ReturnsService.Sagas.ReturnSagaState>()
+        .EntityFrameworkRepository(r =>
+        {
+            r.ExistingDbContext<ReturnsService.Data.ReturnsSagaDbContext>();
+            r.UseSqlServer();
+        });
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host("localhost", "/", h =>
@@ -109,5 +122,27 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+// Migration and Seeding logic
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<ReturnsDbContext>();
+        await context.Database.MigrateAsync();
+
+        var sagaContext = services.GetRequiredService<ReturnsService.Data.ReturnsSagaDbContext>();
+        await sagaContext.Database.MigrateAsync();
+        
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("Returns & Saga Databases initialized successfully.");
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating the database.");
+    }
+}
+
 app.MapControllers();
 app.Run();

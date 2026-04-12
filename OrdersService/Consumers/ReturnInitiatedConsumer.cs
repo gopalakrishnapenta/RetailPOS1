@@ -28,10 +28,10 @@ namespace OrdersService.Consumers
 
             if (bill != null)
             {
-                // Mark the bill status to 'Returned' or 'PendingReturn' to prevent further processing
-                bill.Status = "Returned"; 
+                // Keep the bill pending until the manager approves and the refund flow finishes.
+                bill.Status = "ReturnRequested";
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("Bill {BillNumber} marked as Returned.", bill.BillNumber);
+                _logger.LogInformation("Bill {BillNumber} marked as ReturnRequested.", bill.BillNumber);
             }
             else
             {
