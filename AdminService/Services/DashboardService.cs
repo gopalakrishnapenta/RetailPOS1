@@ -86,26 +86,62 @@ namespace AdminService.Services
                     Sales = g.Sum(b => b.TotalAmount) - todayReturns.Where(r => r.Date.ToLocalTime().Hour == g.Key).Sum(r => r.RefundAmount)
                 }).ToList();
 
-            // Calculate Store-wise share (Appropriate Breakdown)
-            var categoryBreakdown = new List<CategoryBreakdownDto>();
-            if (storeId.HasValue && storeId.Value != 0)
-            {
-                categoryBreakdown.Add(new CategoryBreakdownDto { Category = $"Store {storeId.Value}", Percent = 100 });
-            }
-            else if (totalNetSales > 0)
-            {
-                var storeGroups = bills.GroupBy(b => b.StoreId)
-                    .Select(g => new { 
-                        StoreId = g.Key, 
-                        NetSales = g.Sum(b => b.TotalAmount) - returns.Where(r => r.StoreId == g.Key).Sum(r => r.RefundAmount) 
-                    }).ToList();
+            // 1. Calculate Store Performance Matrix (Used by Admin)
+            var storeMatrix = new List<StoreMatrixDisplayDto>();
+            var categoryBreakdown = new List<CategoryBreakdownDto>(); // For compatibility or small chart
+            
+            // Filter to TODAY'S orders for the matrix comparison
+            var todayStoreGroups = todayBills.GroupBy(b => b.StoreId)
+                .Select(g => new { 
+                    StoreId = g.Key, 
+                    GrossSales = g.Sum(b => b.TotalAmount),
+                    Refunds = todayReturns.Where(r => r.StoreId == g.Key).Sum(r => r.RefundAmount),
+                    Count = g.Count()
+                }).ToList();
 
-                foreach (var sg in storeGroups)
-                {
-                    int percent = (int)Math.Round((double)(sg.NetSales / totalNetSales * 100));
-                    categoryBreakdown.Add(new CategoryBreakdownDto { Category = $"Store {sg.StoreId}", Percent = percent });
-                }
+            foreach (var sg in todayStoreGroups)
+            {
+                var net = sg.GrossSales - sg.Refunds;
+                // Calculate share based on TOTAL TODAY'S NET SALES to avoid the 191% bug
+                int sharePercent = todaySales > 0 ? (int)Math.Round((double)(net / todaySales * 100)) : 0;
+                
+                storeMatrix.Add(new StoreMatrixDisplayDto {
+                    StoreName = sg.StoreId == 0 ? "Global/HQ" : $"Store #{sg.StoreId}",
+                    Sales = net,
+                    Refunds = sg.Refunds,
+                    Transactions = sg.Count,
+                    SharePercent = sharePercent
+                });
+
+                categoryBreakdown.Add(new CategoryBreakdownDto { 
+                    Category = sg.StoreId == 0 ? "Global" : $"Store #{sg.StoreId}", 
+                    Percent = sharePercent 
+                });
             }
+
+            // 2. Calculate Staff Performance Leaderboard (Used by Managers)
+            // Join Today's SyncedOrders with StaffMembers to get names
+            var staffMembers = await _context.StaffMembers.IgnoreQueryFilters().ToListAsync();
+            
+            var staffGroups = todayBills.GroupBy(b => b.CashierId)
+                .Select(g => new {
+                    CashierId = g.Key,
+                    NetSales = g.Sum(b => b.TotalAmount) - todayReturns.Where(r => r.OrderId != 0 && todayBills.Any(bill => bill.OrderId == r.OrderId && bill.CashierId == g.Key)).Sum(r => r.RefundAmount),
+                    Count = g.Count()
+                })
+                .OrderByDescending(s => s.NetSales)
+                .Take(10)
+                .ToList();
+
+            var staffLeaderboard = staffGroups.Select(sg => {
+                var member = staffMembers.FirstOrDefault(m => m.UserId == sg.CashierId);
+                return new StaffLeaderboardDto {
+                    StaffName = member?.FullName ?? (member?.Email ?? $"Staff #{sg.CashierId}"),
+                    Sales = sg.NetSales,
+                    Orders = sg.Count,
+                    Role = member?.AssignedRole ?? "Staff"
+                };
+            }).ToList();
 
             return new DashboardDto
             {
@@ -116,12 +152,14 @@ namespace AdminService.Services
                 TotalBills = bills.Count,
                 TodayBills = todayBills.Count,
                 SalesChangePercent = salesChange,
-                ActiveCashiers = 1,
+                ActiveCashiers = staffLeaderboard.Count,
                 LowStockAlerts = lowStockCount,
                 LowStockItems = lowStockDetails,
                 RecentBills = recentBills,
                 HourlyTrend = hourlyTrend,
-                CategoryBreakdown = categoryBreakdown
+                CategoryBreakdown = categoryBreakdown,
+                StoreMatrix = storeMatrix,
+                StaffLeaderboard = staffLeaderboard
             };
         }
     }

@@ -67,20 +67,61 @@
         <p *ngIf="!stats?.hourlyTrend?.length" class="empty-msg">No transactions yet today</p>
       </div>
     </div>
-    <div class="revenue-split glass-panel">
-      <h3>Store-wise Share</h3>
-      <div class="split-list">
-        <div class="split-item" *ngFor="let item of storeRevenue">
-          <div class="split-info">
-            <span class="store-name">{{ item.category }}</span>
-            <span class="percent">{{ item.percent }}%</span>
+    <!-- Admin View: Store Performance Matrix -->
+    <div class="revenue-split glass-panel" *ngIf="isAdmin">
+      <div class="section-header">
+        <h3>Store Performance Matrix</h3>
+        <span class="badge info">Global Insights</span>
+      </div>
+      <div class="table-container">
+        <table class="admin-table mini-table">
+          <thead>
+            <tr>
+              <th>Store</th>
+              <th class="text-right">Net Sales</th>
+              <th class="text-right">Share</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let store of stats?.storeMatrix">
+              <td>
+                <div class="store-cell">
+                  <span class="store-name">{{ store.storeName }}</span>
+                  <span class="transactions-tag">{{ store.transactions }} orders</span>
+                </div>
+              </td>
+              <td class="text-right font-bold">{{ store.sales | currency }}</td>
+              <td class="text-right">
+                <div class="share-badge" [style.background-color]="'calc(var(--accent-primary) + ' + store.sharePercent + '%)'">
+                  {{ store.sharePercent }}%
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div *ngIf="!stats?.storeMatrix?.length" class="empty-msg">No store data currently.</div>
+      </div>
+    </div>
+
+    <!-- Manager View: Staff Performance Leaderboard -->
+    <div class="revenue-split glass-panel" *ngIf="!isAdmin">
+      <div class="section-header">
+        <h3>Staff Performance Leaderboard</h3>
+        <span class="badge info">Top Performers</span>
+      </div>
+      <div class="leaderboard-list">
+        <div class="leaderboard-item" *ngFor="let staff of stats?.staffLeaderboard; let i = index">
+          <div class="rank">{{ i + 1 }}</div>
+          <div class="staff-info">
+            <span class="staff-name">{{ staff.staffName }}</span>
+            <span class="staff-role">{{ staff.role }}</span>
           </div>
-          <div class="progress-bar">
-            <div class="progress" [style.width.%]="item.percent"></div>
+          <div class="staff-stats">
+            <span class="staff-sales">{{ staff.sales | currency }}</span>
+            <span class="staff-count">{{ staff.orders }} orders</span>
           </div>
-          <span class="amount">Contribution Share</span>
         </div>
-        <div *ngIf="!storeRevenue.length" class="empty-msg">No store data available</div>
+        <div *ngIf="!stats?.staffLeaderboard?.length" class="empty-msg">No staff activity today.</div>
       </div>
     </div>
   </section>

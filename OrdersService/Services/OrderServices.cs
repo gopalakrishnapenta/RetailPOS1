@@ -112,6 +112,7 @@ namespace OrdersService.Services
             {
                 OrderId = bill.Id,
                 StoreId = bill.StoreId,
+                CashierId = bill.CashierId,
                 TotalAmount = bill.TotalAmount,
                 TaxAmount = bill.TaxAmount,
                 Date = DateTime.UtcNow,

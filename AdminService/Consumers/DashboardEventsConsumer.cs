@@ -34,6 +34,7 @@ namespace AdminService.Consumers
                     StoreId = data.StoreId,
                     TotalAmount = data.TotalAmount,
                     TaxAmount = data.TaxAmount,
+                    CashierId = data.CashierId,
                     Date = data.Date,
                     CustomerMobile = data.CustomerMobile
                 };

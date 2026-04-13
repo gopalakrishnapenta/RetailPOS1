@@ -14,7 +14,26 @@ namespace AdminService.DTOs
         public List<RecentBillDto> RecentBills { get; set; } = new();
         public List<LowStockItemDto> LowStockItems { get; set; } = new();
         public List<HourlyTrendDto> HourlyTrend { get; set; } = new();
-        public List<CategoryBreakdownDto> CategoryBreakdown { get; set; } = new();
+        public List<CategoryBreakdownDto> CategoryBreakdown { get; set; } = new(); // Used for "Share" chart
+        public List<StoreMatrixDisplayDto> StoreMatrix { get; set; } = new();
+        public List<StaffLeaderboardDto> StaffLeaderboard { get; set; } = new();
+    }
+
+    public class StoreMatrixDisplayDto
+    {
+        public string StoreName { get; set; } = string.Empty;
+        public decimal Sales { get; set; }
+        public decimal Refunds { get; set; }
+        public int Transactions { get; set; }
+        public int SharePercent { get; set; }
+    }
+
+    public class StaffLeaderboardDto
+    {
+        public string StaffName { get; set; } = string.Empty;
+        public decimal Sales { get; set; }
+        public int Orders { get; set; }
+        public string Role { get; set; } = string.Empty;
     }
 
     public class RecentBillDto

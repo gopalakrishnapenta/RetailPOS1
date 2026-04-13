@@ -19,7 +19,9 @@ import { ApiService } from '../../../core/services/api.service';
             <span class="search-icon">🔍</span>
             <input type="text" [(ngModel)]="searchQuery" (input)="applyFilters()" placeholder="Search Name or Email..." class="input-field search-input">
           </div>
-          <button class="btn btn-primary" (click)="openPendingModal()">+ Add New Staff</button>
+          <button class="btn btn-secondary" (click)="syncStaff()" [disabled]="isSyncing">
+            {{ isSyncing ? '🔄 Syncing...' : '🔄 Sync Staff' }}
+          </button>
         </div>
       </header>
 
@@ -225,6 +227,7 @@ export class StaffComponent implements OnInit {
   showModal = false;
   modalTitle = 'Assign Role & Store';
   selectedUser: any = null;
+  isSyncing = false;
 
   searchQuery: string = '';
   currentPage: number = 1;
@@ -305,14 +308,22 @@ export class StaffComponent implements OnInit {
     this.showModal = true;
   }
 
-  openPendingModal() {
-    // Opens modal for first unassigned user, or blank
-    const pending = this.staffList.find(u => !u.isAssigned);
-    if (pending) {
-      this.openEditModal(pending);
-    } else {
-      alert('No pending (unassigned) staff members found.');
-    }
+  syncStaff() {
+    this.isSyncing = true;
+    this.api.reSyncStaff().subscribe({
+      next: (res: any) => {
+        alert(res.message || 'Staff synchronization complete!');
+        this.loadStaff();
+        this.isSyncing = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        console.error('Sync failed', err);
+        alert('Failed to sync staff: ' + (err.error?.message || 'Unknown error'));
+        this.isSyncing = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   closeModal() {

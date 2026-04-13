@@ -9,6 +9,7 @@ namespace AdminService.Models
         public int StoreId { get; set; }
         public decimal TotalAmount { get; set; }
         public decimal TaxAmount { get; set; }
+        public int CashierId { get; set; }
         public DateTime Date { get; set; }
         public string? CustomerMobile { get; set; }
     }

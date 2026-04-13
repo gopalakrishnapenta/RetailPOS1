@@ -4,6 +4,7 @@ namespace RetailPOS.Contracts
     {
         int OrderId { get; }
         int StoreId { get; }
+        int CashierId { get; }
         decimal TotalAmount { get; }
         decimal TaxAmount { get; }
         DateTime Date { get; }
@@ -21,6 +22,7 @@ namespace RetailPOS.Contracts
     {
         int OrderId { get; }
         int StoreId { get; }
+        int CashierId { get; }
         decimal TotalAmount { get; }
         decimal TaxAmount { get; }
         DateTime Date { get; }

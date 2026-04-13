@@ -703,6 +703,27 @@
                                                  }
                    },
                    {
+                       "DownstreamPathTemplate":  "/api/StaffSync/re-sync",
+                       "DownstreamScheme":  "http",
+                       "DownstreamHostAndPorts":  [
+                                                      {
+                                                          "Host":  "localhost",
+                                                          "Port":  5004
+                                                      }
+                                                  ],
+                       "UpstreamPathTemplate":  "/gateway/admin/staff/sync",
+                       "UpstreamHttpMethod":  [
+                                                  "POST",
+                                                  "OPTIONS"
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
+                   },
+                   {
                        "DownstreamPathTemplate":  "/api/payments/verify",
                        "DownstreamScheme":  "http",
                        "DownstreamHostAndPorts":  [

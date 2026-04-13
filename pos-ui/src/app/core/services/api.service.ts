@@ -59,6 +59,10 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/admin/staff/assign`, dto);
   }
 
+  reSyncStaff(): Observable<any> {
+    return this.http.post(`${this.baseUrl}/admin/staff/sync`, {});
+  }
+
   // --- CATALOG METHODS ---
   getProducts(): Observable<any> {
     return this.http.get(`${this.baseUrl}/catalog/products`);
