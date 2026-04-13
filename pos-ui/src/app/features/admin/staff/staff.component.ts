@@ -15,6 +15,10 @@ import { ApiService } from '../../../core/services/api.service';
           <p>Manage users, roles and store assignments</p>
         </div>
         <div class="actions">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" [(ngModel)]="searchQuery" (input)="applyFilters()" placeholder="Search Name or Email..." class="input-field search-input">
+          </div>
           <button class="btn btn-primary" (click)="openPendingModal()">+ Add New Staff</button>
         </div>
       </header>
@@ -32,7 +36,7 @@ import { ApiService } from '../../../core/services/api.service';
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let user of staffList" class="animate-fade-in">
+              <tr *ngFor="let user of paginatedStaff" class="animate-fade-in">
                 <td>
                   <div class="user-cell">
                     <div class="avatar">{{ (user.fullName || user.email || '?').charAt(0).toUpperCase() }}</div>
@@ -70,7 +74,7 @@ import { ApiService } from '../../../core/services/api.service';
                   </div>
                 </td>
               </tr>
-              <tr *ngIf="!staffList.length && !isLoading">
+              <tr *ngIf="!paginatedStaff.length && !isLoading">
                 <td colspan="5" class="empty-state">
                   <div class="empty-content">
                     <span>👥</span>
@@ -82,6 +86,13 @@ import { ApiService } from '../../../core/services/api.service';
           </table>
         </div>
       </section>
+
+      <!-- Pagination Controls -->
+      <div class="pagination-controls glass-panel" *ngIf="filteredStaff.length > itemsPerPage">
+        <button class="btn btn-secondary" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1">Previous</button>
+        <span class="page-info">Page {{ currentPage }} of {{ totalPages || 1 }}</span>
+        <button class="btn btn-secondary" [disabled]="currentPage === totalPages" (click)="currentPage = currentPage + 1">Next</button>
+      </div>
 
       <!-- Assign/Edit Staff Modal -->
       <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
@@ -139,9 +150,17 @@ import { ApiService } from '../../../core/services/api.service';
   `,
   styles: [`
     .admin-container { padding: var(--spacing-xl); display: flex; flex-direction: column; gap: var(--spacing-xl); }
-    .admin-header { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-lg); }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-lg); flex-wrap: wrap; gap: 16px; }
     .table-section { padding: 0; overflow: hidden; }
     
+    .actions { display: flex; gap: 12px; align-items: center; }
+    .search-box { position: relative; min-width: 250px; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
+    .search-input { padding-left: 36px !important; }
+
+    .pagination-controls { display: flex; justify-content: center; align-items: center; gap: 16px; padding: var(--spacing-md); margin-top: -10px; }
+    .page-info { font-weight: 600; color: var(--text-secondary); font-size: 0.875rem; }
+
     .admin-table { width: 100%; border-collapse: collapse; text-align: left; }
     .admin-table th { padding: var(--spacing-md) var(--spacing-lg); background: var(--bg-tertiary); color: var(--text-secondary); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
     .admin-table td { padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border-color); font-size: 0.875rem; vertical-align: middle; }
@@ -198,6 +217,7 @@ import { ApiService } from '../../../core/services/api.service';
 })
 export class StaffComponent implements OnInit {
   staffList: any[] = [];
+  filteredStaff: any[] = [];
   stores: any[] = [];
   isLoading = true;
   isLoadingStores = false;
@@ -205,6 +225,32 @@ export class StaffComponent implements OnInit {
   showModal = false;
   modalTitle = 'Assign Role & Store';
   selectedUser: any = null;
+
+  searchQuery: string = '';
+  currentPage: number = 1;
+  itemsPerPage: number = 5;
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredStaff.length / this.itemsPerPage) || 1;
+  }
+
+  get paginatedStaff(): any[] {
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    return this.filteredStaff.slice(start, start + this.itemsPerPage);
+  }
+
+  applyFilters() {
+    if (!this.searchQuery) {
+      this.filteredStaff = [...this.staffList];
+    } else {
+      const q = this.searchQuery.toLowerCase();
+      this.filteredStaff = this.staffList.filter(u => 
+        (u.fullName || '').toLowerCase().includes(q) || 
+        (u.email || '').toLowerCase().includes(q)
+      );
+    }
+    this.currentPage = 1; // reset to 1 on filter
+  }
 
   assignForm = {
     userId: 0,
@@ -224,6 +270,7 @@ export class StaffComponent implements OnInit {
     this.api.getStaffManagement().subscribe({
       next: (users: any[]) => {
         this.staffList = users;
+        this.applyFilters();
         this.isLoading = false;
         this.cdr.detectChanges();
       },

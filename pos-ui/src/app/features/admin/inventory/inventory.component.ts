@@ -41,7 +41,7 @@ import { ApiService } from '../../../core/services/api.service';
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of filteredInventory" class="animate-fade-in">
+              <tr *ngFor="let item of paginatedInventory" class="animate-fade-in">
                 <td><span class="badge-sku">{{ item.sku }}</span></td>
                 <td>
                   <div class="product-info">
@@ -67,7 +67,7 @@ import { ApiService } from '../../../core/services/api.service';
                   </button>
                 </td>
               </tr>
-              <tr *ngIf="!filteredInventory.length && !isLoading">
+              <tr *ngIf="!paginatedInventory.length && !isLoading">
                 <td colspan="7" class="empty-state">
                   <div class="empty-content">
                     <span>📦</span>
@@ -79,6 +79,13 @@ import { ApiService } from '../../../core/services/api.service';
           </table>
         </div>
       </section>
+
+      <!-- Pagination Controls -->
+      <div class="pagination-controls glass-panel" *ngIf="filteredInventory.length > itemsPerPage">
+        <button class="btn btn-secondary" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1">Previous</button>
+        <span class="page-info">Page {{ currentPage }} of {{ totalPages || 1 }}</span>
+        <button class="btn btn-secondary" [disabled]="currentPage === totalPages" (click)="currentPage = currentPage + 1">Next</button>
+      </div>
 
       <!-- Adjustment Modal -->
       <div class="modal-overlay" *ngIf="showAdjustmentModal" (click)="closeModal()">
@@ -148,6 +155,9 @@ import { ApiService } from '../../../core/services/api.service';
     .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
     .search-input { padding-left: 36px !important; }
 
+    .pagination-controls { display: flex; justify-content: center; align-items: center; gap: 16px; padding: var(--spacing-md); margin-top: -10px; }
+    .page-info { font-weight: 600; color: var(--text-secondary); font-size: 0.875rem; }
+
     .admin-table { width: 100%; border-collapse: collapse; text-align: left; }
     .admin-table th { padding: var(--spacing-md) var(--spacing-lg); background: var(--bg-tertiary); color: var(--text-secondary); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
     .admin-table td { padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border-color); font-size: 0.875rem; vertical-align: middle; }
@@ -205,6 +215,19 @@ export class InventoryComponent implements OnInit {
   searchQuery: string = '';
   isLoading = true;
 
+  // Pagination
+  currentPage: number = 1;
+  itemsPerPage: number = 5;
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredInventory.length / this.itemsPerPage) || 1;
+  }
+
+  get paginatedInventory(): any[] {
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    return this.filteredInventory.slice(start, start + this.itemsPerPage);
+  }
+
   // Modal State
   showAdjustmentModal = false;
   selectedItem: any = null;
@@ -244,13 +267,14 @@ export class InventoryComponent implements OnInit {
   applyFilters() {
     if (!this.searchQuery) {
       this.filteredInventory = [...this.inventoryItems];
-      return;
+    } else {
+      const query = this.searchQuery.toLowerCase();
+      this.filteredInventory = this.inventoryItems.filter(item => 
+        (item.name || '').toLowerCase().includes(query) || 
+        (item.sku || '').toLowerCase().includes(query)
+      );
     }
-    const query = this.searchQuery.toLowerCase();
-    this.filteredInventory = this.inventoryItems.filter(item => 
-      (item.name || '').toLowerCase().includes(query) || 
-      (item.sku || '').toLowerCase().includes(query)
-    );
+    this.currentPage = 1; // reset to 1 on filter
   }
 
   openAdjustModal(item: any) {

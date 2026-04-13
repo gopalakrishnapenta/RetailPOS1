@@ -15,6 +15,10 @@ import { ApiService } from '../../../core/services/api.service';
           <p>Maintain the central product catalog</p>
         </div>
         <div class="actions">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" [(ngModel)]="searchQuery" (input)="applyFilters()" placeholder="Search SKU or Name..." class="input-field search-input">
+          </div>
           <button class="btn btn-primary" (click)="openModal()">+ Create Product</button>
         </div>
       </header>
@@ -34,7 +38,7 @@ import { ApiService } from '../../../core/services/api.service';
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let p of products" class="animate-fade-in">
+              <tr *ngFor="let p of paginatedProducts" class="animate-fade-in">
                 <td><span class="badge-sku">{{ p.sku }}</span></td>
                 <td>
                   <div class="product-info">
@@ -61,7 +65,7 @@ import { ApiService } from '../../../core/services/api.service';
                   </div>
                 </td>
               </tr>
-              <tr *ngIf="!products.length && !isLoading">
+              <tr *ngIf="!paginatedProducts.length && !isLoading">
                 <td colspan="7" class="empty-state">
                   <div class="empty-content">
                     <span>🚫</span>
@@ -73,6 +77,13 @@ import { ApiService } from '../../../core/services/api.service';
           </table>
         </div>
       </section>
+
+      <!-- Pagination Controls -->
+      <div class="pagination-controls glass-panel" *ngIf="filteredProducts.length > itemsPerPage">
+        <button class="btn btn-secondary" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1">Previous</button>
+        <span class="page-info">Page {{ currentPage }} of {{ totalPages || 1 }}</span>
+        <button class="btn btn-secondary" [disabled]="currentPage === totalPages" (click)="currentPage = currentPage + 1">Next</button>
+      </div>
 
       <!-- Simple Modal for Create/Edit -->
       <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
@@ -134,9 +145,17 @@ import { ApiService } from '../../../core/services/api.service';
   `,
   styles: [`
     .admin-container { padding: var(--spacing-xl); display: flex; flex-direction: column; gap: var(--spacing-xl); }
-    .admin-header { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-lg); }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-lg); flex-wrap: wrap; gap: 16px; }
     .table-section { padding: 0; overflow: hidden; }
     
+    .actions { display: flex; gap: 12px; align-items: center; }
+    .search-box { position: relative; min-width: 250px; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
+    .search-input { padding-left: 36px !important; }
+
+    .pagination-controls { display: flex; justify-content: center; align-items: center; gap: 16px; padding: var(--spacing-md); margin-top: -10px; }
+    .page-info { font-weight: 600; color: var(--text-secondary); font-size: 0.875rem; }
+
     .admin-table { width: 100%; border-collapse: collapse; text-align: left; }
     .admin-table th { padding: var(--spacing-md) var(--spacing-lg); background: var(--bg-tertiary); color: var(--text-secondary); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-color); }
     .admin-table td { padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border-color); font-size: 0.875rem; vertical-align: middle; }
@@ -174,11 +193,38 @@ import { ApiService } from '../../../core/services/api.service';
 })
 export class ProductsComponent implements OnInit {
   products: any[] = [];
+  filteredProducts: any[] = [];
   categories: any[] = [];
   isLoading = true;
   isSaving = false;
   showModal = false;
   isEdit = false;
+
+  searchQuery: string = '';
+  currentPage: number = 1;
+  itemsPerPage: number = 5;
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredProducts.length / this.itemsPerPage) || 1;
+  }
+
+  get paginatedProducts(): any[] {
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    return this.filteredProducts.slice(start, start + this.itemsPerPage);
+  }
+
+  applyFilters() {
+    if (!this.searchQuery) {
+      this.filteredProducts = [...this.products];
+    } else {
+      const q = this.searchQuery.toLowerCase();
+      this.filteredProducts = this.products.filter(p => 
+        (p.name || '').toLowerCase().includes(q) || 
+        (p.sku || '').toLowerCase().includes(q)
+      );
+    }
+    this.currentPage = 1; // reset to 1 on filter
+  }
 
   currentProduct: any = this.resetProduct();
 
@@ -209,6 +255,7 @@ export class ProductsComponent implements OnInit {
     this.api.getProducts().subscribe({
       next: (data) => {
         this.products = data;
+        this.applyFilters();
         this.isLoading = false;
         this.cdr.detectChanges();
       },
