@@ -22,10 +22,10 @@ export class SignalrService {
     }
 
     this.hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl('http://localhost:5000/gateway/notificationHub', {
+      .withUrl('http://localhost:5176/notificationHub', {
         accessTokenFactory: () => token,
-        skipNegotiation: false,
-        transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling
+        skipNegotiation: true,
+        transport: signalR.HttpTransportType.WebSockets
       })
       .withAutomaticReconnect()
       .configureLogging(signalR.LogLevel.Information)

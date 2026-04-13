@@ -32,7 +32,8 @@ builder.Services.AddScoped<INotificationService, InternalNotificationService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy",
-        policy => policy.WithOrigins("http://localhost:4200", "http://localhost:5000") // UI and Gateway
+        policy => policy
+        .WithOrigins("http://localhost:4200", "http://localhost:5000", "http://127.0.0.1:4200")
         .AllowAnyMethod()
         .AllowAnyHeader()
         .AllowCredentials());

@@ -33,11 +33,13 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: 'dashboard', component: DashboardComponent },
-      { path: 'inventory', component: InventoryComponent },
-      { path: 'products', component: ProductsComponent },
-      { path: 'categories', component: CategoriesComponent },
-      { path: 'staff', component: StaffComponent },
-      { path: 'returns', component: ReturnsManagementComponent }
+      { path: 'inventory', component: InventoryComponent },   // StoreManager only
+      { path: 'products', component: ProductsComponent },     // StoreManager only
+      { path: 'categories', component: CategoriesComponent }, // Admin only
+      { path: 'staff', component: StaffComponent },           // Admin only
+      { path: 'returns', component: ReturnsManagementComponent },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   }
 ];
+

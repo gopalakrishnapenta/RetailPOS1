@@ -7,9 +7,26 @@
   </div>
 
   <nav class="sidebar-nav">
-    <!-- Admin & Store Manager Links -->
-    <div class="nav-section" *ngIf="hasAccess(['Admin', 'StoreManager'])">
+    <!-- Admin-Only Links -->
+    <div class="nav-section" *ngIf="userRole === 'Admin'">
       <p class="section-title">ADMINISTRATION</p>
+      <a routerLink="/admin/dashboard" routerLinkActive="active" class="nav-item">
+        <span class="icon">📊</span> Dashboard
+      </a>
+      <a routerLink="/admin/categories" routerLinkActive="active" class="nav-item">
+        <span class="icon">🏷️</span> Categories
+      </a>
+      <a routerLink="/admin/staff" routerLinkActive="active" class="nav-item">
+        <span class="icon">👥</span> Staff
+      </a>
+      <a routerLink="/admin/returns" routerLinkActive="active" class="nav-item">
+        <span class="icon">🔄</span> Returns
+      </a>
+    </div>
+
+    <!-- Store Manager Links -->
+    <div class="nav-section" *ngIf="userRole === 'StoreManager'">
+      <p class="section-title">STORE MANAGEMENT</p>
       <a routerLink="/admin/dashboard" routerLinkActive="active" class="nav-item">
         <span class="icon">📊</span> Dashboard
       </a>
@@ -19,15 +36,6 @@
       <a routerLink="/admin/products" routerLinkActive="active" class="nav-item">
         <span class="icon">🛒</span> Products
       </a>
-      <!-- Categories only for Admin -->
-      <a *ngIf="userRole === 'Admin'" routerLink="/admin/categories" routerLinkActive="active" class="nav-item">
-        <span class="icon">🏷️</span> Categories
-      </a>
-      <!-- Staff only for Admin -->
-      <a *ngIf="userRole === 'Admin'" routerLink="/admin/staff" routerLinkActive="active" class="nav-item">
-        <span class="icon">👥</span> Staff
-      </a>
-      <!-- Returns for Admin & Manager -->
       <a routerLink="/admin/returns" routerLinkActive="active" class="nav-item">
         <span class="icon">🔄</span> Returns
       </a>

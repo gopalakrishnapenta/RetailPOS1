@@ -915,6 +915,27 @@
                                                                        ],
                                                      "AuthenticationProviderKey":  "Bearer"
                                                  }
+                   },
+                   {
+                       "DownstreamPathTemplate":  "/api/Inventory/adjust",
+                       "DownstreamScheme":  "http",
+                       "DownstreamHostAndPorts":  [
+                                                      {
+                                                          "Host":  "localhost",
+                                                          "Port":  5004
+                                                      }
+                                                  ],
+                       "UpstreamPathTemplate":  "/gateway/admin/inventory/adjust",
+                       "UpstreamHttpMethod":  [
+                                                  "POST",
+                                                  "OPTIONS"
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
                    }
                ],
     "GlobalConfiguration":  {

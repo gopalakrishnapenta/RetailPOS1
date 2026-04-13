@@ -118,7 +118,7 @@ namespace CatalogService.Services
         {
             foreach (var item in deductions)
             {
-                var p = await _productRepository.GetByIdAsync(item.ProductId);
+                var p = await _productRepository.GetByIdIgnoringFiltersAsync(item.ProductId);
                 if (p != null) p.StockQuantity -= item.Quantity;
             }
 
@@ -130,7 +130,7 @@ namespace CatalogService.Services
         {
             foreach (var item in additions)
             {
-                var p = await _productRepository.GetByIdAsync(item.ProductId);
+                var p = await _productRepository.GetByIdIgnoringFiltersAsync(item.ProductId);
                 if (p != null) p.StockQuantity += item.Quantity;
             }
 

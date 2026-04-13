@@ -4,6 +4,11 @@ namespace NotificationService.Hubs
 {
     public class NotificationHub : Hub
     {
+        public async Task JoinStoreGroup(int storeId)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"Store_{storeId}");
+        }
+
         public async Task SendNotification(string user, string message)
         {
             await Clients.All.SendAsync("ReceiveNotification", user, message);

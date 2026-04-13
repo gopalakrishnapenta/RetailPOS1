@@ -137,6 +137,9 @@ export class ApiService {
   rejectReturn(id: number, note: string = ''): Observable<any> {
     return this.http.post(`${this.baseUrl}/returns/${id}/reject`, { note });
   }
+  adjustInventory(adjustment: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/admin/inventory/adjust`, adjustment);
+  }
 
   // --- RETURNS METHODS ---
   initiateReturn(returnData: any): Observable<any> {

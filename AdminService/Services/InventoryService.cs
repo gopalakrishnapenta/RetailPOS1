@@ -14,12 +14,17 @@ namespace AdminService.Services
     {
         private readonly IInventoryAdjustmentRepository _adjustmentRepository;
         private readonly IPublishEndpoint _publishEndpoint;
+        private readonly ITenantProvider _tenantProvider;
         private readonly ILogger<InventoryService> _logger;
 
-        public InventoryService(IInventoryAdjustmentRepository adjustmentRepository, IPublishEndpoint publishEndpoint, ILogger<InventoryService> logger)
+        public InventoryService(IInventoryAdjustmentRepository adjustmentRepository, 
+            IPublishEndpoint publishEndpoint, 
+            ITenantProvider tenantProvider,
+            ILogger<InventoryService> logger)
         {
             _adjustmentRepository = adjustmentRepository;
             _publishEndpoint = publishEndpoint;
+            _tenantProvider = tenantProvider;
             _logger = logger;
         }
 
@@ -32,7 +37,7 @@ namespace AdminService.Services
                 ReasonCode = dto.ReasonCode, 
                 DocumentReference = dto.DocumentReference, 
                 AdjustmentDate = DateTime.UtcNow,
-                StoreId = 1 // Default
+                StoreId = _tenantProvider.StoreId
             };
             await _adjustmentRepository.AddAsync(adjustment);
             await _adjustmentRepository.SaveChangesAsync();
