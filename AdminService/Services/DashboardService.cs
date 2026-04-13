@@ -39,8 +39,21 @@ namespace AdminService.Services
             var bills = await orderQuery.AsNoTracking().ToListAsync();
             var returns = await returnQuery.AsNoTracking().ToListAsync();
             
-            // For Low Stock Alerts
-            var lowStockCount = await inventoryQuery.CountAsync(a => a.Quantity < 10);
+            // Calculate current stock levels from adjustments and find items < 10
+            var stockSummary = await inventoryQuery.AsNoTracking()
+                .GroupBy(a => a.ProductId)
+                .Select(g => new { ProductId = g.Key, CurrentStock = g.Sum(a => a.Quantity) })
+                .ToListAsync();
+
+            var lowStockItems = stockSummary.Where(s => s.CurrentStock < 10).ToList();
+            var lowStockCount = lowStockItems.Count;
+
+            var lowStockDetails = lowStockItems.Select(s => new LowStockItemDto
+            {
+                Name = $"Product {s.ProductId}", // Placeholder or we could join with Catalog if we were in the same DB
+                SKU = $"SKU-{s.ProductId:D4}",
+                Stock = s.CurrentStock
+            }).ToList();
 
             var todayBills = bills.Where(b => b.Date.Date == today).ToList();
             var yesterdayBills = bills.Where(b => b.Date.Date == startOfYesterday).ToList();
@@ -73,6 +86,27 @@ namespace AdminService.Services
                     Sales = g.Sum(b => b.TotalAmount) - todayReturns.Where(r => r.Date.ToLocalTime().Hour == g.Key).Sum(r => r.RefundAmount)
                 }).ToList();
 
+            // Calculate Store-wise share (Appropriate Breakdown)
+            var categoryBreakdown = new List<CategoryBreakdownDto>();
+            if (storeId.HasValue && storeId.Value != 0)
+            {
+                categoryBreakdown.Add(new CategoryBreakdownDto { Category = $"Store {storeId.Value}", Percent = 100 });
+            }
+            else if (totalNetSales > 0)
+            {
+                var storeGroups = bills.GroupBy(b => b.StoreId)
+                    .Select(g => new { 
+                        StoreId = g.Key, 
+                        NetSales = g.Sum(b => b.TotalAmount) - returns.Where(r => r.StoreId == g.Key).Sum(r => r.RefundAmount) 
+                    }).ToList();
+
+                foreach (var sg in storeGroups)
+                {
+                    int percent = (int)Math.Round((double)(sg.NetSales / totalNetSales * 100));
+                    categoryBreakdown.Add(new CategoryBreakdownDto { Category = $"Store {sg.StoreId}", Percent = percent });
+                }
+            }
+
             return new DashboardDto
             {
                 TotalSales = totalNetSales,
@@ -84,8 +118,10 @@ namespace AdminService.Services
                 SalesChangePercent = salesChange,
                 ActiveCashiers = 1,
                 LowStockAlerts = lowStockCount,
+                LowStockItems = lowStockDetails,
                 RecentBills = recentBills,
-                HourlyTrend = hourlyTrend
+                HourlyTrend = hourlyTrend,
+                CategoryBreakdown = categoryBreakdown
             };
         }
     }

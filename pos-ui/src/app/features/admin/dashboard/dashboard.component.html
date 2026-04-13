@@ -58,7 +58,10 @@
       <h3>Hourly Sales Trend</h3>
       <div class="trend-chart">
         <div class="trend-bar-wrapper" *ngFor="let h of stats?.hourlyTrend">
-          <div class="trend-bar" [style.height.%]="(h.sales / (stats?.todaySales || 1)) * 300"></div>
+          <div class="trend-bar" 
+               [style.height.%]="maxHourlySales > 0 ? (h.sales / maxHourlySales) * 85 + 5 : 5"
+               [title]="h.sales | currency">
+          </div>
           <span class="trend-label">{{ h.hour }}</span>
         </div>
         <p *ngIf="!stats?.hourlyTrend?.length" class="empty-msg">No transactions yet today</p>
@@ -67,13 +70,17 @@
     <div class="revenue-split glass-panel">
       <h3>Store-wise Share</h3>
       <div class="split-list">
-        <div class="split-item">
-          <span class="store-name">Current Store</span>
-          <div class="progress-bar">
-            <div class="progress" [style.width.%]="100"></div>
+        <div class="split-item" *ngFor="let item of storeRevenue">
+          <div class="split-info">
+            <span class="store-name">{{ item.category }}</span>
+            <span class="percent">{{ item.percent }}%</span>
           </div>
-          <span class="amount">{{ (stats?.todaySales ?? 0) | currency }}</span>
+          <div class="progress-bar">
+            <div class="progress" [style.width.%]="item.percent"></div>
+          </div>
+          <span class="amount">Contribution Share</span>
         </div>
+        <div *ngIf="!storeRevenue.length" class="empty-msg">No store data available</div>
       </div>
     </div>
   </section>

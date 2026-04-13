@@ -110,8 +110,17 @@ export class BillingComponent implements OnInit {
   }
 
   addToCart(product: any) {
+    if (product.stockQuantity <= 0) {
+      alert('This product is out of stock.');
+      return;
+    }
+
     const existing = this.cart.find(item => item.id === product.id);
     if (existing) {
+      if (existing.quantity >= product.stockQuantity) {
+        alert(`Cannot add more. Only ${product.stockQuantity} units in stock.`);
+        return;
+      }
       existing.quantity++;
     } else {
       this.cart.push({ ...product, quantity: 1 });
@@ -128,7 +137,12 @@ export class BillingComponent implements OnInit {
     if (qty <= 0) {
       this.removeFromCart(index);
     } else {
-      this.cart[index].quantity = qty;
+      const item = this.cart[index];
+      if (qty > item.stockQuantity) {
+        alert(`Only ${item.stockQuantity} units available in stock.`);
+        return;
+      }
+      item.quantity = qty;
       this.calculateTotals();
     }
   }

@@ -25,7 +25,6 @@ builder.ConfigureSerilog("CatalogService");
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<CatalogService.Consumers.CategoryConsumer>();
-    x.AddConsumer<CatalogService.Consumers.OrderPlacedConsumer>();
     x.AddConsumer<CatalogService.Consumers.OrderReturnedConsumer>();
     x.AddConsumer<CatalogService.Consumers.StockAdjustedConsumer>();
     x.AddConsumer<CatalogService.Consumers.SagaDeductStockConsumer>();
@@ -37,10 +36,6 @@ builder.Services.AddMassTransit(x =>
             h.Password("guest");
         });
 
-        cfg.ReceiveEndpoint("catalog-order-placed", e =>
-        {
-            e.ConfigureConsumer<OrderPlacedConsumer>(context);
-        });
 
         cfg.ReceiveEndpoint("catalog-category", e =>
         {

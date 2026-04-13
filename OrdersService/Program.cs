@@ -48,6 +48,7 @@ builder.Services.AddMassTransit(x =>
 
 builder.Services.AddControllers().AddJsonOptions(x => {
     x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    x.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     x.JsonSerializerOptions.AllowTrailingCommas = true;
 });
 builder.Services.AddEndpointsApiExplorer();

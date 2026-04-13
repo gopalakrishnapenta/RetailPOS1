@@ -693,6 +693,39 @@
   to { opacity: 1; transform: scale(1); }
 }
 
+/* Stock & Disabled states */
+.p-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.p-stock {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.p-stock.danger {
+  color: #ef4444;
+}
+
+.p-status.out {
+  color: #ef4444;
+}
+
+.add-btn.disabled {
+  background: #cbd5e1 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.p-meta .p-sku {
+    margin-bottom: 0;
+}
+
 /* Print Specific Styles */
 @media print {
   body * {

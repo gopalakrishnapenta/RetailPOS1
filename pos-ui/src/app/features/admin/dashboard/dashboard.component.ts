@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
@@ -29,16 +29,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
   recentTransactions: any[] = [];
   isLoading = true;
   isAdmin = false;
+  maxHourlySales = 0;
 
   // Receipt Modal State
   showReceiptModal = false;
   selectedBill: any = null;
   isReceiptLoading = false;
 
-  constructor(private api: ApiService, private signalr: SignalrService) {}
+  constructor(
+    private api: ApiService, 
+    private signalr: SignalrService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
-    this.loadInitialData();
+    // Small delay to ensure any global auth state is settled
+    setTimeout(() => {
+      this.loadInitialData();
+    }, 0);
     this.startAutoRefresh();
   }
 
@@ -85,11 +93,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.storeRevenue = data.categoryBreakdown || [];
         this.alerts = data.lowStockItems || [];
         this.recentTransactions = data.recentBills || [];
+        
+        // Calculate max sales for chart scaling
+        if (data.hourlyTrend && data.hourlyTrend.length > 0) {
+          this.maxHourlySales = Math.max(...data.hourlyTrend.map((h: any) => h.sales));
+        } else {
+          this.maxHourlySales = 0;
+        }
+
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (err: any) => {
         console.error('Error loading dashboard stats', err);
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -108,19 +126,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.api.getBillDetails(id).subscribe({
       next: (data: any) => {
         console.log('Dashboard: Received bill details:', data);
-        if (data && (data.items || data.Items)) {
+        this.isReceiptLoading = false;
+        
+        if (data) {
+          // Normalize items property (handle both camelCase and PascalCase)
+          data.items = data.items || data.Items || [];
           this.selectedBill = data;
-          this.isReceiptLoading = false;
         } else {
-          console.warn('Dashboard: Bill details found but no items present.');
-          this.isReceiptLoading = false;
-          alert('This order exists but has no line items.');
+          console.warn('Dashboard: Bill details empty.');
+          alert('Could not find order details.');
           this.closeReceiptModal();
         }
+        this.cdr.detectChanges();
       },
       error: (err: any) => {
         console.error('Dashboard: Receipt API Error', err);
         this.isReceiptLoading = false;
+        this.cdr.detectChanges();
         alert('Could not load receipt: ' + (err.error?.message || err.message || 'Server Error'));
         this.closeReceiptModal();
       }

@@ -39,8 +39,25 @@ namespace AdminService.Consumers
                 };
 
                 _context.SyncedOrders.Add(syncedOrder);
+                
+                // SYNC INVENTORY: Record stock deduction for the dashboard's stock summary
+                foreach (var item in data.Items)
+                {
+                    var adjustment = new InventoryAdjustment
+                    {
+                        StoreId = data.StoreId,
+                        ProductId = item.ProductId,
+                        Quantity = -item.Quantity, // Negative because it's a sale
+                        ReasonCode = "Sales",
+                        DocumentReference = $"Order #{data.OrderId}",
+                        AdjustmentDate = data.Date,
+                        IsApproved = true
+                    };
+                    _context.InventoryAdjustments.Add(adjustment);
+                }
+
                 await _context.SaveChangesAsync();
-                _logger.LogInformation($"Synced Order {data.OrderId} for Dashboard.");
+                _logger.LogInformation($"Synced Order {data.OrderId} and its inventory adjustments for Dashboard.");
             }
             catch (Exception ex)
             {

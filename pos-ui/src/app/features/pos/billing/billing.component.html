@@ -55,14 +55,26 @@
           <div class="p-thumb">📦</div>
           <div class="p-details">
             <h4 class="p-name">{{ p.name }}</h4>
-            <p class="p-sku">SKU: {{ p.sku || 'SKU000' }}</p>
+            <div class="p-meta">
+              <span class="p-sku">SKU: {{ p.sku || 'SKU000' }}</span>
+              <span class="p-stock" [class.danger]="p.stockQuantity <= 0">
+                Stock: {{ p.stockQuantity }} units
+              </span>
+            </div>
           </div>
           <div class="p-action-group">
             <div class="p-price-status">
               <span class="p-price">{{ p.sellingPrice | currency }}</span>
-              <span class="p-status" [class.low]="p.stockQuantity < 10">In Stock</span>
+              <span class="p-status" [class.low]="p.stockQuantity < 10" [class.out]="p.stockQuantity <= 0">
+                {{ p.stockQuantity <= 0 ? 'Out of Stock' : 'In Stock' }}
+              </span>
             </div>
-            <button class="add-btn" (click)="addToCart(p)">Add +</button>
+            <button class="add-btn" 
+                    [class.disabled]="p.stockQuantity <= 0" 
+                    [disabled]="p.stockQuantity <= 0"
+                    (click)="addToCart(p)">
+              {{ p.stockQuantity <= 0 ? 'Out' : 'Add +' }}
+            </button>
           </div>
         </div>
         <div *ngIf="!filteredProducts.length && !isLoading" class="empty-state">No products found...</div>
@@ -94,7 +106,9 @@
           <div class="item-actions">
             <button class="qty-btn" (click)="updateQuantity(i, item.quantity - 1)">-</button>
             <span class="qty-val">{{ item.quantity }}</span>
-            <button class="qty-btn" (click)="updateQuantity(i, item.quantity + 1)">+</button>
+            <button class="qty-btn" 
+                    [disabled]="item.quantity >= item.stockQuantity"
+                    (click)="updateQuantity(i, item.quantity + 1)">+</button>
           </div>
         </div>
       </div>
