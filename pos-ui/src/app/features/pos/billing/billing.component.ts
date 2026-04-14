@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -34,7 +34,7 @@ export class BillingComponent implements OnInit {
   total = 0;
   paymentMode: 'Cash' | 'Online' = 'Cash';
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(private api: ApiService, private router: Router, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.loadUserInfo();
@@ -68,10 +68,12 @@ export class BillingComponent implements OnInit {
       next: (cats) => {
         this.categories = cats;
         this.loadProducts();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error loading categories', err);
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -82,10 +84,12 @@ export class BillingComponent implements OnInit {
         this.products = prods;
         this.applyFilters();
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error loading products', err);
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }

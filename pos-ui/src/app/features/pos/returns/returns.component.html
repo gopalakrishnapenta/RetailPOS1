@@ -1,19 +1,20 @@
-<div class="returns-container">
-  <!-- Search & Filters -->
+<div class="returns-container animate-fade-in">
+  <!-- Modern Search & Filter Header -->
   <header class="search-header glass-panel">
-    <div class="search-box">
-      <input type="text" class="input-field" placeholder="Search by Bill ID, Phone, or Customer Name..." [(ngModel)]="searchQuery" (input)="onSearchChange()">
+    <div class="search-host">
+      <i>🔍</i>
+      <input type="text" placeholder="Search by Bill ID, Phone, or Customer Name..." [(ngModel)]="searchQuery" (input)="onSearchChange()">
     </div>
     <div class="filter-chips">
-      <button class="chip" [class.active]="activeTab === 'All Bills'" (click)="setTab('All Bills')">All Bills</button>
-      <button class="chip" [class.active]="activeTab === 'Held Bills'" (click)="setTab('Held Bills')">Held Bills</button>
-      <button class="chip" [class.active]="activeTab === 'Past Bills'" (click)="setTab('Past Bills')">Past Bills</button>
-      <button class="chip" [class.active]="activeTab === 'Return Requests'" (click)="setTab('Return Requests')">Return Requests</button>
+      <button class="chip" [class.active]="activeTab === 'All Bills'" (click)="setTab('All Bills')">Global</button>
+      <button class="chip" [class.active]="activeTab === 'Held Bills'" (click)="setTab('Held Bills')">Drafts</button>
+      <button class="chip" [class.active]="activeTab === 'Past Bills'" (click)="setTab('Past Bills')">Qualified</button>
+      <button class="chip" [class.active]="activeTab === 'Return Requests'" (click)="setTab('Return Requests')">Returns</button>
     </div>
   </header>
 
   <main class="returns-content">
-    <!-- List of Bills -->
+    <!-- Transactions Queue -->
     <section class="bills-list-section glass-panel">
       <div class="list-header">
         <h3>Transactions ({{ filteredBills.length }})</h3>
@@ -21,43 +22,48 @@
       <div class="bill-queue">
         <div class="bill-entry" *ngFor="let bill of filteredBills" [class.active]="selectedBill?.id === bill.id" (click)="selectBill(bill)">
           <div class="entry-header">
-            <span class="bill-id">#{{ bill.billNumber || bill.id }}</span>
+            <span class="bill-id">#{{ (bill.billNumber || bill.id).toString().slice(-8) }}</span>
             <span class="time">{{ bill.date | date:'shortTime' }}</span>
           </div>
           <div class="entry-details">
-            <span class="customer">{{ bill.customerName }}</span>
-            <span class="amount">{{ bill.totalAmount | currency }}</span>
+            <span class="customer">{{ bill.customerName || 'Walk-in Customer' }}</span>
+            <span class="amount">{{ bill.totalAmount | currency:'INR':'symbol' }}</span>
           </div>
-          <div class="status-badge" [ngClass]="bill.status?.toLowerCase()">
+          <div class="status-badge" [ngClass]="normalizeStatus(bill.status)">
             {{ bill.status }}
           </div>
         </div>
-        <p *ngIf="!filteredBills.length" class="empty-msg">No bills found for this tab.</p>
+        <div *ngIf="!filteredBills.length && !isLoading" class="empty-selection">
+          <div class="empty-state-content">
+            <div style="font-size: 2.5rem;">📁</div>
+            <p>No transactions found in this category.</p>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Bill Details & Return Wizard -->
+    <!-- Detailed Wizard -->
     <section class="details-section glass-panel" *ngIf="selectedBill">
       <div class="details-header">
         <h3>Bill Details</h3>
         <div class="actions">
-          <button class="btn btn-secondary">Reprint</button>
-          <button class="btn btn-primary">Resume</button>
+          <button class="btn btn-secondary btn-sm" style="margin-right: 8px;">Print</button>
+          <button class="btn btn-primary btn-sm">Copy</button>
         </div>
       </div>
 
       <div class="bill-info-grid">
          <div class="info-block">
            <label>Customer</label>
-           <span>{{ selectedBill.customerName }} ({{ selectedBill.customerMobile }})</span>
+           <span>{{ selectedBill.customerName || 'Regular' }} ({{ selectedBill.customerMobile || 'N/A' }})</span>
          </div>
          <div class="info-block">
-           <label>Date/Time</label>
+           <label>Timestamp</label>
            <span>{{ selectedBill.date | date:'medium' }}</span>
          </div>
          <div class="info-block">
-           <label>Payment Method</label>
-           <span>Handled</span>
+           <label>Reference</label>
+           <span>{{ selectedBill.billNumber || selectedBill.id }}</span>
          </div>
       </div>
 
@@ -66,19 +72,22 @@
         <table class="admin-table">
           <thead>
             <tr>
-              <th><input type="checkbox"></th>
-              <th>Product</th>
-              <th>Bill Qty</th>
-              <th>Return Qty</th>
-              <th>Price</th>
-              <th>Refundable</th>
+              <th width="40"><input type="checkbox"></th>
+              <th>Description</th>
+              <th class="text-center">Qty</th>
+              <th width="120">Return Qty</th>
+              <th class="text-right">Price</th>
+              <th class="text-right">Total</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let item of selectedBill.items">
               <td><input type="checkbox" [(ngModel)]="item.selected"></td>
-              <td>{{ item.productName }}</td>
-              <td>{{ item.quantity }}</td>
+              <td>
+                <div style="font-weight: 600;">{{ item.productName }}</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">PK: {{ item.id }}</div>
+              </td>
+              <td class="text-center">{{ item.quantity }}</td>
               <td>
                 <input type="number" 
                        class="qty-input" 
@@ -87,8 +96,8 @@
                        min="1"
                        [disabled]="!item.selected">
               </td>
-              <td>{{ item.unitPrice | currency }}</td>
-              <td>{{ (item.unitPrice * (item.returnQuantity || 0)) | currency }}</td>
+              <td class="text-right">{{ item.unitPrice | currency:'INR':'symbol' }}</td>
+              <td class="text-right" style="font-weight: 700;">{{ (item.unitPrice * (item.returnQuantity || 0)) | currency:'INR':'symbol' }}</td>
             </tr>
           </tbody>
         </table>
@@ -96,26 +105,28 @@
 
       <div class="return-form">
         <div class="form-group">
-          <label>Reason for Return</label>
-          <select class="input-field" [(ngModel)]="returnReason">
+          <label>Return Reason</label>
+          <select class="input-field" [(ngModel)]="returnReason" style="height: 48px;">
             <option>Damaged Item</option>
             <option>Wrong Item</option>
-            <option>Customer Dissatisfied</option>
-            <option>Other</option>
+            <option>Quality Issue</option>
+            <option>Customer Choice</option>
           </select>
         </div>
         <div class="form-group">
-          <label>Refund Mode</label>
-          <div class="radio-group">
-            <label><input type="radio" value="Original Mode" [(ngModel)]="refundMode"> Original Mode</label>
+          <label>Refund Channel</label>
+          <div class="radio-group" style="height: 48px; align-items: center;">
+            <label><input type="radio" value="Original Mode" [(ngModel)]="refundMode"> Original</label>
             <label><input type="radio" value="Cash" [(ngModel)]="refundMode"> Cash</label>
-            <label><input type="radio" value="Store Credit" [(ngModel)]="refundMode"> Store Credit</label>
+            <label><input type="radio" value="Store Credit" [(ngModel)]="refundMode"> Credit</label>
           </div>
         </div>
+        
         <div class="approval-status info-block" [ngClass]="getStatusClass()">
-          <label>Approval Status</label>
+          <label>Audit Status</label>
           <span>{{ getDisplayStatus() }}</span>
         </div>
+
         <div class="return-action-panel">
           <button class="btn btn-danger w-full submit-return" (click)="initiateReturn()" [disabled]="!canInitiate() || !hasSelectedItems() || isProcessing">
             {{ getInitiateButtonLabel() }}
@@ -125,12 +136,12 @@
       </div>
     </section>
 
-    <!-- Placeholder for when no bill is selected -->
+    <!-- Empty Selection -->
     <section class="details-section glass-panel empty-selection" *ngIf="!selectedBill">
        <div class="empty-state-content">
-         <div class="empty-icon">📊</div>
-         <h3>Select a finalized bill to initiate return</h3>
-         <p>Past Bills contains completed and finalized invoices that can be sent for return approval.</p>
+         <div class="empty-icon">📂</div>
+         <h3>No Bill Selected</h3>
+         <p>Select a transaction from the list on the left to start the return workflow.</p>
        </div>
     </section>
   </main>

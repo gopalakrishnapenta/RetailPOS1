@@ -23,7 +23,7 @@ export class ReturnsComponent implements OnInit, OnDestroy {
   isProcessing = false;
   
   searchQuery = '';
-  activeTab = 'Past Bills';
+  activeTab = 'All Bills';
   currentStoreId = 0;
 
   returnReason = 'Wrong Item';

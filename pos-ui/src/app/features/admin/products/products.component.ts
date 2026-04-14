@@ -96,38 +96,38 @@ import { ApiService } from '../../../core/services/api.service';
           <form (submit)="saveProduct()" #productForm="ngForm">
             <div class="form-grid">
               <div class="form-group">
-                <label>SKU (Barcode/Unique ID)</label>
+                <label>SKU (Barcode/Unique ID) <span class="required-star">*</span></label>
                 <input type="text" name="sku" [(ngModel)]="currentProduct.sku" required class="input-field" placeholder="E.g. PRD-001">
               </div>
               <div class="form-group">
-                <label>Product Name</label>
+                <label>Product Name <span class="required-star">*</span></label>
                 <input type="text" name="name" [(ngModel)]="currentProduct.name" required class="input-field" placeholder="E.g. Premium Coffee">
               </div>
               <div class="form-group">
-                <label>Category</label>
+                <label>Category <span class="required-star">*</span></label>
                 <select name="categoryId" [(ngModel)]="currentProduct.categoryId" required class="input-field">
                   <option [ngValue]="null">Select Category</option>
                   <option *ngFor="let c of categories" [ngValue]="c.id">{{ c.name }}</option>
                 </select>
               </div>
               <div class="form-group">
-                <label>Barcode (Optional)</label>
-                <input type="text" name="barcode" [(ngModel)]="currentProduct.barcode" class="input-field">
+                <label>Barcode <span class="optional-label">(Optional)</span></label>
+                <input type="text" name="barcode" [(ngModel)]="currentProduct.barcode" class="input-field" placeholder="Scan if available">
               </div>
               <div class="form-group">
-                <label>MRP (Max Retail Price)</label>
+                <label>MRP (Max Retail Price) <span class="required-star">*</span></label>
                 <input type="number" name="mrp" [(ngModel)]="currentProduct.mrp" required class="input-field">
               </div>
               <div class="form-group">
-                <label>Selling Price</label>
+                <label>Selling Price <span class="required-star">*</span></label>
                 <input type="number" name="sellingPrice" [(ngModel)]="currentProduct.sellingPrice" required class="input-field">
               </div>
               <div class="form-group">
-                <label>Stock Quantity</label>
+                <label>Stock Quantity <span class="required-star">*</span></label>
                 <input type="number" name="stockQuantity" [(ngModel)]="currentProduct.stockQuantity" required class="input-field">
               </div>
               <div class="form-group">
-                <label>Reorder Level</label>
+                <label>Reorder Level <span class="required-star">*</span></label>
                 <input type="number" name="reorderLevel" [(ngModel)]="currentProduct.reorderLevel" required class="input-field">
               </div>
             </div>
@@ -189,6 +189,9 @@ import { ApiService } from '../../../core/services/api.service';
     .text-center { text-align: center; }
     .text-muted { color: var(--text-muted); }
     .text-primary { color: var(--accent-primary); }
+
+    .required-star { color: var(--accent-danger); font-weight: bold; margin-left: 2px; }
+    .optional-label { color: var(--text-muted); font-size: 0.75rem; font-weight: normal; margin-left: 4px; }
   `]
 })
 export class ProductsComponent implements OnInit {
