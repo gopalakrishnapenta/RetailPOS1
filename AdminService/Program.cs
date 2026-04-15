@@ -127,25 +127,37 @@ builder.Services.AddScoped<IReportService, ReportService>();
 
 var app = builder.Build();
 
+    // ── DATABASE INITIALIZATION (Consolidated) ──────────────────────────────
     using (var scope = app.Services.CreateScope())
     {
         var services = scope.ServiceProvider;
-        var context = services.GetRequiredService<AdminService.Data.AdminDbContext>();
         var logger = services.GetRequiredService<ILogger<Program>>();
         
         try 
         {
-            logger.LogInformation("Attempting to apply Admin Service migrations...");
-            await context.Database.MigrateAsync();
-            logger.LogInformation("Admin Service migrations applied successfully.");
+            var context = services.GetRequiredService<AdminDbContext>();
+            var sagaContext = services.GetRequiredService<AdminSagaDbContext>();
 
-            logger.LogInformation("🚀 Starting Admin Data Seeding...");
+            logger.LogInformation("🚀 [AdminService] Starting Database Initialization...");
+
+            // Apply Migrations for Main DB
+            logger.LogInformation("Applying AdminDbContext migrations...");
+            await context.Database.MigrateAsync();
+            
+            // Apply Migrations for Saga DB
+            logger.LogInformation("Applying AdminSagaDbContext migrations...");
+            await sagaContext.Database.MigrateAsync();
+
+            // Run Seeding
+            logger.LogInformation("Starting Admin Data Seeding...");
             await AdminService.Data.DbInitializer.InitAsync(context, logger);
-            logger.LogInformation("Admin Data Seeding completed successfully.");
+            
+            logger.LogInformation("✅ [AdminService] Database & Saga initialized successfully.");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Admin Service initialization failed.");
+            logger.LogCritical(ex, "❌ [AdminService] Fatal error during database initialization.");
+            // In Production, you might want to stop the app: throw;
         }
     }
 
@@ -164,26 +176,6 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 // Migration and Initial Setup logic
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<AdminDbContext>();
-        await context.Database.MigrateAsync();
-
-        var sagaContext = services.GetRequiredService<AdminService.Data.AdminSagaDbContext>();
-        await sagaContext.Database.MigrateAsync();
-        
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogInformation("Admin & Saga Databases initialized successfully.");
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while migrating the database.");
-    }
-}
 
 app.MapControllers();
 app.Run();

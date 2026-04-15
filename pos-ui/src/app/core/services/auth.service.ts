@@ -18,6 +18,7 @@ export interface User {
 export class AuthService {
   private _user = signal<User | null>(null);
   readonly user = this._user.asReadonly();
+  readonly isAuth = signal(false);
 
   private http = inject(HttpClient);
   private router = inject(Router);
@@ -30,7 +31,11 @@ export class AuthService {
     return this.http.post<any>('http://localhost:5000/gateway/auth/login', credentials).pipe(
       tap((response: any) => {
         if (response.data && response.data.token) {
-          this.setSession(response.data);
+          const authData: User = {
+            ...response.data,
+            role: response.data.role || 'Staff' // Default to Staff if role missing
+          };
+          this.setSession(authData);
         }
       })
     );
@@ -40,12 +45,17 @@ export class AuthService {
     localStorage.setItem('token', authData.token || '');
     localStorage.setItem('user', JSON.stringify(authData));
     this._user.set(authData);
+    this.isAuth.set(true);
   }
 
   private loadUserFromStorage() {
     const data = localStorage.getItem('user');
-    if (data) {
+    const token = localStorage.getItem('token');
+    if (data && token) {
       this._user.set(JSON.parse(data));
+      this.isAuth.set(true);
+    } else {
+      this.isAuth.set(false);
     }
   }
 
@@ -53,11 +63,18 @@ export class AuthService {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     this._user.set(null);
+    this.isAuth.set(false);
     this.router.navigate(['/login']);
   }
 
   isLoggedIn(): boolean {
-    return !!this._user();
+    return this.isAuth();
+  }
+
+  hasRole(allowedRoles: string[]): boolean {
+    const user = this._user();
+    if (!user) return false;
+    return allowedRoles.includes(user.role);
   }
 
   hasPermission(permission: string): boolean {

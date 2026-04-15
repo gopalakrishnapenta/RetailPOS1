@@ -33,9 +33,21 @@ namespace AdminService.Data
             modelBuilder.Entity<SyncedReturn>().HasQueryFilter(r => r.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || r.StoreId == 0);
             
             // Disable identity generation for the synced key (we use the ID from OrdersService)
-            modelBuilder.Entity<SyncedOrder>()
-                .Property(o => o.OrderId)
-                .ValueGeneratedNever();
+            modelBuilder.Entity<SyncedOrder>(entity => {
+                entity.Property(o => o.OrderId).ValueGeneratedNever();
+                entity.Property(o => o.TaxAmount).HasPrecision(18, 2);
+                entity.Property(o => o.TotalAmount).HasPrecision(18, 2);
+                entity.Property(o => o.CashierId).HasDefaultValue(0);
+            });
+
+            modelBuilder.Entity<DashboardStats>(entity => {
+                entity.Property(d => d.TodaySales).HasPrecision(18, 2);
+                entity.Property(d => d.TotalSales).HasPrecision(18, 2);
+            });
+
+            modelBuilder.Entity<SyncedReturn>(entity => {
+                entity.Property(r => r.RefundAmount).HasPrecision(18, 2);
+            });
 
             modelBuilder.Entity<StaffMember>().HasQueryFilter(sm => 
                 sm.AssignedStoreId == _tenantProvider.StoreId || 

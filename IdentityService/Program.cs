@@ -116,36 +116,39 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 
 var app = builder.Build();
 
-// ── [UPGRADE] Dynamic RBAC & Database Initialization ────────────────────
-try
+// ── DATABASE INITIALIZATION (Standardized) ──────────────────────────────
+using (var scope = app.Services.CreateScope())
 {
-    using (var scope = app.Services.CreateScope())
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    
+    try
     {
-        var services = scope.ServiceProvider;
-        var logger = services.GetRequiredService<ILogger<Program>>();
         var context = services.GetRequiredService<AppDbContext>();
 
-        logger.LogInformation("Attempting to apply Identity Database migrations...");
-        
+        logger.LogInformation("🚀 [IdentityService] Starting Database Initialization...");
+
+        // Apply Migrations
+        logger.LogInformation("Applying Identity Database migrations...");
         try 
         {
             await context.Database.MigrateAsync();
         }
         catch (Exception ex)
         {
-            logger.LogWarning("Identity migration skipped (Database may be dirty): {Message}", ex.Message);
+            logger.LogWarning("Identity migration semi-failed or skipped (checking if DB is still usable): {Message}", ex.Message);
         }
 
-        // [PRO UPGRADE] This MUST run even if migration skipped, to ensure Permissions are synced!
+        // Initialize/Seed (RBAC, etc.)
+        logger.LogInformation("Starting Identity Data Seeding (RBAC)...");
         await DbInitializer.InitAsync(context, logger);
         
-        logger.LogInformation("Identity Database & RBAC initialized successfully.");
+        logger.LogInformation("✅ [IdentityService] Database & RBAC initialized successfully.");
     }
-}
-catch (Exception ex)
-{
-    var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    logger.LogError(ex, "CRITICAL ERROR: Failed to initialize Identity Database/RBAC.");
+    catch (Exception ex)
+    {
+        logger.LogCritical(ex, "❌ [IdentityService] Fatal error during database initialization.");
+    }
 }
 
 if (app.Environment.IsDevelopment())
