@@ -255,7 +255,7 @@ export class ReturnsComponent implements OnInit, OnDestroy {
     return status === 'completed' || status === 'paid' || status === 'finalized';
   }
 
-  private normalizeStatus(status: string | null | undefined): string {
+  public normalizeStatus(status: string | null | undefined): string {
     return (status || '').toString().trim().toLowerCase();
   }
 

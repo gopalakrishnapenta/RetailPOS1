@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RetailPOS ER Diagram</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+
+    .frame {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      padding: 24px;
+      width: max-content;
+      min-width: 100%;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      margin: 0 0 16px;
+      font-size: 24px;
+    }
+
+    .mermaid {
+      width: max-content;
+    }
+  </style>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      er: {
+        layoutDirection: 'TB'
+      }
+    });
+  </script>
+</head>
+<body>
+  <div class="frame">
+    <h1>RetailPOS ER Diagram</h1>
+    <div class="mermaid">
+erDiagram
+    IDENTITY_USER {
+        int Id PK
+        string Email
+        string PasswordHash
+        string EmployeeCode
+        bool IsEmailVerified
+        string RefreshToken
+        datetime RefreshTokenExpiry
+    }
+
+    IDENTITY_STORE {
+        int Id PK
+        string StoreCode
+        string Name
+        string Location
+        bool IsActive
+    }
+
+    IDENTITY_ROLE {
+        int Id PK
+        string Name
+    }
+
+    IDENTITY_PERMISSION {
+        int Id PK
+        string Code
+        string Description
+    }
+
+    USER_STORE_ROLE {
+        int Id PK
+        int UserId FK
+        int StoreId FK
+        int RoleId FK
+    }
+
+    ROLE_PERMISSION {
+        int RoleId FK
+        int PermissionId FK
+    }
+
+    ADMIN_STORE {
+        int Id PK
+        string StoreCode
+        string Name
+        string Location
+        bool IsActive
+    }
+
+    ADMIN_CATEGORY {
+        int Id PK
+        string Name
+        string Description
+        bool IsActive
+        int StoreId
+    }
+
+    ADMIN_INVENTORY_ADJUSTMENT {
+        int Id PK
+        int StoreId
+        int ProductId
+        int Quantity
+        string ReasonCode
+        string DocumentReference
+        datetime AdjustmentDate
+        int AdjustedByUserId
+        bool IsApproved
+    }
+
+    ADMIN_STAFF_MEMBER {
+        int UserId PK
+        string Email
+        string FullName
+        bool IsAssigned
+        int AssignedStoreId
+        string AssignedRole
+        datetime RegisteredDate
+    }
+
+    ADMIN_SYNCED_ORDER {
+        int OrderId PK
+        int StoreId
+        decimal TotalAmount
+        decimal TaxAmount
+        datetime Date
+        string CustomerMobile
+    }
+
+    ADMIN_SYNCED_RETURN {
+        int Id PK
+        int OrderId
+        int ReturnId
+        decimal RefundAmount
+        int StoreId
+        datetime Date
+    }
+
+    CATALOG_CATEGORY {
+        int Id PK
+        string Name
+        string Description
+        bool IsActive
+        int StoreId
+    }
+
+    CATALOG_PRODUCT {
+        int Id PK
+        string Sku
+        string Barcode
+        string Name
+        decimal MRP
+        decimal SellingPrice
+        string TaxCode
+        int ReorderLevel
+        bool IsActive
+        int StockQuantity
+        int CategoryId FK
+        int StoreId
+    }
+
+    ORDER_BILL {
+        int Id PK
+        string BillNumber
+        datetime Date
+        int StoreId
+        int CashierId
+        string CustomerMobile
+        decimal TotalAmount
+        decimal TaxAmount
+        string Status
+        string CustomerName
+    }
+
+    ORDER_BILL_ITEM {
+        int Id PK
+        int BillId FK
+        int ProductId
+        string ProductName
+        decimal UnitPrice
+        int Quantity
+        decimal SubTotal
+        int StoreId
+    }
+
+    ORDER_CUSTOMER {
+        int Id PK
+        string Mobile
+        string Name
+        datetime CreatedAt
+        int StoreId
+    }
+
+    PAYMENT_PAYMENT {
+        int Id PK
+        int BillId
+        string PaymentMode
+        decimal Amount
+        string ReferenceNumber
+        int StoreId
+    }
+
+    RETURN_RETURN {
+        int Id PK
+        int OriginalBillId
+        int ProductId
+        int Quantity
+        decimal RefundAmount
+        string Reason
+        string Status
+        string ManagerApprovalNote
+        string CustomerMobile
+        int StoreId
+        datetime Date
+    }
+
+    NOTIFICATION {
+        int Id PK
+        string Type
+        string Recipient
+        string Content
+        datetime SentAt
+        bool IsRead
+        string Status
+    }
+
+    IDENTITY_USER ||--o{ USER_STORE_ROLE : mapped_to
+    IDENTITY_STORE o|--o{ USER_STORE_ROLE : scopes
+    IDENTITY_ROLE ||--o{ USER_STORE_ROLE : grants
+    IDENTITY_ROLE ||--o{ ROLE_PERMISSION : includes
+    IDENTITY_PERMISSION ||--o{ ROLE_PERMISSION : allows
+
+    ADMIN_STORE ||--o{ ADMIN_CATEGORY : owns
+    ADMIN_STORE ||--o{ ADMIN_INVENTORY_ADJUSTMENT : scopes
+    ADMIN_STORE ||--o{ ADMIN_SYNCED_ORDER : aggregates
+    ADMIN_STORE ||--o{ ADMIN_SYNCED_RETURN : aggregates
+    IDENTITY_USER ||--o| ADMIN_STAFF_MEMBER : mirrored_as
+
+    CATALOG_CATEGORY ||--o{ CATALOG_PRODUCT : contains
+    ORDER_BILL ||--|{ ORDER_BILL_ITEM : contains
+    ORDER_BILL ||--o{ PAYMENT_PAYMENT : paid_by
+    ORDER_BILL ||--o{ RETURN_RETURN : returned_by
+    CATALOG_PRODUCT ||--o{ ORDER_BILL_ITEM : referenced_by
+    CATALOG_PRODUCT ||--o{ RETURN_RETURN : referenced_by
+    ORDER_BILL ||--o| ADMIN_SYNCED_ORDER : projected_to
+    RETURN_RETURN ||--o| ADMIN_SYNCED_RETURN : projected_to
+    </div>
+  </div>
+</body>
+</html>
