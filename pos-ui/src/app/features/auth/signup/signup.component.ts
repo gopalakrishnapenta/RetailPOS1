@@ -24,6 +24,8 @@ export class SignupComponent implements OnInit, AfterViewInit {
   isLoading = false;
 
 
+  fullName = '';
+
   constructor(
     private api: ApiService,
     private router: Router
@@ -91,13 +93,18 @@ export class SignupComponent implements OnInit, AfterViewInit {
         }
       });
     } else {
+      if (!this.fullName) {
+        this.isLoading = false;
+        alert('Please enter your full name');
+        return;
+      }
       if (this.password !== this.confirmPassword) {
         this.isLoading = false;
         alert('Passwords do not match');
         return;
       }
 
-      this.api.register({ email: this.email, password: this.password }).subscribe({
+      this.api.register({ fullName: this.fullName, email: this.email, password: this.password }).subscribe({
         next: (res: any) => {
           this.isLoading = false;
           this.isRegistered = true;

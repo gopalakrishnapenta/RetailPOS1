@@ -4,6 +4,8 @@ using CatalogService.Models;
 using CatalogService.DTOs;
 using CatalogService.Interfaces;
 using CatalogService.Exceptions;
+using RetailPOS.Contracts;
+using MassTransit;
 
 namespace CatalogService.Services
 {
@@ -11,11 +13,13 @@ namespace CatalogService.Services
     {
         private readonly IProductRepository _productRepository;
         private readonly ITenantProvider _tenantProvider;
+        private readonly IPublishEndpoint _publishEndpoint;
 
-        public ProductService(IProductRepository productRepository, ITenantProvider tenantProvider)
+        public ProductService(IProductRepository productRepository, ITenantProvider tenantProvider, IPublishEndpoint publishEndpoint)
         {
             _productRepository = productRepository;
             _tenantProvider = tenantProvider;
+            _publishEndpoint = publishEndpoint;
         }
 
         public async Task<IEnumerable<ProductDto>> GetAllProductsAsync()
@@ -90,6 +94,17 @@ namespace CatalogService.Services
 
             await _productRepository.AddAsync(p);
             await _productRepository.SaveChangesAsync();
+
+            // SYNC: Notify other services about the new product and its initial stock
+            await _publishEndpoint.Publish<ProductCreatedEvent>(new
+            {
+                ProductId = p.Id,
+                Name = p.Name,
+                Sku = p.Sku,
+                InitialStock = p.StockQuantity,
+                StoreId = p.StoreId
+            });
+
             return MapToDto(p);
         }
 
@@ -111,6 +126,15 @@ namespace CatalogService.Services
 
             _productRepository.Update(p);
             await _productRepository.SaveChangesAsync();
+
+            // SYNC: Notify about updates
+            await _publishEndpoint.Publish<ProductUpdatedEvent>(new
+            {
+                ProductId = p.Id,
+                Name = p.Name,
+                Sku = p.Sku
+            });
+
             return true;
         }
 
@@ -119,7 +143,20 @@ namespace CatalogService.Services
             foreach (var item in deductions)
             {
                 var p = await _productRepository.GetByIdIgnoringFiltersAsync(item.ProductId);
-                if (p != null) p.StockQuantity -= item.Quantity;
+                if (p != null)
+                {
+                    p.StockQuantity -= item.Quantity;
+                    
+                    // SYNC: Notify dashboard and other services
+                    await _publishEndpoint.Publish<StockAdjustedEvent>(new
+                    {
+                        ProductId = p.Id,
+                        StoreId = p.StoreId,
+                        QuantityChange = -item.Quantity,
+                        ReasonCode = "Adjustment-Deduction",
+                        DocumentReference = "Manual Adjustment"
+                    });
+                }
             }
 
             await _productRepository.SaveChangesAsync();
@@ -131,7 +168,20 @@ namespace CatalogService.Services
             foreach (var item in additions)
             {
                 var p = await _productRepository.GetByIdIgnoringFiltersAsync(item.ProductId);
-                if (p != null) p.StockQuantity += item.Quantity;
+                if (p != null)
+                {
+                    p.StockQuantity += item.Quantity;
+
+                    // SYNC: Notify dashboard and other services
+                    await _publishEndpoint.Publish<StockAdjustedEvent>(new
+                    {
+                        ProductId = p.Id,
+                        StoreId = p.StoreId,
+                        QuantityChange = item.Quantity,
+                        ReasonCode = "Adjustment-Addition",
+                        DocumentReference = "Manual Adjustment"
+                    });
+                }
             }
 
             await _productRepository.SaveChangesAsync();

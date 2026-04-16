@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -10,12 +10,16 @@ namespace AdminService.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
-                name: "CashierId",
-                table: "SyncedOrders",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
+            migrationBuilder.Sql(@"
+                IF NOT EXISTS (
+                    SELECT * FROM sys.columns 
+                    WHERE object_id = OBJECT_ID(N'[SyncedOrders]') 
+                      AND name = N'CashierId'
+                )
+                BEGIN
+                    ALTER TABLE [SyncedOrders] ADD [CashierId] int NOT NULL DEFAULT 0;
+                END
+            ");
         }
 
         /// <inheritdoc />

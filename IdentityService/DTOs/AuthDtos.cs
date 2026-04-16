@@ -15,6 +15,10 @@ namespace IdentityService.DTOs
         public string Email { get; set; } = string.Empty;
 
         [Required]
+        [MaxLength(200)]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required]
         [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", 
             ErrorMessage = "Password must be at least 8 characters, include uppercase, lowercase, number, and symbol.")]
         public string Password { get; set; } = string.Empty;
@@ -22,6 +26,7 @@ namespace IdentityService.DTOs
 
     public class AuthResponseDto
     {
+        public int Id { get; set; }
         public string? Token { get; set; }
         public bool RequiresOtp { get; set; } = false;
         public string Role { get; set; } = string.Empty;

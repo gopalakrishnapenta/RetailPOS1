@@ -39,21 +39,34 @@ namespace AdminService.Services
             var bills = await orderQuery.AsNoTracking().ToListAsync();
             var returns = await returnQuery.AsNoTracking().ToListAsync();
             
-            // Calculate current stock levels from adjustments and find items < 10
+            // Calculate current stock levels from adjustments
             var stockSummary = await inventoryQuery.AsNoTracking()
                 .GroupBy(a => a.ProductId)
                 .Select(g => new { ProductId = g.Key, CurrentStock = g.Sum(a => a.Quantity) })
-                .ToListAsync();
+                .ToDictionaryAsync(x => x.ProductId, x => x.CurrentStock);
 
-            var lowStockItems = stockSummary.Where(s => s.CurrentStock < 10).ToList();
-            var lowStockCount = lowStockItems.Count;
-
-            var lowStockDetails = lowStockItems.Select(s => new LowStockItemDto
+            var productQuery = _context.Products.IgnoreQueryFilters();
+            if (storeId.HasValue && storeId.Value != 0)
             {
-                Name = $"Product {s.ProductId}", // Placeholder or we could join with Catalog if we were in the same DB
-                SKU = $"SKU-{s.ProductId:D4}",
-                Stock = s.CurrentStock
-            }).ToList();
+                productQuery = productQuery.Where(p => p.StoreId == storeId.Value);
+            }
+            var syncedItems = await productQuery.AsNoTracking().ToListAsync();
+
+            var lowStockDetails = new List<LowStockItemDto>();
+            foreach (var p in syncedItems)
+            {
+                var currentStock = stockSummary.TryGetValue(p.Id, out var qty) ? qty : 0;
+                if (currentStock < 10)
+                {
+                    lowStockDetails.Add(new LowStockItemDto
+                    {
+                        Name = p.Name,
+                        SKU = p.Sku,
+                        Stock = currentStock
+                    });
+                }
+            }
+            var lowStockCount = lowStockDetails.Count;
 
             var todayBills = bills.Where(b => b.Date.Date == today).ToList();
             var yesterdayBills = bills.Where(b => b.Date.Date == startOfYesterday).ToList();
@@ -135,8 +148,10 @@ namespace AdminService.Services
 
             var staffLeaderboard = staffGroups.Select(sg => {
                 var member = staffMembers.FirstOrDefault(m => m.UserId == sg.CashierId);
+                string staffName = !string.IsNullOrEmpty(member?.FullName) ? member.FullName : (!string.IsNullOrEmpty(member?.Email) ? member.Email : $"Staff #{sg.CashierId}");
+                
                 return new StaffLeaderboardDto {
-                    StaffName = member?.FullName ?? (member?.Email ?? $"Staff #{sg.CashierId}"),
+                    StaffName = staffName,
                     Sales = sg.NetSales,
                     Orders = sg.Count,
                     Role = member?.AssignedRole ?? "Staff"

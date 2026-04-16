@@ -108,6 +108,7 @@ namespace IdentityService.Services
                 { 
                     Success = true, 
                     Data = new AuthResponseDto { 
+                        Id = user.Id,
                         Token = null, 
                         Role = "PENDING_STAFF", 
                         Email = user.Email, 
@@ -131,6 +132,7 @@ namespace IdentityService.Services
                 Success = true, 
                 RefreshToken = refreshToken,
                 Data = new AuthResponseDto { 
+                    Id = user.Id,
                     Token = token, 
                     Role = mapping.Role.Name, 
                     Email = user.Email, 
@@ -150,6 +152,7 @@ namespace IdentityService.Services
             var user = new ModelsUser
             {
                 Email = registerDto.Email,
+                FullName = registerDto.FullName,
                 PasswordHash = BCryptNet.HashPassword(registerDto.Password),
                 EmployeeCode = $"E{new Random().Next(100, 999)}",
                 VerificationOtp = otp,
@@ -164,7 +167,7 @@ namespace IdentityService.Services
             {
                 UserId = user.Id,
                 Email = user.Email,
-                FullName = (string?)null,
+                FullName = user.FullName,
                 RoleName = (string?)null,
                 StoreId = (int?)null
             });
@@ -254,6 +257,7 @@ namespace IdentityService.Services
                 user = new ModelsUser 
                 { 
                     Email = payload.Email, 
+                    FullName = payload.Name,
                     PasswordHash = BCryptNet.HashPassword(Guid.NewGuid().ToString()), 
                     IsEmailVerified = true,
                     EmployeeCode = $"E{new Random().Next(100, 999)}"
@@ -270,6 +274,11 @@ namespace IdentityService.Services
                 await _userRepository.SaveChangesAsync();
                 user = await _userRepository.GetWithRolesByEmailAsync(payload.Email);
             }
+            else if (string.IsNullOrEmpty(user.FullName))
+            {
+                user.FullName = payload.Name;
+                await _userRepository.SaveChangesAsync();
+            }
 
             var map = user!.UserRoles.OrderBy(ur => ur.StoreId == null ? 0 : 1).FirstOrDefault();
             
@@ -280,6 +289,7 @@ namespace IdentityService.Services
                 { 
                     Success = true, 
                     Data = new AuthResponseDto { 
+                        Id = user.Id,
                         Token = null, 
                         Role = "PENDING_STAFF", 
                         Email = user.Email, 
@@ -298,7 +308,7 @@ namespace IdentityService.Services
             user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
             await _userRepository.SaveChangesAsync();
 
-            return new AuthResult { Success = true, RefreshToken = refreshToken, Data = new AuthResponseDto { Token = token, Role = map.Role.Name, Email = user.Email, StoreId = map.StoreId ?? 0, Permissions = perms } };
+            return new AuthResult { Success = true, RefreshToken = refreshToken, Data = new AuthResponseDto { Id = user.Id, Token = token, Role = map.Role.Name, Email = user.Email, StoreId = map.StoreId ?? 0, Permissions = perms } };
         }
 
         private string GenerateJwt(ModelsUser user, string roleName, List<string> permissions, int storeId, string? storeCode = null, string? shiftDate = null)
@@ -399,6 +409,7 @@ namespace IdentityService.Services
                 RefreshToken = newRefreshToken,
                 Data = new AuthResponseDto
                 {
+                    Id = user.Id,
                     Token = newAccessToken,
                     Role = mapping.Role.Name,
                     Email = user.Email,
@@ -449,7 +460,8 @@ namespace IdentityService.Services
                 await _publishEndpoint.Publish<UserRegisteredEvent>(new
                 {
                     UserId = user.Id,
-                    Email = user.Email
+                    Email = user.Email,
+                    FullName = user.FullName ?? user.Email.Split('@')[0]
                 });
                 count++;
             }

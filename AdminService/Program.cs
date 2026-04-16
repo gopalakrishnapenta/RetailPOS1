@@ -105,6 +105,9 @@ builder.Services.AddMassTransit(x =>
 
     x.AddConsumer<DashboardEventsConsumer>();
     x.AddConsumer<SagaUserOnboardingConsumer>();
+    x.AddConsumer<UserRegisteredConsumer>();
+    x.AddConsumer<ProductSyncConsumer>();
+    x.AddConsumer<StockSyncConsumer>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
