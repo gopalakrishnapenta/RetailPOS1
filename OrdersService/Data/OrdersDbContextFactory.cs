@@ -26,6 +26,7 @@ namespace OrdersService.Data
     public class DesignTimeTenantProvider : Interfaces.ITenantProvider
     {
         public int StoreId => 0;
+        public int UserId => 0;
         public string Role => "Admin";
         public string? Token => null;
     }

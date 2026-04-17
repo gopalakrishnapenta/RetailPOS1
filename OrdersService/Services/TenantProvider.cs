@@ -41,6 +41,24 @@ namespace OrdersService.Services
             }
         }
 
+        public int UserId
+        {
+            get
+            {
+                var context = _httpContextAccessor.HttpContext;
+                if (context == null) return 0;
+                var claim = context.User.FindFirst(ClaimTypes.NameIdentifier) ??
+                            context.User.FindFirst("sub") ??
+                            context.User.FindFirst("id");
+
+                if (claim != null && int.TryParse(claim.Value, out int userId))
+                {
+                    return userId;
+                }
+                return 0;
+            }
+        }
+
         public string Role
         {
             get

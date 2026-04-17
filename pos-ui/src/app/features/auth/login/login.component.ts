@@ -16,6 +16,7 @@ declare var google: any;
 export class LoginComponent implements OnInit, AfterViewInit {
   email = '';
   password = '';
+  username = '';
   otp = '';
   authError = '';
   showOtp = false;

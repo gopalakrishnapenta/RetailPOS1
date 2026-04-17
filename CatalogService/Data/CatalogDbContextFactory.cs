@@ -27,6 +27,7 @@ namespace CatalogService.Data
     public class DesignTimeTenantProvider : ITenantProvider
     {
         public int StoreId => 0;
+        public int UserId => 0;
         public string Role => "Admin"; // Allow migrations to see everything
         public string? Token => null;
     }

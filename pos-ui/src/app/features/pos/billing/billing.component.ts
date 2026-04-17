@@ -191,8 +191,8 @@ export class BillingComponent implements OnInit {
       customerMobile: this.customerMobile,
       totalAmount: this.total,
       taxAmount: this.tax,
-      storeId: authData.storeId || 0,
-      cashierId: authData.id || 0,
+      storeId: authData.storeId || authData.StoreId || 0,
+      cashierId: authData.id || authData.Id || 0,
       status: 'PendingPayment',
       items: this.cart.map(item => ({
         productId: item.id,

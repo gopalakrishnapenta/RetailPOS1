@@ -58,7 +58,7 @@ namespace OrdersService.Services
                     TotalAmount = cartDto.TotalAmount,
                     TaxAmount = cartDto.TaxAmount,
                     StoreId = cartDto.StoreId != 0 ? cartDto.StoreId : _tenantProvider.StoreId,
-                    CashierId = cartDto.CashierId
+                    CashierId = cartDto.CashierId != 0 ? cartDto.CashierId : _tenantProvider.UserId
                 };
                 await _billRepository.AddAsync(bill);
             }
