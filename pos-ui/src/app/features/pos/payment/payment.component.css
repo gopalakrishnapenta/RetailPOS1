@@ -256,19 +256,62 @@
   box-shadow: 0 15px 30px rgba(34, 197, 94, 0.2);
 }
 
+/* DETAILED RECEIPT STYLES */
 .receipt-print-area {
-  padding: 32px;
+  max-width: 400px;
+  margin: 0 auto 32px;
+  padding: 20px;
+  background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #fff;
-  margin-bottom: 32px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: #000;
+  line-height: 1.4;
 }
 
-.p-header { text-align: center; margin-bottom: 16px; }
-.p-header h3 { font-size: 20px; }
+.receipt-header { text-align: center; margin-bottom: 15px; }
+.brand-logo { margin-bottom: 10px; }
+.brand-name { font-size: 24px; font-weight: 900; letter-spacing: 2px; }
+.store-info p { margin: 2px 0; font-size: 11px; }
 
-.p-table { width: 100%; margin: 16px 0; }
-.p-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.promo-section { text-align: center; margin: 15px 0; }
+.tagline { font-weight: 700; font-size: 14px; text-transform: uppercase; }
+.savings { font-weight: 700; font-size: 14px; margin-top: 4px; }
+
+.divider { text-align: center; font-weight: 700; margin: 5px 0; }
+.divider-sub { text-align: center; font-size: 10px; margin-bottom: 10px; }
+
+.bill-info { margin-bottom: 15px; }
+.info-grid { display: grid; grid-template-columns: 1.5fr 1fr; margin-top: 5px; }
+.col p { margin: 2px 0; }
+
+.items-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; border-top: 1px solid #000; border-bottom: 1px solid #000; }
+.items-table th { text-align: left; padding: 5px 0; font-size: 10px; border-bottom: 1px dashed #000; }
+.items-table td { padding: 5px 0; vertical-align: top; }
+
+.summary-section { margin-bottom: 15px; }
+.summary-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.summary-row.bold { font-weight: 800; }
+.summary-row.highlight { background: #eee; padding: 4px 0; }
+.taxes-hint { font-size: 9px; text-align: center; margin-top: 5px; }
+
+.gst-section { margin-bottom: 15px; }
+.divider-dashed { font-size: 10px; text-align: center; margin-bottom: 5px; }
+.gst-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+.gst-table th { text-align: left; border-bottom: 1px dashed #000; }
+.gst-table td { padding: 3px 0; }
+.total-row { border-top: 1px solid #000; font-weight: 700; }
+
+.footer-meta { font-size: 10px; margin-bottom: 15px; }
+.footer-meta p { margin: 2px 0; }
+
+.qr-section { text-align: center; margin-bottom: 15px; }
+.qr-placeholder { display: flex; justify-content: center; margin-bottom: 5px; }
+.qr-code-stylized { width: 60px; height: 60px; background: url('https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg') no-repeat center; background-size: contain; filter: grayscale(1); }
+.qr-text { font-size: 9px; letter-spacing: 1px; }
+
+.thank-you { text-align: center; font-size: 11px; }
+.thank-you p { margin: 2px 0; }
 
 .btn-new {
   width: 100%;
@@ -295,8 +338,44 @@
 }
 
 @media print {
-  .payment-wrapper { padding: 0; background: white; }
-  .summary-card, .action-card, .success-header, .btn-new, .auto-print-hint { display: none !important; }
-  .success-card { box-shadow: none; border: none; padding: 0; }
-  .receipt-print-area { border: none; padding: 0; }
+  body * { visibility: hidden; }
+  #printable-receipt, #printable-receipt * { visibility: visible; }
+  #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    margin: 0;
+    border: none;
+    padding: 10px;
+  }
 }
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  color: #64748b;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.print-logo {
+  max-width: 60px;
+  margin-bottom: 5px;
+}
+

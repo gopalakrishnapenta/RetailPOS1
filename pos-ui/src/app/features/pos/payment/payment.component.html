@@ -1,5 +1,7 @@
 <div class="payment-wrapper" [class.success]="paymentSuccess">
   <div class="container" *ngIf="!isLoading">
+    <!-- Debug info hidden but present in DOM -->
+    <div style="display:none" id="debug-bill-id">{{ bill?.id }}</div>
     
     <!-- Left Side: Order Summary -->
     <div class="summary-card glass-panel" *ngIf="bill">
@@ -103,33 +105,153 @@
     <div class="success-card glass-panel animate-scale-up" *ngIf="paymentSuccess">
       <div class="success-header">
         <div class="success-icon">✓</div>
-        <h2>Payment Successful!</h2>
-        <p>A message has been sent to {{ bill.customerMobile }}</p>
+        <h2>Transaction Complete</h2>
+        <p>Receipt generated for Order #{{ bill?.id }}</p>
       </div>
 
-      <div class="receipt-print-area">
-        <div class="p-header">
-          <h3>OFFICIAL RECEIPT</h3>
-          <p>Retail Store</p>
-          <p>{{ bill.date | date:'medium' }}</p>
+      <!-- NEW DETAILED RECEIPT TEMPLATE -->
+      <div class="receipt-print-area" id="printable-receipt">
+        <div class="receipt-header">
+          <div class="brand-logo">
+            <div class="brand-name">NEXUS POS</div>
+          </div>
+          <div class="store-info">
+            <p>{{ currentStore?.name || 'Retail Solutions' }}</p>
+            <p>{{ currentStore?.location }}</p>
+            <p>Store Code: {{ currentStore?.storeCode }}</p>
+            <p>Customer care: 18008910001</p>
+            <p>GSTIN: 03AAACS1710E1ZZ</p>
+          </div>
         </div>
-        <hr>
-        <div class="p-details">
-          <p><strong>Bill #:</strong> {{ bill.billNumber || bill.id }}</p>
-          <p><strong>Mode:</strong> {{ bill.paymentMode }}</p>
-          <p><strong>Ref:</strong> {{ bill.referenceNumber }}</p>
+
+        <div class="promo-section">
+          <p class="tagline">Your Full Paisa Vasool</p>
+          <div class="savings">Sale Savings. Rs. {{ ((bill?.totalAmount || 0) * 0.05) | number:'1.2-2' }}</div>
         </div>
-        <table class="p-table">
-           <tr *ngFor="let item of bill.items">
-             <td>{{ item.productName }} x {{ item.quantity }}</td>
-             <td class="text-right">{{ item.subTotal | currency }}</td>
-           </tr>
+
+        <div class="divider">**************** TAX INVOICE ****************</div>
+        <div class="divider-sub">********* Original for Recipient *********</div>
+
+        <div class="bill-info">
+          <div class="info-row">
+            <span>Place of Supply & State Code: 03 PB</span>
+          </div>
+          <div class="info-row">
+            <span>Customer Type: UNG</span>
+          </div>
+          <div class="info-grid">
+            <div class="col">
+              <p>Date: {{ bill?.date | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+              <p>Store: {{ currentStore?.storeCode }}  Cashier: {{ bill?.cashierId || '50100662' }}</p>
+            </div>
+            <div class="col text-right">
+              <p>Bill No: {{ bill?.id }}</p>
+              <p>Pos No: R102</p>
+            </div>
+          </div>
+        </div>
+
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>HSN Code</th>
+              <th>Item Description</th>
+              <th class="text-right">Price</th>
+              <th class="text-center">Qty</th>
+              <th class="text-right">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of bill?.items">
+              <td>040{{ item?.productId }}</td>
+              <td>{{ item?.productName }}</td>
+              <td class="text-right">{{ item?.unitPrice | number:'1.2-2' }}</td>
+              <td class="text-center">{{ item?.quantity }}</td>
+              <td class="text-right">{{ item?.subTotal | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
         </table>
-        <hr>
-        <div class="p-totals">
-           <div class="p-row"><span>Total Paid:</span> <strong>{{ bill.totalAmount | currency }}</strong></div>
-           <div class="p-row" *ngIf="bill.paymentMode === 'Cash'"><span>Tendered:</span> <span>{{ tenderedAmount | currency }}</span></div>
-           <div class="p-row" *ngIf="bill.paymentMode === 'Cash'"><span>Change:</span> <span>{{ changeAmount | currency }}</span></div>
+
+        <div class="summary-section">
+          <div class="summary-row">
+            <span>Items: {{ bill?.items?.length || 0 }}</span>
+            <span>Qty: {{ bill?.items?.length || 0 }}</span>
+            <span>{{ ((bill?.totalAmount || 0) - (bill?.taxAmount || 0)) | number:'1.2-2' }}</span>
+          </div>
+          <div class="summary-row bold">
+            <span>Gross Sales Value</span>
+            <span>{{ bill?.totalAmount | number:'1.2-2' }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Total Discount</span>
+            <span>{{ ((bill?.totalAmount || 0) * 0.05) | number:'1.2-2' }}</span>
+          </div>
+          <div class="summary-row bold highlight">
+            <span>Net Sales Value (Inclusive of GST)</span>
+            <span>{{ bill?.totalAmount | number:'1.2-2' }}</span>
+          </div>
+          <div class="summary-row bold">
+            <span>Total Amount Paid</span>
+            <span>{{ bill?.totalAmount | number:'1.2-2' }}</span>
+          </div>
+          <div class="summary-row">
+            <span>{{ bill?.paymentMode | uppercase }} PAYMENT</span>
+            <span>{{ bill?.totalAmount | number:'1.2-2' }}</span>
+          </div>
+          <p class="taxes-hint">(AMOUNT INCLUSIVE OF APPLICABLE TAXES)</p>
+        </div>
+
+        <div class="gst-section">
+          <div class="divider-dashed">------- GST Breakup Details ------- Amount (INR)</div>
+          <table class="gst-table">
+            <thead>
+              <tr>
+                <th>GST %</th>
+                <th>Taxable</th>
+                <th>CGST</th>
+                <th>SGST</th>
+                <th>CESS</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>10%</td>
+                <td>{{ ((bill?.totalAmount || 0) - (bill?.taxAmount || 0)) | number:'1.2-2' }}</td>
+                <td>{{ ((bill?.taxAmount || 0) / 2) | number:'1.2-2' }}</td>
+                <td>{{ ((bill?.taxAmount || 0) / 2) | number:'1.2-2' }}</td>
+                <td>0.00</td>
+                <td>{{ bill?.totalAmount | number:'1.2-2' }}</td>
+              </tr>
+              <tr class="total-row">
+                <td>Total</td>
+                <td>{{ ((bill?.totalAmount || 0) - (bill?.taxAmount || 0)) | number:'1.2-2' }}</td>
+                <td>{{ ((bill?.taxAmount || 0) / 2) | number:'1.2-2' }}</td>
+                <td>{{ ((bill?.taxAmount || 0) / 2) | number:'1.2-2' }}</td>
+                <td>0.00</td>
+                <td>{{ bill?.totalAmount | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="footer-meta">
+          <p>PaymentRefNo# {{ bill?.referenceNumber }}</p>
+          <p>TaxInvoice# {{ bill?.id }}20240428</p>
+          <p>Terms & Conditions Apply</p>
+        </div>
+
+        <div class="qr-section">
+          <div class="qr-placeholder">
+            <div class="qr-code-stylized"></div>
+          </div>
+          <p class="qr-text">118FRE21020215000002</p>
+        </div>
+
+        <div class="thank-you">
+          <p>* Thank You for Shopping with us *</p>
+          <p>Website: www.retailpos.com</p>
+          <p>For Privacy Policy refer to our website link</p>
         </div>
       </div>
 

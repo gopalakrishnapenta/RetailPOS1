@@ -18,18 +18,29 @@ namespace PaymentService.Services
 
         public async Task<Payment> ProcessPaymentAsync(Payment payment)
         {
+            Console.WriteLine($"[DIAGNOSTIC] PaymentService: Saving payment to DB for Bill {payment.BillId}...");
             await _paymentRepository.AddAsync(payment);
             await _paymentRepository.SaveChangesAsync();
-
-            // Publish event so OrdersService can update Bill status to "Paid"
-            await _publishEndpoint.Publish<PaymentProcessedEvent>(new
+            Console.WriteLine($"[DIAGNOSTIC] PaymentService: DB Save Successful. Publishing event...");
+            
+            try 
             {
-                PaymentId = payment.Id,
-                OrderId = payment.BillId,
-                Amount = payment.Amount,
-                PaymentMode = payment.PaymentMode,
-                Status = "Success"
-            });
+                // Publish event so OrdersService can update Bill status to "Paid"
+                await _publishEndpoint.Publish<PaymentProcessedEvent>(new
+                {
+                    PaymentId = payment.Id,
+                    OrderId = payment.BillId,
+                    Amount = payment.Amount,
+                    PaymentMode = payment.PaymentMode,
+                    Status = "Success"
+                });
+                Console.WriteLine($"[DIAGNOSTIC] PaymentService: Event published successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WARNING] PaymentService: Failed to publish event, but payment was saved: {ex.Message}");
+                // We continue because the payment IS saved in the DB
+            }
 
             return payment;
         }

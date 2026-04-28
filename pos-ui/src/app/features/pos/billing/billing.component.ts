@@ -157,9 +157,80 @@ export class BillingComponent implements OnInit {
     this.total = this.subtotal + this.tax;
   }
 
+  showHeldBillsModal = false;
+  heldBills: any[] = [];
+
   holdBill() {
     if (this.cart.length === 0) return;
-    alert('Bill has been put on hold.');
+    
+    this.isProcessing = true;
+    const authData = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    const billData = {
+      billNumber: 'HOLD-' + Date.now(),
+      customerName: this.customerName,
+      customerMobile: this.customerMobile,
+      totalAmount: this.total,
+      taxAmount: this.tax,
+      storeId: authData.storeId || authData.StoreId || 0,
+      cashierId: authData.id || authData.Id || 0,
+      status: 'Held',
+      items: this.cart.map(item => ({
+        productId: item.id,
+        productName: item.name,
+        quantity: item.quantity,
+        unitPrice: item.sellingPrice,
+        subTotal: item.sellingPrice * item.quantity
+      }))
+    };
+
+    this.api.createBill(billData).subscribe({
+      next: (billRes) => {
+        const billId = billRes.id || billRes.Id || 0;
+        this.api.holdBill(billId).subscribe({
+          next: () => {
+            alert('Bill has been put on hold successfully.');
+            this.resetCart();
+          },
+          error: () => {
+            this.isProcessing = false;
+            alert('Failed to set bill status to Held.');
+          }
+        });
+      },
+      error: (err) => {
+        this.isProcessing = false;
+        alert('Failed to save held bill.');
+      }
+    });
+  }
+
+  openHeldBills() {
+    this.showHeldBillsModal = true;
+    this.api.getBills().subscribe({
+      next: (bills: any[]) => {
+        // Filter for Held or Draft bills
+        this.heldBills = bills.filter(b => b.status === 'Held' || b.status === 'Draft');
+      },
+      error: (err) => {
+        console.error('Error fetching held bills', err);
+      }
+    });
+  }
+
+  resumeBill(bill: any) {
+    this.cart = bill.items.map((item: any) => ({
+      id: item.productId,
+      name: item.productName,
+      sellingPrice: item.unitPrice,
+      quantity: item.quantity,
+      stockQuantity: 999 // Placeholder as we don't have fresh stock here
+    }));
+    
+    this.customerMobile = bill.customerMobile;
+    this.customerName = bill.customerName;
+    this.calculateTotals();
+    this.showHeldBillsModal = false;
   }
 
   resetCart() {

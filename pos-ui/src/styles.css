@@ -47,7 +47,7 @@
   --transition-normal: 0.25s ease;
 }
 
-:root[data-theme="dark"] {
+[data-theme="dark"] {
   --bg-primary: #0f172a;
   --bg-secondary: #111827;
   --bg-tertiary: #1f2937;

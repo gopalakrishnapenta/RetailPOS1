@@ -74,7 +74,13 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<PaymentDbContext>(options =>
 {
     var connString = builder.Configuration.GetConnectionString("PaymentConnection") ?? builder.Configuration.GetConnectionString("DefaultConnection");
-    options.UseSqlServer(connString);
+    options.UseSqlServer(connString, sqlOptions => 
+    {
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null);
+    });
 });
 
 builder.Services.AddHttpContextAccessor();
@@ -124,6 +130,26 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddRetailPOSAuthorization();
 
 var app = builder.Build();
+
+// Automatically apply migrations on startup
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        var context = services.GetRequiredService<PaymentDbContext>();
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        
+        logger.LogInformation("Applying Migrations for PaymentService...");
+        await context.Database.MigrateAsync();
+        logger.LogInformation("PaymentService Database initialized successfully.");
+    }
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "An error occurred while applying migrations to the Payment database.");
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

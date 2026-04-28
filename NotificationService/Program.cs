@@ -142,6 +142,26 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Automatically apply migrations on startup
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        var context = services.GetRequiredService<NotificationDbContext>();
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        
+        logger.LogInformation("Applying Migrations for NotificationService...");
+        await context.Database.MigrateAsync();
+        logger.LogInformation("NotificationService Database initialized successfully.");
+    }
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "An error occurred while applying migrations to the Notification database.");
+}
+
 // Configure the HTTP request pipeline.
 app.UseSerilogRequestLogging();
 app.UseCors("CorsPolicy");

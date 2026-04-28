@@ -138,6 +138,10 @@ export class ApiService {
     return this.http.get(`${this.baseUrl}/orders/bills/${id}`);
   }
 
+  holdBill(id: number): Observable<any> {
+    return this.http.post(`${this.baseUrl}/orders/bills/${id}/hold`, {});
+  }
+
   // --- ADMIN METHODS ---
   getDashboardStats(storeId?: number): Observable<any> {
     let url = `${this.baseUrl}/admin/dashboard/stats`;

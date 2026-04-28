@@ -34,6 +34,9 @@
         <button class="search-submit">
           <span class="search-icon">🔍</span>
         </button>
+        <button class="resume-btn" (click)="openHeldBills()">
+          <span class="resume-icon">📋</span> Held Bills
+        </button>
       </div>
 
       <div class="category-filters">
@@ -153,4 +156,29 @@
       </div>
     </aside>
   </main>
+
+  <!-- Held Bills Modal -->
+  <div class="modal-overlay" *ngIf="showHeldBillsModal">
+    <div class="modal-content animate-slide-up">
+      <div class="modal-header">
+        <h2>Held & Draft Bills</h2>
+        <button class="close-btn" (click)="showHeldBillsModal = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="held-bills-list" *ngIf="heldBills.length > 0">
+          <div class="held-bill-item" *ngFor="let bill of heldBills">
+            <div class="bill-info">
+              <span class="bill-num">{{ bill.billNumber }}</span>
+              <span class="bill-cust">{{ bill.customerName || 'Walk-in Customer' }} ({{ bill.customerMobile }})</span>
+              <span class="bill-meta">{{ bill.items.length }} items • {{ bill.totalAmount | currency }}</span>
+            </div>
+            <button class="resume-action-btn" (click)="resumeBill(bill)">Resume</button>
+          </div>
+        </div>
+        <div class="empty-modal-state" *ngIf="heldBills.length === 0">
+          <p>No held bills found for this store.</p>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

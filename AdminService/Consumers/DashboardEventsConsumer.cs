@@ -60,6 +60,10 @@ namespace AdminService.Consumers
                 await _context.SaveChangesAsync();
                 _logger.LogInformation($"Synced Order {data.OrderId} and its inventory adjustments for Dashboard.");
             }
+            catch (DbUpdateException ex) when (ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx && (sqlEx.Number == 2627 || sqlEx.Number == 2601))
+            {
+                _logger.LogWarning($"Order {data.OrderId} was already synced by another process. Skipping.");
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Failed to sync Order {data.OrderId} for Dashboard.");

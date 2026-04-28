@@ -22,6 +22,7 @@ export class PaymentComponent implements OnInit {
   paymentMode: 'Cash' | 'Online' = 'Cash';
   tenderedAmount: number = 0;
   changeAmount: number = 0;
+  currentStore: any = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -57,6 +58,7 @@ export class PaymentComponent implements OnInit {
         this.bill = bill;
         this.tenderedAmount = this.bill.totalAmount || 0;
         this.calculateChange();
+        this.fetchStoreDetails(this.bill.storeId);
       }),
       catchError((err) => {
         console.error('Error loading bill', err);
@@ -67,7 +69,10 @@ export class PaymentComponent implements OnInit {
       finalize(() => {
         this.isLoading = false;
         this.cdr.detectChanges();
-        console.log('[Payment] Loading complete. isLoading:', this.isLoading, 'bill:', this.bill);
+        console.log('[Payment] Final State - isLoading:', this.isLoading, 'bill:', this.bill);
+        if (this.bill) {
+          console.log('[Payment] Bill ID:', this.bill.id, 'Total:', this.bill.totalAmount, 'Items count:', this.bill.items?.length);
+        }
       })
     ).subscribe();
   }
@@ -231,5 +236,15 @@ export class PaymentComponent implements OnInit {
         subTotal: i.subTotal ?? i.SubTotal ?? 0
       })) : []
     };
+  }
+
+  private fetchStoreDetails(storeId: number) {
+    this.api.getStores().subscribe({
+      next: (stores: any[]) => {
+        this.currentStore = stores.find(s => s.id === storeId);
+        console.log('[Payment] Current store details:', this.currentStore);
+      },
+      error: (err) => console.error('Error fetching store details', err)
+    });
   }
 }

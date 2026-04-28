@@ -23,9 +23,20 @@ namespace PaymentService.Controllers
         [Authorize(Policy = Permissions.Orders.Finalize)]
         public async Task<IActionResult> Collect([FromBody] Payment payment)
         {
-            Console.WriteLine($"[DIAGNOSTIC] PaymentsController: Received request to collect payment for Bill ID: {payment.BillId} at {DateTime.Now}");
-            var result = await _paymentService.ProcessPaymentAsync(payment);
-            return Ok(new { message = "Payment collected successfully", payment = result });
+            try 
+            {
+                Console.WriteLine($"[DIAGNOSTIC] PaymentsController: Received request for Bill ID: {payment?.BillId}, Amount: {payment?.Amount}, Store: {payment?.StoreId}");
+                if (payment == null) return BadRequest(new { message = "Payment data is null" });
+                
+                var result = await _paymentService.ProcessPaymentAsync(payment);
+                return Ok(new { message = "Payment collected successfully", payment = result });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CRITICAL ERROR] PaymentsController.Collect: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+                return StatusCode(500, new { message = ex.Message, detail = ex.InnerException?.Message });
+            }
         }
 
         [HttpPost("create-order")]
