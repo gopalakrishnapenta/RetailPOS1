@@ -32,6 +32,10 @@ Write-Host "Starting Notification Service on Port 5176..."
 Start-Process "dotnet" -ArgumentList "run --project `"NotificationService/NotificationService.csproj`" --urls http://127.0.0.1:5176" -WindowStyle Normal
 Start-Sleep -Seconds 5
 
+Write-Host "Starting AI Service on Port 5007..."
+Start-Process "dotnet" -ArgumentList "run --project `"AIService/AIService.csproj`" --urls http://127.0.0.1:5007" -WindowStyle Normal
+Start-Sleep -Seconds 5
+
 Write-Host "Starting Ocelot API Gateway on Port 5000..."
 Start-Process "dotnet" -ArgumentList "run --project `"ApiGateway/ApiGateway.csproj`" --urls http://127.0.0.1:5000" -WindowStyle Normal
 Start-Sleep -Seconds 5

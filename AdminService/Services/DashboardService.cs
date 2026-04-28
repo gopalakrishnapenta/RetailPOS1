@@ -39,6 +39,8 @@ namespace AdminService.Services
             var bills = await orderQuery.AsNoTracking().ToListAsync();
             var returns = await returnQuery.AsNoTracking().ToListAsync();
             
+            _logger.LogInformation($"[DASHBOARD] Found {bills.Count} total orders and {returns.Count} total returns in Admin DB.");
+            
             // Calculate current stock levels from adjustments
             var stockSummary = await inventoryQuery.AsNoTracking()
                 .GroupBy(a => a.ProductId)

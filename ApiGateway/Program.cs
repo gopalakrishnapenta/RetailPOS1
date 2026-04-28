@@ -7,7 +7,27 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 // Newtonsoft support is provided by Microsoft.AspNetCore.Mvc.NewtonsoftJson
 
+// Load the .env file robustly from current or parent directory
+var currentDir = Directory.GetCurrentDirectory();
+var envPath = Path.Combine(currentDir, ".env");
+if (!File.Exists(envPath))
+{
+    envPath = Path.Combine(currentDir, "..", ".env");
+}
+
+if (File.Exists(envPath))
+{
+    DotNetEnv.Env.Load(envPath);
+    Console.WriteLine($"[CONFIG] Loaded .env from: {Path.GetFullPath(envPath)}");
+}
+else
+{
+    Console.WriteLine("[CONFIG] WARNING: .env file not found.");
+}
+
 var builder = WebApplication.CreateBuilder(args);
+// Add environment variables to configuration
+builder.Configuration.AddEnvironmentVariables();
 
 // Configure Serilog
 builder.ConfigureSerilog("ApiGateway");
@@ -31,7 +51,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudiences = builder.Configuration.GetSection("Jwt:Audiences").Get<string[]>() ?? new[] { builder.Configuration["Jwt:Audience"] ?? "ApiGateway" },
+            ValidAudiences = builder.Configuration.GetSection("Jwt:Audiences").Get<string[]>() ?? 
+                             new[] { builder.Configuration["Jwt:Audience"] ?? "RetailPOS_Clients", "RetailPOS_Services" },
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "super_secret_key_1234567890_pos_system"))
         };
     });
@@ -65,3 +86,4 @@ app.UseEndpoints(endpoints => {
 await app.UseOcelot();
 
 app.Run();
+

@@ -157,12 +157,12 @@ namespace CatalogService.Data.Migrations
                             CategoryId = 1,
                             IsActive = true,
                             MRP = 50000m,
-                            Name = "Laptop",
+                            Name = "Laptop (S1)",
                             ReorderLevel = 10,
                             SellingPrice = 45000m,
-                            Sku = "SKU-001",
+                            Sku = "SKU-S1-001",
                             StockQuantity = 10,
-                            StoreId = 0,
+                            StoreId = 1,
                             TaxCode = ""
                         },
                         new
@@ -172,12 +172,12 @@ namespace CatalogService.Data.Migrations
                             CategoryId = 1,
                             IsActive = true,
                             MRP = 3000m,
-                            Name = "Mechanical Keyboard",
+                            Name = "Mechanical Keyboard (S1)",
                             ReorderLevel = 10,
                             SellingPrice = 2500m,
-                            Sku = "SKU-002",
+                            Sku = "SKU-S1-002",
                             StockQuantity = 50,
-                            StoreId = 0,
+                            StoreId = 1,
                             TaxCode = ""
                         },
                         new
@@ -187,12 +187,12 @@ namespace CatalogService.Data.Migrations
                             CategoryId = 1,
                             IsActive = true,
                             MRP = 1000m,
-                            Name = "Mouse",
+                            Name = "Mouse (S2)",
                             ReorderLevel = 10,
                             SellingPrice = 800m,
-                            Sku = "SKU-003",
+                            Sku = "SKU-S2-003",
                             StockQuantity = 100,
-                            StoreId = 0,
+                            StoreId = 2,
                             TaxCode = ""
                         },
                         new
@@ -202,12 +202,12 @@ namespace CatalogService.Data.Migrations
                             CategoryId = 2,
                             IsActive = true,
                             MRP = 50m,
-                            Name = "Milk",
+                            Name = "Milk (S2)",
                             ReorderLevel = 10,
                             SellingPrice = 48m,
-                            Sku = "SKU-004",
+                            Sku = "SKU-S2-004",
                             StockQuantity = 500,
-                            StoreId = 0,
+                            StoreId = 2,
                             TaxCode = ""
                         },
                         new
@@ -217,12 +217,12 @@ namespace CatalogService.Data.Migrations
                             CategoryId = 2,
                             IsActive = true,
                             MRP = 40m,
-                            Name = "Bread",
+                            Name = "Bread (S2)",
                             ReorderLevel = 10,
                             SellingPrice = 38m,
-                            Sku = "SKU-005",
+                            Sku = "SKU-S2-005",
                             StockQuantity = 200,
-                            StoreId = 0,
+                            StoreId = 2,
                             TaxCode = ""
                         });
                 });

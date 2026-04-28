@@ -34,7 +34,7 @@ import { ApiService } from '../../../core/services/api.service';
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let cat of paginatedCategories" class="animate-fade-in">
+            <tr *ngFor="let cat of paginatedCategories" class="animate-fade-in" [class.inactive-row]="!cat.isActive">
               <td class="text-muted">#{{ cat.id }}</td>
               <td><strong class="text-primary">{{ cat.name }}</strong></td>
               <td class="text-secondary">{{ cat.description || 'No description provided' }}</td>
@@ -86,6 +86,13 @@ import { ApiService } from '../../../core/services/api.service';
                 <label>Description (Optional)</label>
                 <textarea name="description" [(ngModel)]="currentCategory.description" rows="4" class="input-field" placeholder="Brief details about this category..."></textarea>
               </div>
+              <div class="form-group mb-4">
+                <label class="checkbox-container">
+                  <input type="checkbox" name="isActive" [(ngModel)]="currentCategory.isActive">
+                  <span class="checkmark"></span>
+                  Is Active
+                </label>
+              </div>
             </div>
 
             <footer class="modal-footer">
@@ -122,6 +129,9 @@ import { ApiService } from '../../../core/services/api.service';
     .btn-icon.edit:hover { background: var(--bg-tertiary); color: var(--accent-primary); border-color: var(--accent-primary); }
     .btn-icon.delete:hover { background: #fef2f2; color: var(--accent-danger); border-color: var(--accent-danger); }
     
+    .inactive-row { opacity: 0.5; background-color: var(--bg-secondary); }
+    .inactive-row td { color: var(--text-muted); }
+    
     /* Modal Styles */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .modal-content { width: 100%; max-width: 450px; padding: 24px; }
@@ -137,6 +147,8 @@ import { ApiService } from '../../../core/services/api.service';
     .text-primary { color: var(--accent-primary); }
     
     textarea.input-field { resize: none; padding-top: 12px; }
+    
+    .checkbox-container { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.875rem; margin-top: 16px; }
   `]
 })
 export class CategoriesComponent implements OnInit {
@@ -183,7 +195,7 @@ export class CategoriesComponent implements OnInit {
 
   loadCategories() {
     this.isLoading = true;
-    this.api.getCategories().subscribe({
+    this.api.getAdminCategoriesAll().subscribe({
       next: (data) => {
         this.categories = data;
         this.applyFilters();

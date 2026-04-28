@@ -47,6 +47,23 @@ export class ApiService {
     return this.http.get(`${this.baseUrl}/auth/stores`);
   }
 
+  // --- ADMIN STORE MANAGEMENT ---
+  getAdminStores(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/admin/stores/all`);
+  }
+
+  createStore(store: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/admin/stores`, store);
+  }
+
+  updateStore(id: number, store: any): Observable<any> {
+    return this.http.put(`${this.baseUrl}/admin/stores/${id}`, store);
+  }
+
+  deleteStore(id: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/admin/stores/${id}`);
+  }
+
   getUsers(): Observable<any> {
     return this.http.get(`${this.baseUrl}/auth/users`);
   }
@@ -68,6 +85,10 @@ export class ApiService {
     return this.http.get(`${this.baseUrl}/catalog/products`);
   }
 
+  getAdminProductsAll(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/catalog/products/all`);
+  }
+
   createProduct(product: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/catalog/products`, product);
   }
@@ -82,6 +103,10 @@ export class ApiService {
 
   getCategories(): Observable<any> {
     return this.http.get(`${this.baseUrl}/catalog/categories`);
+  }
+
+  getAdminCategoriesAll(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/catalog/categories/all`);
   }
 
   createCategory(category: any): Observable<any> {
@@ -161,5 +186,9 @@ export class ApiService {
 
   verifyRazorpayPayment(verifyData: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/payments/verify`, verifyData);
+  }
+
+  chatWithAI(message: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/ai/chat`, { message });
   }
 }

@@ -5,10 +5,12 @@ import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { SignalrService } from './core/services/signalr.service';
 
+import { AiChatbotComponent } from './shared/components/ai-chatbot/ai-chatbot.component';
+
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, CommonModule],
+  imports: [RouterOutlet, SidebarComponent, CommonModule, AiChatbotComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

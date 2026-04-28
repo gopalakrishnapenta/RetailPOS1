@@ -89,6 +89,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!isSilent) this.isLoading = true;
     this.api.getDashboardStats(this.selectedStoreId).subscribe({
       next: (data: any) => {
+        console.log('[DASHBOARD] Stats data received:', data);
         this.stats = data;
         this.storeRevenue = data.categoryBreakdown || [];
         this.alerts = data.lowStockItems || [];

@@ -20,7 +20,27 @@ using Serilog;
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
+// Load the .env file robustly from current or parent directory
+var currentDir = Directory.GetCurrentDirectory();
+var envPath = Path.Combine(currentDir, ".env");
+if (!File.Exists(envPath))
+{
+    envPath = Path.Combine(currentDir, "..", ".env");
+}
+
+if (File.Exists(envPath))
+{
+    DotNetEnv.Env.Load(envPath);
+    Console.WriteLine($"[CONFIG] Loaded .env from: {Path.GetFullPath(envPath)}");
+}
+else
+{
+    Console.WriteLine("[CONFIG] WARNING: .env file not found.");
+}
+
 var builder = WebApplication.CreateBuilder(args);
+// Add environment variables to configuration
+builder.Configuration.AddEnvironmentVariables();
 
 // Configure Serilog
 builder.ConfigureSerilog("AdminService");
@@ -78,7 +98,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime         = true,
             ValidateIssuerSigningKey = true,
             ValidIssuer              = jwtIssuer,
-            ValidAudiences           = builder.Configuration.GetSection("Jwt:Audiences").Get<string[]>() ?? new[] { jwtAud },
+            ValidAudiences           = builder.Configuration.GetSection("Jwt:Audiences").Get<string[]>() ?? new[] { jwtAud, "RetailPOS_Services" },
             IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
@@ -89,10 +109,17 @@ builder.Services.AddScoped<ITenantProvider, TenantProvider>();
 builder.Services.AddRetailPOSAuthorization();
 
 builder.Services.AddDbContext<AdminDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    var connString = builder.Configuration.GetConnectionString("AdminConnection") ?? builder.Configuration.GetConnectionString("DefaultConnection");
+    Console.WriteLine($"[DB] AdminService using connection string: {connString}");
+    options.UseSqlServer(connString);
+});
 
 builder.Services.AddDbContext<AdminService.Data.AdminSagaDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    var connString = builder.Configuration.GetConnectionString("AdminConnection") ?? builder.Configuration.GetConnectionString("DefaultConnection");
+    options.UseSqlServer(connString);
+});
 
 builder.Services.AddMassTransit(x =>
 {
@@ -111,9 +138,13 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.Host("localhost", "/", h => {
-            h.Username("guest");
-            h.Password("guest");
+        var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+        var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
+        var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+
+        cfg.Host(rabbitHost, "/", h => {
+            h.Username(rabbitUser);
+            h.Password(rabbitPass);
         });
 
         cfg.ConfigureEndpoints(context);
@@ -182,3 +213,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.Run();
+

@@ -1,0 +1,42 @@
+<div class="chatbot-container">
+  <!-- Chat Bubble Icon -->
+  <div class="chat-bubble" (click)="toggleChat()" [class.active]="isOpen()">
+    @if (!isOpen()) {
+      <span class="chat-icon">✨</span>
+    } @else {
+      <span class="close-icon">✕</span>
+    }
+  </div>
+
+  <!-- Chat Window -->
+  @if (isOpen()) {
+    <div class="chat-window">
+      <div class="window-header">
+        <div class="header-info">
+          <span class="bot-status"></span>
+          <span class="bot-name">AI Store Assistant</span>
+        </div>
+      </div>
+
+      <div class="messages-container" #scrollContainer>
+        @for (msg of messages(); track $index) {
+          <div class="message" [class.user]="msg.role === 'user'" [class.ai]="msg.role === 'ai'">
+            {{ msg.text }}
+          </div>
+        }
+      </div>
+
+      <div class="input-area">
+        <input 
+          type="text" 
+          [(ngModel)]="message" 
+          (keyup.enter)="sendMessage()" 
+          placeholder="Ask me anything..."
+        />
+        <button (click)="sendMessage()" [disabled]="!message().trim()">
+          <span class="send-icon">➤</span>
+        </button>
+      </div>
+    </div>
+  }
+</div>

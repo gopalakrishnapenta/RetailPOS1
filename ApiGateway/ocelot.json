@@ -310,6 +310,27 @@
                        "Priority":  10
                    },
                    {
+                       "DownstreamPathTemplate":  "/api/products/all",
+                       "DownstreamScheme":  "http",
+                       "DownstreamHostAndPorts":  [
+                                                      {
+                                                          "Host":  "localhost",
+                                                          "Port":  5002
+                                                      }
+                                                  ],
+                       "UpstreamPathTemplate":  "/gateway/catalog/products/all",
+                       "UpstreamHttpMethod":  [
+                                                  "GET",
+                                                  "OPTIONS"
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
+                   },
+                   {
                        "DownstreamPathTemplate":  "/api/products",
                        "DownstreamScheme":  "http",
                        "DownstreamHostAndPorts":  [
@@ -345,6 +366,27 @@
                                                   "GET",
                                                   "PUT",
                                                   "DELETE",
+                                                  "OPTIONS"
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
+                   },
+                   {
+                       "DownstreamPathTemplate":  "/api/categories/all",
+                       "DownstreamScheme":  "http",
+                       "DownstreamHostAndPorts":  [
+                                                      {
+                                                          "Host":  "localhost",
+                                                          "Port":  5002
+                                                      }
+                                                  ],
+                       "UpstreamPathTemplate":  "/gateway/catalog/categories/all",
+                       "UpstreamHttpMethod":  [
+                                                  "GET",
                                                   "OPTIONS"
                                               ],
                        "AuthenticationOptions":  {
@@ -949,6 +991,86 @@
                        "UpstreamPathTemplate":  "/gateway/admin/inventory/adjust",
                        "UpstreamHttpMethod":  [
                                                   "POST",
+                                                  "OPTIONS"
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
+                   },
+                   {
+                       "DownstreamPathTemplate":  "/api/Chat",
+                       "DownstreamScheme":  "http",
+                       "DownstreamHostAndPorts":  [
+                                                      {
+                                                          "Host":  "localhost",
+                                                          "Port":  5007
+                                                      }
+                                                  ],
+                       "UpstreamPathTemplate":  "/gateway/ai/chat",
+                       "UpstreamHttpMethod":  [
+                                                  "POST",
+                                                  "OPTIONS"
+                                              ]
+                   },
+                   {
+                       "DownstreamPathTemplate":  "/api/Stores/all",
+                       "DownstreamScheme":  "http",
+                       "DownstreamHostAndPorts":  [
+                                                      {
+                                                          "Host":  "localhost",
+                                                          "Port":  5004
+                                                      }
+                                                  ],
+                       "UpstreamPathTemplate":  "/gateway/admin/stores/all",
+                       "UpstreamHttpMethod":  [
+                                                  "GET",
+                                                  "OPTIONS"
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
+                   },
+                   {
+                       "DownstreamPathTemplate":  "/api/Stores",
+                       "DownstreamScheme":  "http",
+                       "DownstreamHostAndPorts":  [
+                                                      {
+                                                          "Host":  "localhost",
+                                                          "Port":  5004
+                                                      }
+                                                  ],
+                       "UpstreamPathTemplate":  "/gateway/admin/stores",
+                       "UpstreamHttpMethod":  [
+                                                  "GET",
+                                                  "POST",
+                                                  "OPTIONS"
+                                              ],
+                       "AuthenticationOptions":  {
+                                                     "AllowedScopes":  [
+
+                                                                       ],
+                                                     "AuthenticationProviderKey":  "Bearer"
+                                                 }
+                   },
+                   {
+                       "DownstreamPathTemplate":  "/api/Stores/{id}",
+                       "DownstreamScheme":  "http",
+                       "DownstreamHostAndPorts":  [
+                                                      {
+                                                          "Host":  "localhost",
+                                                          "Port":  5004
+                                                      }
+                                                  ],
+                       "UpstreamPathTemplate":  "/gateway/admin/stores/{id}",
+                       "UpstreamHttpMethod":  [
+                                                  "PUT",
+                                                  "DELETE",
                                                   "OPTIONS"
                                               ],
                        "AuthenticationOptions":  {

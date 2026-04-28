@@ -16,7 +16,6 @@ declare var google: any;
 export class LoginComponent implements OnInit, AfterViewInit {
   email = '';
   password = '';
-  username = '';
   otp = '';
   authError = '';
   showOtp = false;
@@ -39,7 +38,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
   constructor(
     private api: ApiService,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.loadRememberedEmail();
@@ -143,7 +142,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
   resendOtp() {
     if (this.resendCooldown > 0) return;
     this.authError = '';
-    
+
     this.api.resendLoginOtp(this.email).subscribe({
       next: (res: any) => {
         this.startCooldown();
@@ -192,6 +191,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
   closeForgotPassword() {
     this.showForgotPassword = false;
   }
+
 
   sendResetOtp() {
     if (this.resetOtpCooldown > 0) return;

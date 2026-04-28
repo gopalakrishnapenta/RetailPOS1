@@ -9,6 +9,7 @@ import { InventoryComponent } from './features/admin/inventory/inventory.compone
 import { ProductsComponent } from './features/admin/products/products.component';
 import { CategoriesComponent } from './features/admin/categories/categories.component';
 import { StaffComponent } from './features/admin/staff/staff.component';
+import { StoresComponent } from './features/admin/stores/stores.component';
 import { ReturnsComponent } from './features/pos/returns/returns.component';
 import { ReturnsManagementComponent } from './features/admin/returns/returns.component';
 import { LandingComponent } from './features/marketing/landing/landing.component';
@@ -38,6 +39,7 @@ export const routes: Routes = [
       { path: 'products', component: ProductsComponent, data: { roles: ['Admin', 'StoreManager'] } },
       { path: 'categories', component: CategoriesComponent, data: { roles: ['Admin'] } },
       { path: 'staff', component: StaffComponent, data: { roles: ['Admin'] } },
+      { path: 'stores', component: StoresComponent, data: { roles: ['Admin'] } },
       { path: 'returns', component: ReturnsManagementComponent, data: { roles: ['Admin', 'StoreManager'] } },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]

@@ -16,7 +16,27 @@ using Serilog;
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
+// Load the .env file robustly from current or parent directory
+var currentDir = Directory.GetCurrentDirectory();
+var envPath = Path.Combine(currentDir, ".env");
+if (!File.Exists(envPath))
+{
+    envPath = Path.Combine(currentDir, "..", ".env");
+}
+
+if (File.Exists(envPath))
+{
+    DotNetEnv.Env.Load(envPath);
+    Console.WriteLine($"[CONFIG] Loaded .env from: {Path.GetFullPath(envPath)}");
+}
+else
+{
+    Console.WriteLine("[CONFIG] WARNING: .env file not found.");
+}
+
 var builder = WebApplication.CreateBuilder(args);
+// Add environment variables to configuration
+builder.Configuration.AddEnvironmentVariables();
 
 // Configure Serilog
 builder.ConfigureSerilog("IdentityService");
@@ -28,9 +48,13 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.Host("localhost", "/", h => {
-            h.Username("guest");
-            h.Password("guest");
+        var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+        var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
+        var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+
+        cfg.Host(rabbitHost, "/", h => {
+            h.Username(rabbitUser);
+            h.Password(rabbitPass);
         });
 
         cfg.ReceiveEndpoint("identity-store-created", e =>
@@ -87,7 +111,7 @@ builder.Services.AddSwaggerGen(c =>
 // ── JWT Authentication ────────────────────────────────────────────────────
 var jwtKey    = builder.Configuration["Jwt:Key"]      ?? "super_secret_key_1234567890_pos_system";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]   ?? "RetailPOS";
-var jwtAud    = "IdentityService";
+var jwtAud    = builder.Configuration["Jwt:Audience"] ?? "RetailPOS_Clients";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -99,14 +123,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime         = true,
             ValidateIssuerSigningKey = true,
             ValidIssuer              = jwtIssuer,
-            ValidAudiences           = builder.Configuration.GetSection("Jwt:Audiences").Get<string[]>() ?? new[] { jwtAud },
+            ValidAudiences           = builder.Configuration.GetSection("Jwt:Audiences").Get<string[]>() ?? new[] { jwtAud, "RetailPOS_Services" },
             IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
 builder.Services.AddAuthorization();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    var connString = builder.Configuration.GetConnectionString("IdentityConnection") ?? builder.Configuration.GetConnectionString("DefaultConnection");
+    options.UseSqlServer(connString);
+});
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IStoreRepository, StoreRepository>();
@@ -167,3 +194,4 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
+

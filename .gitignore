@@ -59,3 +59,7 @@ obj/
 *.suo
 *.log
 .tmp-chrome-profile/
+
+# Environment Variables
+.env
+.env.*

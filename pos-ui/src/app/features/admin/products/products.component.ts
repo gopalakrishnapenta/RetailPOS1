@@ -38,7 +38,7 @@ import { ApiService } from '../../../core/services/api.service';
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let p of paginatedProducts" class="animate-fade-in">
+              <tr *ngFor="let p of paginatedProducts" class="animate-fade-in" [class.inactive-row]="!p.isActive">
                 <td><span class="badge-sku">{{ p.sku }}</span></td>
                 <td>
                   <div class="product-info">
@@ -130,6 +130,13 @@ import { ApiService } from '../../../core/services/api.service';
                 <label>Reorder Level <span class="required-star">*</span></label>
                 <input type="number" name="reorderLevel" [(ngModel)]="currentProduct.reorderLevel" required class="input-field">
               </div>
+              <div class="form-group">
+                <label class="checkbox-container" style="margin-top: 24px;">
+                  <input type="checkbox" name="isActive" [(ngModel)]="currentProduct.isActive">
+                  <span class="checkmark"></span>
+                  Is Active
+                </label>
+              </div>
             </div>
 
             <footer class="modal-footer">
@@ -177,6 +184,10 @@ import { ApiService } from '../../../core/services/api.service';
     .btn-icon.edit:hover { background: var(--bg-tertiary); color: var(--accent-primary); border-color: var(--accent-primary); }
     .btn-icon.delete:hover { background: #fef2f2; color: var(--accent-danger); border-color: var(--accent-danger); }
     
+    .inactive-row { opacity: 0.5; background-color: var(--bg-secondary); }
+    .inactive-row td { color: var(--text-muted); }
+    .inactive-row .badge-sku, .inactive-row .badge-category { background: transparent; }
+    
     /* Modal Styles */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
     .modal-content { width: 100%; max-width: 650px; padding: 24px; }
@@ -192,6 +203,8 @@ import { ApiService } from '../../../core/services/api.service';
 
     .required-star { color: var(--accent-danger); font-weight: bold; margin-left: 2px; }
     .optional-label { color: var(--text-muted); font-size: 0.75rem; font-weight: normal; margin-left: 4px; }
+    
+    .checkbox-container { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.875rem; }
   `]
 })
 export class ProductsComponent implements OnInit {
@@ -255,7 +268,7 @@ export class ProductsComponent implements OnInit {
 
   loadProducts() {
     this.isLoading = true;
-    this.api.getProducts().subscribe({
+    this.api.getAdminProductsAll().subscribe({
       next: (data) => {
         this.products = data;
         this.applyFilters();
@@ -271,7 +284,7 @@ export class ProductsComponent implements OnInit {
   }
 
   loadCategories() {
-    this.api.getCategories().subscribe(data => this.categories = data);
+    this.api.getAdminCategoriesAll().subscribe(data => this.categories = data);
   }
 
   openModal(product?: any) {

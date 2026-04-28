@@ -1,4 +1,13 @@
 <Solution>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/AdminService.Tests/AdminService.Tests.csproj" />
+    <Project Path="Tests/CatalogService.Tests/CatalogService.Tests.csproj" />
+    <Project Path="Tests/IdentityService.Tests/IdentityService.Tests.csproj" />
+    <Project Path="Tests/NotificationService.Tests/NotificationService.Tests.csproj" />
+    <Project Path="Tests/OrdersService.Tests/OrdersService.Tests.csproj" />
+    <Project Path="Tests/PaymentService.Tests/PaymentService.Tests.csproj" />
+    <Project Path="Tests/ReturnsService.Tests/ReturnsService.Tests.csproj" />
+  </Folder>
   <Project Path="AdminService/AdminService.csproj" />
   <Project Path="ApiGateway/ApiGateway.csproj" />
   <Project Path="CatalogService/CatalogService.csproj" />
@@ -9,4 +18,5 @@
   <Project Path="RetailPOS.Common/RetailPOS.Common.csproj" />
   <Project Path="RetailPOS.Contracts/RetailPOS.Contracts.csproj" />
   <Project Path="ReturnsService/ReturnsService.csproj" />
+  <Project Path="AIService/AIService.csproj" />
 </Solution>

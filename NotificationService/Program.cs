@@ -15,14 +15,22 @@ using Serilog;
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
+// Load the .env file from the root directory
+DotNetEnv.Env.Load(Path.Combine(Directory.GetCurrentDirectory(), "..", ".env"));
+
 var builder = WebApplication.CreateBuilder(args);
+// Add environment variables to configuration
+builder.Configuration.AddEnvironmentVariables();
 
 // Configure Serilog (Common Extension)
 builder.ConfigureSerilog("NotificationService");
 
 // Add Database Context
 builder.Services.AddDbContext<NotificationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    var connString = builder.Configuration.GetConnectionString("NotificationConnection") ?? builder.Configuration.GetConnectionString("DefaultConnection");
+    options.UseSqlServer(connString);
+});
 
 // Register Repository Pattern
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
@@ -157,3 +165,4 @@ if (app.Environment.IsDevelopment())
 }
 
 app.Run();
+
