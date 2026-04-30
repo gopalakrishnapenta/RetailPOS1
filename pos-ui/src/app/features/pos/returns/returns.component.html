@@ -97,7 +97,7 @@
                        [disabled]="!item.selected">
               </td>
               <td class="text-right">{{ item.unitPrice | currency:'INR':'symbol' }}</td>
-              <td class="text-right" style="font-weight: 700;">{{ (item.unitPrice * (item.returnQuantity || 0)) | currency:'INR':'symbol' }}</td>
+              <td class="text-right" style="font-weight: 700;">{{ (item.unitPrice * (item.returnQuantity || 0) * (selectedBill.totalAmount / (selectedBill.totalAmount - selectedBill.taxAmount))) | currency:'INR':'symbol' }}</td>
             </tr>
           </tbody>
         </table>

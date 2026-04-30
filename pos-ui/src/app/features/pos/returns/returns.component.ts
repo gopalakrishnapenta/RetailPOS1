@@ -140,16 +140,26 @@ export class ReturnsComponent implements OnInit, OnDestroy {
     if (!this.selectedBill || !this.canInitiate() || !this.hasSelectedItems()) return;
     this.isProcessing = true;
 
+    // Calculate Tax Factor (Proportionate tax share for each item)
+    const billTotal = this.selectedBill.totalAmount || 0;
+    const billTax = this.selectedBill.taxAmount || 0;
+    const billSubTotal = billTotal - billTax;
+    const taxFactor = billSubTotal > 0 ? (1 + (billTax / billSubTotal)) : 1;
+
     const returnData = {
       BillId: this.selectedBill.id,
       Reason: this.returnReason,
       RefundMode: this.refundMode,
       CustomerMobile: this.selectedBill.customerMobile,
-      Items: this.selectedBill.items.filter((i: any) => i.selected).map((i: any) => ({
-        BillItemId: i.productId || i.id,
-        Quantity: Math.min(Math.max(Number(i.returnQuantity) || 0, 1), i.quantity),
-        RefundAmount: i.unitPrice * Math.min(Math.max(Number(i.returnQuantity) || 0, 1), i.quantity)
-      }))
+      Items: this.selectedBill.items.filter((i: any) => i.selected).map((i: any) => {
+        const qty = Math.min(Math.max(Number(i.returnQuantity) || 0, 1), i.quantity);
+        const baseRefund = i.unitPrice * qty;
+        return {
+          BillItemId: i.productId || i.id,
+          Quantity: qty,
+          RefundAmount: Math.round(baseRefund * taxFactor * 100) / 100 // Include Tax share
+        };
+      })
     };
 
     this.api.initiateReturn(returnData).subscribe({

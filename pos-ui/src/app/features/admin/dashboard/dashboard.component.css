@@ -473,3 +473,26 @@
   color: var(--text-muted);
 }
 
+.title-with-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.view-all-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-primary);
+  text-decoration: none;
+  transition: all 0.2s;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+}
+
+.view-all-link:hover {
+  background: var(--accent-primary);
+  color: white;
+  transform: translateX(2px);
+}
+

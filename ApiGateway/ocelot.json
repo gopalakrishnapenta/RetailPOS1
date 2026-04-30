@@ -496,7 +496,7 @@
                                                       }
                                                   ],
                        "UpstreamPathTemplate":  "/gateway/orders/bills",
-                       "Priority":  5,
+                       "Priority":  20,
                        "UpstreamHttpMethod":  [
                                                   "GET",
                                                   "POST",

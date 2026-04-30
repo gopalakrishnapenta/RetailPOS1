@@ -143,9 +143,12 @@
     </div>
 
     <div class="recent-bills glass-panel">
-       <div class="section-header">
-        <h3>Recent Transactions</h3>
-        <button class="btn btn-secondary btn-sm">Export All</button>
+      <div class="section-header">
+        <div class="title-with-link">
+          <h3>Recent Transactions</h3>
+          <a routerLink="/admin/transactions" class="view-all-link">View All History →</a>
+        </div>
+        <button class="btn btn-secondary btn-sm" (click)="exportRecentTransactions()">Export All</button>
       </div>
       <table class="admin-table">
         <thead>

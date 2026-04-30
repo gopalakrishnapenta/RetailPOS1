@@ -12,6 +12,7 @@ import { StaffComponent } from './features/admin/staff/staff.component';
 import { StoresComponent } from './features/admin/stores/stores.component';
 import { ReturnsComponent } from './features/pos/returns/returns.component';
 import { ReturnsManagementComponent } from './features/admin/returns/returns.component';
+import { TransactionsComponent } from './features/admin/transactions/transactions.component';
 import { LandingComponent } from './features/marketing/landing/landing.component';
 import { authGuard } from './core/guards/auth.guard';
 
@@ -41,6 +42,7 @@ export const routes: Routes = [
       { path: 'staff', component: StaffComponent, data: { roles: ['Admin'] } },
       { path: 'stores', component: StoresComponent, data: { roles: ['Admin'] } },
       { path: 'returns', component: ReturnsManagementComponent, data: { roles: ['Admin', 'StoreManager'] } },
+      { path: 'transactions', component: TransactionsComponent, data: { roles: ['Admin', 'StoreManager'] } },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   }

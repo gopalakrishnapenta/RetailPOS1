@@ -6,10 +6,12 @@ import { SignalrService } from '../../../core/services/signalr.service';
 import { Subject, timer } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
+import { RouterModule } from '@angular/router';
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -158,5 +160,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
   getTrendClass(percent: number): string {
     if (!percent) return '';
     return percent >= 0 ? 'up' : 'down';
+  }
+
+  exportRecentTransactions() {
+    if (!this.recentTransactions || this.recentTransactions.length === 0) {
+      alert('No transactions to export.');
+      return;
+    }
+
+    const headers = ['Order ID', 'Customer', 'Amount', 'Time'];
+    const rows = this.recentTransactions.map(t => [
+      `#${t.id}`,
+      t.customer || 'Walking Customer',
+      t.total,
+      t.time
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Recent_Transactions_${new Date().toLocaleDateString()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }
