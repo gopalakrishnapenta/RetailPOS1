@@ -22,7 +22,8 @@ export class SignupComponent implements OnInit, AfterViewInit {
   showPassword = false;
   showConfirmPassword = false;
   isLoading = false;
-
+  resendCooldown = 0;
+  private cooldownInterval: any;
 
   fullName = '';
 
@@ -45,7 +46,8 @@ export class SignupComponent implements OnInit, AfterViewInit {
         google.accounts.id.initialize({
           client_id: '279364566745-oc9hv9a5tt1k91hgoi51s3qi0ot80u92.apps.googleusercontent.com',
           callback: this.handleGoogleSignupResponse.bind(this),
-          auto_select: false
+          auto_select: false,
+          ux_mode: 'popup'
         });
         google.accounts.id.renderButton(
           btnElement,
@@ -78,6 +80,28 @@ export class SignupComponent implements OnInit, AfterViewInit {
     });
   }
 
+  resendOtp() {
+    if (this.resendCooldown > 0) return;
+    this.api.resendVerification(this.email).subscribe({
+      next: () => {
+        this.startCooldown();
+        alert('Verification code resent successfully.');
+      },
+      error: (err) => alert(err.error?.message || 'Failed to resend code')
+    });
+  }
+
+  private startCooldown() {
+    this.resendCooldown = 60;
+    if (this.cooldownInterval) clearInterval(this.cooldownInterval);
+    this.cooldownInterval = setInterval(() => {
+      this.resendCooldown--;
+      if (this.resendCooldown <= 0) {
+        clearInterval(this.cooldownInterval);
+      }
+    }, 1000);
+  }
+
   onSubmit() {
     this.isLoading = true;
     if (this.isRegistered) {
@@ -108,6 +132,7 @@ export class SignupComponent implements OnInit, AfterViewInit {
         next: (res: any) => {
           this.isLoading = false;
           this.isRegistered = true;
+          this.startCooldown();
           alert(res.message);
         },
         error: (err) => {
@@ -116,5 +141,9 @@ export class SignupComponent implements OnInit, AfterViewInit {
         }
       });
     }
+  }
+
+  ngOnDestroy() {
+    if (this.cooldownInterval) clearInterval(this.cooldownInterval);
   }
 }

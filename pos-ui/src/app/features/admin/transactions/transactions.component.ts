@@ -3,136 +3,156 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 
+interface StoreTransactionGroup {
+  storeId: number;
+  storeName: string;
+  bills: any[];
+  isExpanded: boolean;
+  totalAmount: number;
+  returnsAmount: number;
+  count: number;
+}
+
 @Component({
   selector: 'app-transactions',
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="admin-container animate-fade-in">
+    <div class="transactions-wrapper animate-fade-in">
       <!-- Premium Header -->
-      <header class="admin-header glass-panel">
-        <div class="title-section">
-          <h2><span class="icon">📜</span> Transaction Ledger</h2>
-          <p>Advanced audit and financial history</p>
+      <header class="page-header glass-panel">
+        <div class="header-left">
+          <h2 class="page-title"><span class="icon">📜</span> Transaction Ledger</h2>
+          <p class="page-subtitle">Advanced audit and financial history categorized by store</p>
         </div>
-        <div class="actions-section">
-          <div class="search-host">
+        <div class="header-right">
+          <div class="search-box">
              <span class="search-icon">🔍</span>
-             <input type="text" [(ngModel)]="searchQuery" (input)="onFilterChange()" placeholder="Filter by ID, Phone, Name...">
+             <input type="text" [(ngModel)]="searchQuery" (input)="onFilterChange()" placeholder="Search by ID, Phone, Name...">
           </div>
-          <button class="btn btn-primary export-btn" (click)="exportAll()">
-            <span class="icon">📥</span> Export Ledger (CSV)
+          <button class="export-btn" (click)="exportAll()">
+            <span class="icon">📥</span> Export CSV
           </button>
         </div>
       </header>
 
-      <!-- Insight Summary Bar -->
+      <!-- Global Insight Summary Bar -->
       <div class="insight-bar">
         <div class="insight-card glass-panel">
-          <div class="i-label">Gross Value (In View)</div>
-          <div class="i-value">{{ getViewTotal() | currency:'INR' }}</div>
+          <div class="i-label">Gross Value (All Stores)</div>
+          <div class="i-value">{{ globalTotal | currency:'INR' }}</div>
         </div>
         <div class="insight-card glass-panel warning">
-          <div class="i-label">Returns (In View)</div>
-          <div class="i-value">{{ getViewReturns() | currency:'INR' }}</div>
+          <div class="i-label">Total Returns</div>
+          <div class="i-value">{{ globalReturns | currency:'INR' }}</div>
         </div>
         <div class="insight-card glass-panel info">
           <div class="i-label">Net Realized</div>
-          <div class="i-value">{{ (getViewTotal() - getViewReturns()) | currency:'INR' }}</div>
+          <div class="i-value">{{ (globalTotal - globalReturns) | currency:'INR' }}</div>
         </div>
       </div>
 
-      <div class="history-table-container glass-panel">
-        <!-- Filter Bar -->
-        <div class="table-top-bar">
-           <div class="filter-group">
-             <div class="chip-group">
-               <button class="status-chip" [class.active]="statusFilter === 'all'" (click)="setStatusFilter('all')">All Records</button>
-               <button class="status-chip completed" [class.active]="statusFilter === 'completed'" (click)="setStatusFilter('completed')">Completed Only</button>
-               <button class="status-chip returned" [class.active]="statusFilter === 'returned'" (click)="setStatusFilter('returned')">Returns Only</button>
-               <button class="status-chip pending" [class.active]="statusFilter === 'pending'" (click)="setStatusFilter('pending')">Pending Only</button>
-             </div>
-           </div>
-           <div class="record-count">
-             Records <strong>{{ getStartIndex() }} - {{ getEndIndex() }}</strong> of {{ filteredBills.length }}
-           </div>
+      <!-- Filter Controls -->
+      <div class="filter-controls">
+        <div class="chip-group">
+          <button class="status-chip" [class.active]="statusFilter === 'all'" (click)="setStatusFilter('all')">All Records</button>
+          <button class="status-chip completed" [class.active]="statusFilter === 'completed'" (click)="setStatusFilter('completed')">Completed</button>
+          <button class="status-chip returned" [class.active]="statusFilter === 'returned'" (click)="setStatusFilter('returned')">Returns</button>
+          <button class="status-chip pending" [class.active]="statusFilter === 'pending'" (click)="setStatusFilter('pending')">Pending</button>
         </div>
-
-        <!-- Ledger Table -->
-        <div class="ledger-wrapper">
-          <table class="ledger-table">
-            <thead>
-              <tr>
-                <th>Reference</th>
-                <th>Timestamp</th>
-                <th>Client Details</th>
-                <th class="text-right">Tax (GST)</th>
-                <th class="text-right">Grand Total</th>
-                <th class="text-center">Status Audit</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let bill of paginatedBills" 
-                  [class.row-returned]="normalizeStatus(bill.status) === 'returned' || normalizeStatus(bill.status) === 'rejected'"
-                  [class.row-pending]="normalizeStatus(bill.status) === 'pending'"
-                  [class.row-completed]="normalizeStatus(bill.status) === 'completed'"
-                  (click)="viewBillReceipt(bill.id)"
-                  style="cursor: pointer;"
-                  class="ledger-row">
-                <td class="id-cell"><strong>#{{ bill.billNumber || bill.id }}</strong></td>
-                <td class="date-cell">
-                  <div class="d-info">
-                    <span class="d-main">{{ bill.date | date:'dd MMM yyyy' }}</span>
-                    <span class="d-sub">{{ bill.date | date:'hh:mm a' }}</span>
-                  </div>
-                </td>
-                <td class="client-cell">
-                  <div class="c-info">
-                    <span class="c-name">{{ bill.customerName || 'Walking Customer' }}</span>
-                    <span class="c-sub">{{ bill.customerMobile || 'N/A' }}</span>
-                  </div>
-                </td>
-                <td class="text-right tax-text">{{ bill.taxAmount | currency:'INR' }}</td>
-                <td class="text-right total-text"><strong>{{ bill.totalAmount | currency:'INR' }}</strong></td>
-                <td class="text-center">
-                  <span class="status-indicator" [ngClass]="normalizeStatus(bill.status)">
-                    {{ bill.status }}
-                  </span>
-                </td>
-              </tr>
-              <tr *ngIf="!filteredBills.length">
-                <td colspan="6" class="empty-state">
-                  <div class="empty-content">
-                    <span class="empty-icon">🔎</span>
-                    <p>No historical records match your current filters.</p>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="record-meta">
+          Showing <strong>{{ bills.length }}</strong> transactions across <strong>{{ storeGroups.length }}</strong> locations
         </div>
+      </div>
 
-        <!-- Professional Pagination -->
-        <div class="pagination-footer">
-           <div class="page-info">Ledger Page {{ currentPage }} of {{ totalPages }}</div>
-           <div class="page-controls">
-             <button class="page-nav-btn" [disabled]="currentPage === 1" (click)="prevPage()">← Back</button>
-             <div class="page-dots">
-                <button *ngFor="let p of getPageRange()" 
-                        class="dot-btn" 
-                        [class.active]="p === currentPage"
-                        (click)="goToPage(p)">
-                  {{ p }}
-                </button>
-             </div>
-             <button class="page-nav-btn" [disabled]="currentPage === totalPages" (click)="nextPage()">Next →</button>
-           </div>
+      <!-- Empty State -->
+      <div class="empty-state glass-panel" *ngIf="storeGroups.length === 0">
+        <span class="empty-icon">🔎</span>
+        <h3>No records found</h3>
+        <p>Try adjusting your search or filters.</p>
+      </div>
+
+      <!-- Store Groups -->
+      <div class="store-groups">
+        <div class="store-card glass-panel animate-fade-in" *ngFor="let group of storeGroups">
+          
+          <!-- Store Header (Expandable) -->
+          <div class="store-header" (click)="toggleGroup(group)">
+            <div class="store-identity">
+              <div class="store-icon">🏪</div>
+              <div class="store-info">
+                <h3 class="store-name">{{ group.storeName }}</h3>
+                <span class="store-id">ID: {{ group.storeId }} • {{ group.count }} Records</span>
+              </div>
+            </div>
+            <div class="store-summary-meta">
+              <div class="meta-pill">
+                <small>Gross</small>
+                <span>{{ group.totalAmount | currency:'INR' }}</span>
+              </div>
+              <div class="meta-pill warning" *ngIf="group.returnsAmount > 0">
+                <small>Returns</small>
+                <span>{{ group.returnsAmount | currency:'INR' }}</span>
+              </div>
+              <div class="meta-pill info">
+                <small>Net</small>
+                <span>{{ (group.totalAmount - group.returnsAmount) | currency:'INR' }}</span>
+              </div>
+              <div class="expand-btn" [class.expanded]="group.isExpanded">›</div>
+            </div>
+          </div>
+
+          <!-- Store Body (Table) -->
+          <div class="store-body" [class.expanded]="group.isExpanded">
+            <div class="table-scroll">
+              <table class="ledger-table">
+                <thead>
+                  <tr>
+                    <th>Ref #</th>
+                    <th>Timestamp</th>
+                    <th>Customer</th>
+                    <th class="text-right">Tax</th>
+                    <th class="text-right">Total</th>
+                    <th class="text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let bill of group.bills" 
+                      (click)="viewBillReceipt(bill.id)"
+                      [class.row-returned]="normalizeStatus(bill.status) === 'returned'"
+                      [class.row-pending]="normalizeStatus(bill.status) === 'pending'"
+                      class="ledger-row">
+                    <td class="id-cell"><strong>#{{ bill.billNumber || bill.id }}</strong></td>
+                    <td class="date-cell">
+                      <div class="d-info">
+                        <span class="d-main">{{ bill.date | date:'dd MMM yyyy' }}</span>
+                        <span class="d-sub">{{ bill.date | date:'hh:mm a' }}</span>
+                      </div>
+                    </td>
+                    <td class="client-cell">
+                      <div class="c-info">
+                        <span class="c-name">{{ bill.customerName || 'Walk-in' }}</span>
+                        <span class="c-sub">{{ bill.customerMobile || '—' }}</span>
+                      </div>
+                    </td>
+                    <td class="text-right tax-text">{{ bill.taxAmount | currency:'INR' }}</td>
+                    <td class="text-right total-text"><strong>{{ bill.totalAmount | currency:'INR' }}</strong></td>
+                    <td class="text-center">
+                      <span class="status-indicator" [ngClass]="normalizeStatus(bill.status)">
+                        {{ bill.status }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- Receipt Modal -->
-      <div class="modal-overlay" *ngIf="showReceiptModal">
-        <div class="receipt-card glass-panel animate-slide-up" [class.loading]="isReceiptLoading">
+      <div class="modal-overlay" *ngIf="showReceiptModal" (click)="closeReceiptModal()">
+        <div class="receipt-card glass-panel animate-slide-up" (click)="$event.stopPropagation()">
           <div class="receipt-header">
             <div class="logo">POS<span>Retail</span></div>
             <h4>Sales Receipt</h4>
@@ -175,161 +195,284 @@ import { ApiService } from '../../../core/services/api.service';
           </div>
 
           <div class="receipt-footer">
-            <div class="loading-spinner" *ngIf="isReceiptLoading">
-              <span>🔄 Fetching Details...</span>
-            </div>
-            <button class="btn btn-primary w-100" (click)="closeReceiptModal()">Close Receipt</button>
+            <button class="btn-close-receipt" (click)="closeReceiptModal()">Close Receipt</button>
           </div>
         </div>
       </div>
     </div>
   `,
   styles: [`
-    .admin-container { padding: 40px; display: flex; flex-direction: column; gap: 32px; background: #f8fafc; min-height: 100vh; }
+    .transactions-wrapper { padding: 32px; display: flex; flex-direction: column; gap: 24px; background: #f8fafc; min-height: 100vh; }
     
+    /* Header */
+    .page-header { display: flex; justify-content: space-between; align-items: center; padding: 24px; border-radius: 20px; }
+    .page-title { margin: 0; font-size: 1.5rem; font-weight: 800; color: #1e293b; }
+    .page-subtitle { margin: 4px 0 0; font-size: 0.9rem; color: #64748b; }
+    .header-right { display: flex; gap: 16px; align-items: center; }
+    
+    .search-box { position: relative; display: flex; align-items: center; }
+    .search-icon { position: absolute; left: 16px; color: #94a3b8; }
+    .search-box input { 
+      padding: 12px 16px 12px 48px; border-radius: 12px; border: 1px solid #e2e8f0; 
+      background: white; width: 320px; font-weight: 600; outline: none; transition: 0.2s;
+    }
+    .search-box input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.1); }
+    
+    .export-btn { 
+      padding: 12px 20px; border-radius: 12px; border: none; background: #1e293b; color: white; 
+      font-weight: 700; cursor: pointer; transition: 0.2s; 
+    }
+    .export-btn:hover { background: #0f172a; transform: translateY(-1px); }
+
     /* Insight Bar */
     .insight-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-    .insight-card { padding: 20px; border-radius: 16px; border-left: 6px solid var(--accent-primary); }
+    .insight-card { padding: 24px; border-radius: 18px; border-left: 6px solid #3b82f6; }
     .insight-card.warning { border-left-color: #ef4444; }
     .insight-card.info { border-left-color: #10b981; }
-    .i-label { font-size: 13px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px; }
-    .i-value { font-size: 24px; font-weight: 800; color: var(--text-primary); }
+    .i-label { font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .i-value { font-size: 1.5rem; font-weight: 800; color: #1e293b; }
 
-    /* Header & Search */
-    .search-host { position: relative; display: flex; align-items: center; }
-    .search-icon { position: absolute; left: 16px; color: #94a3b8; }
-    .search-host input { 
-      padding: 12px 16px 12px 48px; border-radius: 14px; border: 2px solid #e2e8f0; 
-      background: white; color: #1e293b; width: 380px; font-weight: 600;
-      transition: all 0.3s;
-    }
-    .search-host input:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 4px rgba(59,130,246,0.1); outline: none; }
-
-    /* Table Styles */
-    .table-top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-    .chip-group { display: flex; gap: 10px; }
+    /* Filter Controls */
+    .filter-controls { display: flex; justify-content: space-between; align-items: center; }
+    .chip-group { display: flex; gap: 8px; }
     .status-chip { 
-      padding: 8px 18px; border-radius: 12px; border: 2px solid #e2e8f0; 
-      background: white; font-size: 13px; font-weight: 700; cursor: pointer; transition: 0.2s;
+      padding: 8px 16px; border-radius: 10px; border: 1px solid #e2e8f0; background: white;
+      font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: 0.2s;
     }
     .status-chip.active { background: #1e293b; color: white; border-color: #1e293b; }
+    .record-meta { font-size: 0.9rem; color: #64748b; }
+
+    /* Store Cards */
+    .store-groups { display: flex; flex-direction: column; gap: 16px; }
+    .store-card { border-radius: 20px; overflow: hidden; transition: 0.3s; }
+    .store-card:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgba(0,0,0,0.1); }
     
-    .ledger-wrapper { overflow-x: auto; border: 1.5px solid #e2e8f0; border-radius: 12px; }
+    .store-header { 
+      display: flex; justify-content: space-between; align-items: center; 
+      padding: 20px 24px; cursor: pointer; background: rgba(255,255,255,0.5);
+    }
+    .store-identity { display: flex; align-items: center; gap: 16px; }
+    .store-icon { 
+      width: 48px; height: 48px; border-radius: 14px; background: #3b82f6; 
+      display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white;
+    }
+    .store-name { margin: 0; font-size: 1.1rem; font-weight: 800; color: #1e293b; }
+    .store-id { font-size: 0.8rem; color: #64748b; font-weight: 600; }
+    
+    .store-summary-meta { display: flex; align-items: center; gap: 16px; }
+    .meta-pill { 
+      display: flex; flex-direction: column; align-items: flex-end; 
+      padding: 6px 14px; border-radius: 10px; background: #f1f5f9; min-width: 100px;
+    }
+    .meta-pill small { font-size: 0.65rem; font-weight: 800; color: #64748b; text-transform: uppercase; }
+    .meta-pill span { font-size: 0.95rem; font-weight: 800; color: #1e293b; }
+    .meta-pill.warning { background: #fef2f2; }
+    .meta-pill.warning span { color: #dc2626; }
+    .meta-pill.info { background: #f0fdf4; }
+    .meta-pill.info span { color: #166534; }
+    
+    .expand-btn { 
+      width: 32px; height: 32px; border-radius: 80px; background: #e2e8f0; 
+      display: flex; align-items: center; justify-content: center; 
+      font-size: 1.5rem; color: #64748b; transition: 0.3s;
+    }
+    .expand-btn.expanded { transform: rotate(90deg); background: #1e293b; color: white; }
+
+    /* Store Body */
+    .store-body { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
+    .store-body.expanded { max-height: 2000px; border-top: 1px solid #f1f5f9; }
+    .table-scroll { overflow-x: auto; }
+
+    /* Table Styles */
     .ledger-table { width: 100%; border-collapse: collapse; background: white; }
-    .ledger-table th { background: #f1f5f9; padding: 16px; text-align: left; font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
-    .ledger-table td { padding: 18px 16px; border-bottom: 1.5px solid #f1f5f9; font-size: 14px; color: #334155; }
-    
-    /* Row Highlighting */
+    .ledger-table th { 
+      padding: 14px 20px; text-align: left; background: #f8fafc; 
+      font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .ledger-table td { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+    .ledger-row { cursor: pointer; transition: 0.2s; }
     .ledger-row:hover { background: #f8fafc; }
-    .row-returned { background: #fff1f2 !important; }
-    .row-returned td { border-bottom-color: #fecaca; }
-    .row-returned:hover { background: #ffe4e6 !important; }
     
-    .row-pending { background: #fffbeb !important; }
-    .row-pending td { border-bottom-color: #fef3c7; }
-    .row-pending:hover { background: #fef3c7 !important; }
-
-    .row-completed { background: #f0fdf4 !important; }
-    .row-completed td { border-bottom-color: #dcfce7; }
-    .row-completed:hover { background: #dcfce7 !important; }
-
-    .id-cell strong { color: #1e293b; letter-spacing: -0.5px; }
-    .d-info, .c-info { display: flex; flex-direction: column; gap: 2px; }
-    .d-main, .c-name { font-weight: 700; color: #1e293b; }
-    .d-sub, .c-sub, .tax-text { font-size: 12px; color: #64748b; font-weight: 500; }
-    .total-text { font-size: 15px; color: #0f172a; }
-
-    .status-indicator { padding: 5px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; display: inline-block; }
-    .status-indicator.completed, .status-indicator.finalized { background: #dcfce7; color: #166534; }
-    .status-indicator.returned, .status-indicator.rejected { background: #ef4444; color: white; }
-    .status-indicator.pending { background: #f59e0b; color: white; }
-
-    /* Pagination */
-    .pagination-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 32px; }
-    .page-nav-btn { padding: 10px 20px; border-radius: 12px; border: 1.5px solid #e2e8f0; background: white; font-weight: 700; cursor: pointer; transition: 0.2s; }
-    .page-nav-btn:hover:not(:disabled) { border-color: #1e293b; background: #f8fafc; }
-    .dot-btn { width: 40px; height: 40px; border-radius: 10px; border: 1.5px solid #e2e8f0; background: white; font-weight: 800; cursor: pointer; }
-    .dot-btn.active { background: #1e293b; color: white; border-color: #1e293b; }
-
-    /* Modal Overlay - FIX FOR POPUP */
-    .modal-overlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(10px);
-      display: flex; align-items: center; justify-content: center; z-index: 9999;
-    }
-    .receipt-card { 
-      width: 440px; background: white; border-radius: 24px; padding: 36px; 
-      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.35); position: relative;
-    }
-    .receipt-header { text-align: center; border-bottom: 2px dashed #cbd5e1; padding-bottom: 24px; margin-bottom: 24px; }
-    .receipt-header .logo { font-size: 24px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
-    .receipt-header .logo span { color: #3b82f6; }
-    .bill-num { font-family: 'Courier New', Courier, monospace; font-weight: 700; color: #64748b; font-size: 15px; }
+    .row-returned { background: #fff1f2; }
+    .row-pending { background: #fffbeb; }
     
-    .customer-info { 
-      font-size: 14px; background: #f1f5f9; padding: 14px; border-radius: 12px; 
-      margin-bottom: 24px; border-left: 5px solid #3b82f6; color: #334155;
-    }
-    .receipt-table { width: 100%; margin-bottom: 24px; border-collapse: collapse; }
-    .receipt-table th { font-size: 11px; text-transform: uppercase; color: #94a3b8; padding-bottom: 12px; text-align: left; letter-spacing: 1px; }
-    .receipt-table td { font-size: 14px; padding: 8px 0; color: #1e293b; font-weight: 600; border-top: 1px solid #f1f5f9; }
+    .id-cell strong { color: #1e293b; font-family: monospace; }
+    .d-main { display: block; font-weight: 700; color: #1e293b; }
+    .d-sub { font-size: 0.75rem; color: #94a3b8; }
+    .c-name { display: block; font-weight: 700; color: #1e293b; }
+    .c-sub { font-size: 0.75rem; color: #94a3b8; }
+    .tax-text { color: #94a3b8; font-size: 0.8rem; }
+    .total-text { color: #1e293b; font-size: 1rem; }
     
-    .summary-line { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 6px; color: #64748b; font-weight: 500; }
-    .summary-line.total { 
-      margin-top: 16px; padding-top: 16px; border-top: 2px solid #1e293b; 
-      font-size: 22px; font-weight: 800; color: #0f172a; 
+    .status-indicator { 
+      padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; 
+      text-transform: uppercase; display: inline-block;
     }
+    .status-indicator.completed { background: #dcfce7; color: #166534; }
+    .status-indicator.returned { background: #fee2e2; color: #991b1b; }
+    .status-indicator.pending { background: #fef3c7; color: #92400e; }
 
-    .loading-spinner { text-align: center; padding: 30px; color: #3b82f6; font-weight: 700; }
-    .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    /* Modal */
+    .modal-overlay { 
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .receipt-card { width: 440px; background: white; border-radius: 24px; padding: 32px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+    .receipt-header { text-align: center; border-bottom: 2px dashed #e2e8f0; padding-bottom: 20px; margin-bottom: 20px; }
+    .receipt-header h4 { margin: 8px 0; font-size: 1.2rem; }
+    .bill-num { font-family: monospace; color: #64748b; margin: 0; }
+    .logo { font-size: 1.5rem; font-weight: 800; color: #1e293b; }
+    .logo span { color: #3b82f6; }
+    
+    .customer-info { background: #f8fafc; padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 0.85rem; }
+    .receipt-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .receipt-table th { text-align: left; font-size: 0.75rem; color: #94a3b8; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; }
+    .receipt-table td { padding: 8px 0; font-size: 0.9rem; font-weight: 600; }
+    
+    .summary-line { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px; color: #64748b; }
+    .summary-line.total { border-top: 2px solid #1e293b; padding-top: 12px; margin-top: 12px; font-size: 1.25rem; font-weight: 800; color: #0f172a; }
+    
+    .btn-close-receipt { width: 100%; padding: 12px; border-radius: 12px; border: none; background: #3b82f6; color: white; font-weight: 700; cursor: pointer; }
 
+    .empty-state { padding: 64px; text-align: center; color: #94a3b8; }
+    .empty-icon { font-size: 3rem; margin-bottom: 16px; display: block; }
+    
     .animate-fade-in { animation: fadeIn 0.4s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-slide-up { animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
   `]
 })
 export class TransactionsComponent implements OnInit {
   bills: any[] = [];
-  filteredBills: any[] = [];
+  allStores: any[] = [];
+  storeGroups: StoreTransactionGroup[] = [];
+  
   searchQuery = '';
   statusFilter = 'all';
   
-  // Pagination
-  currentPage = 1;
-  pageSize = 15; // Increased to 15
-  totalPages = 1;
+  globalTotal = 0;
+  globalReturns = 0;
 
   // Receipt Modal State
   showReceiptModal = false;
   selectedBill: any = null;
-  isReceiptLoading = false;
 
   constructor(private api: ApiService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    this.loadAllTransactions();
+    this.loadData();
   }
 
-  loadAllTransactions() {
-    this.api.getBills().subscribe({
-      next: (data) => {
-        this.bills = data;
-        this.applyFilters();
-        this.cdr.detectChanges();
+  loadData() {
+    this.api.getStores().subscribe({
+      next: (stores) => {
+        this.allStores = stores;
+        this.api.getBills().subscribe({
+          next: (data) => {
+            this.bills = data;
+            this.applyFilters();
+            this.cdr.detectChanges();
+          },
+          error: (err) => console.error('Error loading bills', err)
+        });
       },
-      error: (err) => console.error('Error loading ledger', err)
+      error: (err) => console.error('Error loading stores', err)
     });
+  }
+
+  applyFilters() {
+    let filtered = [...this.bills];
+
+    // Status Filter
+    if (this.statusFilter !== 'all') {
+      filtered = filtered.filter(b => {
+        const s = this.normalizeStatus(b.status);
+        return s === this.statusFilter;
+      });
+    }
+
+    // Search Filter
+    if (this.searchQuery) {
+      const q = this.searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(b => 
+        (b.billNumber || b.id || '').toString().toLowerCase().includes(q) ||
+        (b.customerName || '').toLowerCase().includes(q) ||
+        (b.customerMobile || '').toLowerCase().includes(q)
+      );
+    }
+
+    // Group by Store
+    const groupMap = new Map<number, StoreTransactionGroup>();
+    this.globalTotal = 0;
+    this.globalReturns = 0;
+
+    filtered.forEach(bill => {
+      const sid = bill.storeId || 0;
+      if (!groupMap.has(sid)) {
+        const store = this.allStores.find(s => s.id === sid);
+        groupMap.set(sid, {
+          storeId: sid,
+          storeName: store?.name || `Store #${sid}`,
+          bills: [],
+          isExpanded: false,
+          totalAmount: 0,
+          returnsAmount: 0,
+          count: 0
+        });
+      }
+      
+      const group = groupMap.get(sid)!;
+      group.bills.push(bill);
+      group.count++;
+      group.totalAmount += (bill.totalAmount || 0);
+      
+      const status = this.normalizeStatus(bill.status);
+      if (status === 'returned') {
+        group.returnsAmount += (bill.totalAmount || 0);
+      }
+
+      this.globalTotal += (bill.totalAmount || 0);
+      if (status === 'returned') this.globalReturns += (bill.totalAmount || 0);
+    });
+
+    this.storeGroups = Array.from(groupMap.values())
+      .sort((a, b) => b.totalAmount - a.totalAmount);
+
+    // Auto-expand if only one store
+    if (this.storeGroups.length === 1) {
+      this.storeGroups[0].isExpanded = true;
+    }
+  }
+
+  toggleGroup(group: StoreTransactionGroup) {
+    group.isExpanded = !group.isExpanded;
+  }
+
+  setStatusFilter(status: string) {
+    this.statusFilter = status;
+    this.applyFilters();
+  }
+
+  onFilterChange() {
+    this.applyFilters();
+  }
+
+  normalizeStatus(status: string): string {
+    const s = (status || '').toLowerCase();
+    if (['returned', 'rejected', 'returnrequested'].includes(s)) return 'returned';
+    if (['completed', 'paid', 'finalized'].includes(s)) return 'completed';
+    if (['held', 'draft', 'pendingpayment'].includes(s)) return 'pending';
+    return s;
   }
 
   viewBillReceipt(id: any) {
     if (!id) return;
-    this.isReceiptLoading = true;
     this.showReceiptModal = true;
     this.selectedBill = null;
 
     this.api.getBillDetails(id).subscribe({
       next: (data: any) => {
-        this.isReceiptLoading = false;
         if (data) {
           data.items = data.items || data.Items || [];
           this.selectedBill = data;
@@ -340,9 +483,7 @@ export class TransactionsComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err: any) => {
-        this.isReceiptLoading = false;
-        this.cdr.detectChanges();
-        alert('Could not load receipt: ' + (err.error?.message || err.message || 'Server Error'));
+        alert('Could not load receipt: ' + (err.error?.message || 'Server Error'));
         this.closeReceiptModal();
       }
     });
@@ -353,94 +494,32 @@ export class TransactionsComponent implements OnInit {
     this.selectedBill = null;
   }
 
-  onFilterChange() {
-    this.currentPage = 1;
-    this.applyFilters();
-  }
-
-  setStatusFilter(status: string) {
-    this.statusFilter = status;
-    this.onFilterChange();
-  }
-
-  applyFilters() {
-    let results = [...this.bills];
-
-    if (this.statusFilter !== 'all') {
-      results = results.filter(b => {
-        const s = b.status.toLowerCase();
-        if (this.statusFilter === 'pending') return ['held', 'draft', 'pendingpayment', 'returnrequested'].includes(s);
-        return s === this.statusFilter;
-      });
-    }
-
-    if (this.searchQuery) {
-      const q = this.searchQuery.toLowerCase().trim();
-      results = results.filter(b => 
-        (b.billNumber || b.id || '').toString().toLowerCase().includes(q) ||
-        (b.customerName || '').toLowerCase().includes(q) ||
-        (b.customerMobile || '').toLowerCase().includes(q)
-      );
-    }
-
-    this.filteredBills = results.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    this.totalPages = Math.ceil(this.filteredBills.length / this.pageSize) || 1;
-  }
-
-  get paginatedBills() {
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this.filteredBills.slice(start, start + this.pageSize);
-  }
-
-  // Insight Helpers
-  getViewTotal() { return this.paginatedBills.reduce((acc, b) => acc + (b.totalAmount || 0), 0); }
-  getViewReturns() { 
-    return this.paginatedBills
-      .filter(b => ['returned', 'rejected'].includes(this.normalizeStatus(b.status)))
-      .reduce((acc, b) => acc + (b.totalAmount || 0), 0); 
-  }
-
-  // Pagination Helpers
-  nextPage() { if (this.currentPage < this.totalPages) this.currentPage++; }
-  prevPage() { if (this.currentPage > 1) this.currentPage--; }
-  goToPage(p: number) { this.currentPage = p; }
-
-  getPageRange() {
-    const pages = [];
-    for (let i = 1; i <= this.totalPages; i++) pages.push(i);
-    const start = Math.max(0, this.currentPage - 3);
-    const end = Math.min(this.totalPages, this.currentPage + 2);
-    return pages.slice(start, end);
-  }
-
-  getStartIndex() { return this.filteredBills.length ? (this.currentPage - 1) * this.pageSize + 1 : 0; }
-  getEndIndex() { return Math.min(this.currentPage * this.pageSize, this.filteredBills.length); }
-
-  normalizeStatus(status: string): string {
-    const s = (status || '').toLowerCase();
-    if (['held', 'draft', 'pendingpayment', 'returnrequested'].includes(s)) return 'pending';
-    if (['completed', 'paid', 'finalized'].includes(s)) return 'completed';
-    return s;
-  }
-
   exportAll() {
-    if (!this.filteredBills.length) return;
-    const headers = ['ID', 'Date', 'Customer', 'Mobile', 'Amount', 'Tax', 'Status'];
-    const rows = this.filteredBills.map(b => [
-      b.billNumber || b.id,
-      new Date(b.date).toLocaleString(),
-      b.customerName || 'Walk-in',
-      b.customerMobile || '',
-      b.totalAmount,
-      b.taxAmount,
-      b.status
-    ]);
+    if (!this.bills.length) return;
+    const headers = ['Store', 'ID', 'Date', 'Customer', 'Mobile', 'Amount', 'Tax', 'Status'];
+    const rows: any[] = [];
+    
+    this.storeGroups.forEach(g => {
+      g.bills.forEach(b => {
+        rows.push([
+          g.storeName,
+          b.billNumber || b.id,
+          new Date(b.date).toLocaleString(),
+          b.customerName || 'Walk-in',
+          b.customerMobile || '',
+          b.totalAmount,
+          b.taxAmount,
+          b.status
+        ]);
+      });
+    });
+
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `Store_Ledger_${new Date().toLocaleDateString()}.csv`);
+    link.setAttribute('download', `Transactions_Report_${new Date().toLocaleDateString()}.csv`);
     link.click();
   }
 }

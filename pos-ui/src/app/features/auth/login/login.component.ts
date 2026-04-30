@@ -72,7 +72,8 @@ export class LoginComponent implements OnInit, AfterViewInit {
         google.accounts.id.initialize({
           client_id: '279364566745-oc9hv9a5tt1k91hgoi51s3qi0ot80u92.apps.googleusercontent.com',
           callback: this.handleCredentialResponse.bind(this),
-          auto_select: false
+          auto_select: false,
+          ux_mode: 'popup'
         });
         google.accounts.id.renderButton(
           btnElement,

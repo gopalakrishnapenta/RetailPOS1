@@ -40,7 +40,12 @@
     </div>
 
     <div *ngIf="isRegistered" class="form-group animate-fade-in">
-      <label>Email Verification Code</label>
+      <div class="label-row">
+        <label>Email Verification Code</label>
+        <button class="resend-link" (click)="resendOtp()" [disabled]="resendCooldown > 0">
+          {{ resendCooldown > 0 ? 'Resend in ' + resendCooldown + 's' : 'Resend Code' }}
+        </button>
+      </div>
       <input type="text" class="input-field" placeholder="6-digit code" [(ngModel)]="verificationOtp">
       <p class="helper-text">Check your email for the verification code.</p>
     </div>

@@ -27,6 +27,10 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/auth/register`, registerDto);
   }
 
+  resendVerification(email: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/auth/resend-verification`, { email });
+  }
+
   googleLogin(googleDto: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/auth/google-login`, googleDto);
   }
