@@ -52,52 +52,94 @@
         </div>
       </div>
 
-      <div class="bill-info-grid">
-         <div class="info-block">
-           <label>Customer</label>
-           <span>{{ selectedBill.customerName || 'Regular' }} ({{ selectedBill.customerMobile || 'N/A' }})</span>
-         </div>
-         <div class="info-block">
-           <label>Timestamp</label>
-           <span>{{ selectedBill.date | date:'medium' }}</span>
-         </div>
-         <div class="info-block">
-           <label>Reference</label>
-           <span>{{ selectedBill.billNumber || selectedBill.id }}</span>
-         </div>
+      <div class="bill-summary-banner">
+        <div class="banner-main">
+          <div class="bill-id-badge">
+            <span class="label">BILL ID</span>
+            <span class="value">#{{ selectedBill.billNumber || selectedBill.id }}</span>
+          </div>
+          <div class="bill-meta">
+            <div class="meta-item">
+              <i class="icon">👤</i>
+              <div class="meta-content">
+                <label>Customer</label>
+                <span>{{ selectedBill.customerName || 'Regular Customer' }}</span>
+              </div>
+            </div>
+            <div class="meta-item">
+              <i class="icon">📱</i>
+              <div class="meta-content">
+                <label>Contact</label>
+                <span>{{ selectedBill.customerMobile || '+91 00000 00000' }}</span>
+              </div>
+            </div>
+            <div class="meta-item">
+              <i class="icon">📅</i>
+              <div class="meta-content">
+                <label>Billed On</label>
+                <span>{{ selectedBill.date | date:'medium' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="banner-stats">
+          <div class="stat-pill total">
+            <label>Grand Total</label>
+            <span>{{ selectedBill.totalAmount | currency:'INR':'symbol' }}</span>
+          </div>
+        </div>
       </div>
 
       <div class="items-table-container">
-        <h4>Items Eligible for Return</h4>
-        <table class="admin-table">
+        <div class="section-title">
+          <h4>Items Eligible for Return</h4>
+          <span class="badge">{{ selectedBill.items.length }} Items</span>
+        </div>
+        <table class="modern-return-table">
           <thead>
             <tr>
-              <th width="40"><input type="checkbox"></th>
-              <th>Description</th>
-              <th class="text-center">Qty</th>
-              <th width="120">Return Qty</th>
-              <th class="text-right">Price</th>
-              <th class="text-right">Total</th>
+              <th width="50"></th>
+              <th>Product Details</th>
+              <th class="text-center">Purchase Qty</th>
+              <th width="140">Return Qty</th>
+              <th class="text-right">Unit Price</th>
+              <th class="text-right">Refund Value</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of selectedBill.items">
-              <td><input type="checkbox" [(ngModel)]="item.selected"></td>
+            <tr *ngFor="let item of selectedBill.items" [class.row-selected]="item.selected">
               <td>
-                <div style="font-weight: 600;">{{ item.productName }}</div>
-                <div style="font-size: 0.7rem; color: var(--text-muted);">PK: {{ item.id }}</div>
+                <div class="custom-checkbox">
+                  <input type="checkbox" [id]="'chk-' + item.id" [(ngModel)]="item.selected">
+                  <label [for]="'chk-' + item.id"></label>
+                </div>
               </td>
-              <td class="text-center">{{ item.quantity }}</td>
               <td>
-                <input type="number" 
-                       class="qty-input" 
-                       [(ngModel)]="item.returnQuantity" 
-                       [max]="item.quantity" 
-                       min="1"
-                       [disabled]="!item.selected">
+                <div class="product-cell">
+                  <div class="product-icon">📦</div>
+                  <div class="product-info">
+                    <div class="name">{{ item.productName }}</div>
+                    <div class="sku">ID: {{ item.id }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="text-center">
+                <span class="qty-badge">{{ item.quantity }}</span>
+              </td>
+              <td>
+                <div class="qty-stepper" [class.disabled]="!item.selected">
+                  <button (click)="item.returnQuantity = (item.returnQuantity || 1) - 1" [disabled]="!item.selected || (item.returnQuantity || 1) <= 1">-</button>
+                  <input type="number" [(ngModel)]="item.returnQuantity" [max]="item.quantity" min="1" [disabled]="!item.selected">
+                  <button (click)="item.returnQuantity = (item.returnQuantity || 1) + 1" [disabled]="!item.selected || (item.returnQuantity || 1) >= item.quantity">+</button>
+                </div>
               </td>
               <td class="text-right">{{ item.unitPrice | currency:'INR':'symbol' }}</td>
-              <td class="text-right" style="font-weight: 700;">{{ (item.unitPrice * (item.returnQuantity || 0) * (selectedBill.totalAmount / (selectedBill.totalAmount - selectedBill.taxAmount))) | currency:'INR':'symbol' }}</td>
+              <td class="text-right">
+                <span class="refund-amount" *ngIf="item.selected">
+                  {{ (item.unitPrice * (item.returnQuantity || 1)) | currency:'INR':'symbol' }}
+                </span>
+                <span class="refund-placeholder" *ngIf="!item.selected">-</span>
+              </td>
             </tr>
           </tbody>
         </table>

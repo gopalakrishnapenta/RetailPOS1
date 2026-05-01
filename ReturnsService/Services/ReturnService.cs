@@ -59,7 +59,9 @@ namespace ReturnsService.Services
                     OrderId = r.OriginalBillId,
                     ServiceReturnId = r.Id,
                     StoreId = r.StoreId,
-                    Items = new[] { new { ProductId = r.ProductId, Quantity = r.Quantity } }
+                    TotalRefund = r.RefundAmount,
+                    CustomerMobile = r.CustomerMobile,
+                    Items = new[] { new { ProductId = r.ProductId, Quantity = r.Quantity, RefundAmount = r.RefundAmount } }
                 });
             }
 

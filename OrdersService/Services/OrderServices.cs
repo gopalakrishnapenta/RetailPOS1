@@ -108,6 +108,7 @@ namespace OrdersService.Services
             // TRIGGER SAGA
             await _publishEndpoint.Publish<CheckoutInitiatedEvent>(new
             {
+                CorrelationId = Guid.Parse($"00000000-0000-0000-0000-{bill.Id:D12}"),
                 OrderId = bill.Id,
                 StoreId = bill.StoreId,
                 CashierId = bill.CashierId,

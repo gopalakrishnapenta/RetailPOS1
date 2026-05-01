@@ -43,6 +43,7 @@ builder.ConfigureSerilog("OrdersService");
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddMessageScheduler(new Uri("queue:scheduler"));
     /* 
     // Configure EF Core Outbox
     x.AddEntityFrameworkOutbox<OrdersDbContext>(o =>
@@ -70,6 +71,7 @@ builder.Services.AddMassTransit(x =>
             h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
         });
         
+        cfg.UseMessageScheduler(new Uri("queue:scheduler"));
         cfg.ConfigureEndpoints(context);
     });
 });

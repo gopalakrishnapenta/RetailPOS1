@@ -1,6 +1,7 @@
 using MassTransit;
 using RetailPOS.Contracts;
 using CatalogService.Interfaces;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace CatalogService.Consumers
 {
@@ -9,11 +10,15 @@ namespace CatalogService.Consumers
         IConsumer<RestockItemCommand>
     {
         private readonly IProductRepository _productRepository;
+        private readonly IDistributedCache _cache;
         private readonly ILogger<SagaDeductStockConsumer> _logger;
 
-        public SagaDeductStockConsumer(IProductRepository productRepository, ILogger<SagaDeductStockConsumer> logger)
+        private const string ALL_PRODUCTS_CACHE_KEY = "all_products_v1";
+
+        public SagaDeductStockConsumer(IProductRepository productRepository, IDistributedCache cache, ILogger<SagaDeductStockConsumer> logger)
         {
             _productRepository = productRepository;
+            _cache = cache;
             _logger = logger;
         }
 
@@ -42,8 +47,13 @@ namespace CatalogService.Consumers
                 }
 
                 await _productRepository.SaveChangesAsync();
+                await _cache.RemoveAsync(ALL_PRODUCTS_CACHE_KEY);
                 
-                await context.Publish<StockDeductedEvent>(new { OrderId = command.OrderId });
+                await context.Publish<StockDeductedEvent>(new 
+                { 
+                    CorrelationId = command.CorrelationId,
+                    OrderId = command.OrderId 
+                });
                 _logger.LogInformation($"Stock deducted successfully for Order {command.OrderId}");
             }
             catch (Exception ex)
@@ -51,6 +61,7 @@ namespace CatalogService.Consumers
                 _logger.LogError(ex, $"Failed to deduct stock for Order {command.OrderId}");
                 await context.Publish<StockDeductionFailedEvent>(new 
                 { 
+                    CorrelationId = command.CorrelationId,
                     OrderId = command.OrderId, 
                     Reason = ex.Message 
                 });
@@ -75,6 +86,7 @@ namespace CatalogService.Consumers
                 }
 
                 await _productRepository.SaveChangesAsync();
+                await _cache.RemoveAsync(ALL_PRODUCTS_CACHE_KEY);
                 await context.Publish<StockRestockedEvent>(new { OrderId = command.OrderId });
                 _logger.LogInformation($"Stock restocked successfully for Order {command.OrderId}");
             }

@@ -2,6 +2,7 @@ namespace RetailPOS.Contracts
 {
     public interface CheckoutInitiatedEvent
     {
+        Guid? CorrelationId { get; }
         int OrderId { get; }
         int StoreId { get; }
         int CashierId { get; }
@@ -50,6 +51,7 @@ namespace RetailPOS.Contracts
     {
         int ProductId { get; }
         int Quantity { get; }
+        decimal RefundAmount { get; }
     }
 
     public interface ReturnInitiatedEvent
@@ -57,6 +59,7 @@ namespace RetailPOS.Contracts
         int OrderId { get; }
         int ServiceReturnId { get; }
         int StoreId { get; }
+        decimal TotalRefund { get; }
         string? CustomerMobile { get; }
         List<ReturnedItemEvent> Items { get; }
     }

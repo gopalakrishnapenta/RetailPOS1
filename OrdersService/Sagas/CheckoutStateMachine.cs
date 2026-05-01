@@ -9,10 +9,10 @@ namespace OrdersService.Sagas
         {
             InstanceState(x => x.CurrentState);
 
-            Event(() => CheckoutInitiated, x => x.CorrelateBy((saga, context) => saga.OrderId == context.Message.OrderId).SelectId(context => NewId.NextGuid()));
-            Event(() => PaymentProcessed, x => x.CorrelateBy((saga, context) => saga.OrderId == context.Message.OrderId));
-            Event(() => StockDeducted, x => x.CorrelateBy((saga, context) => saga.OrderId == context.Message.OrderId));
-            Event(() => StockDeductionFailed, x => x.CorrelateBy((saga, context) => saga.OrderId == context.Message.OrderId));
+            Event(() => CheckoutInitiated, x => x.CorrelateById(context => context.Message.CorrelationId ?? Guid.Empty));
+            Event(() => PaymentProcessed, x => x.CorrelateById(context => context.Message.CorrelationId ?? Guid.Empty));
+            Event(() => StockDeducted, x => x.CorrelateById(context => context.Message.CorrelationId ?? Guid.Empty));
+            Event(() => StockDeductionFailed, x => x.CorrelateById(context => context.Message.CorrelationId ?? Guid.Empty));
             Event(() => PaymentRefunded, x => x.CorrelateBy((saga, context) => saga.OrderId == context.Message.OrderId));
 
             Schedule(() => CheckoutTimeout, x => x.TimeoutTokenId, x => {
@@ -59,6 +59,7 @@ namespace OrdersService.Sagas
                             .TransitionTo(StockDeductionProcessing)
                             .Then(context => Console.WriteLine($"[SAGA DIAGNOSTIC] Transitioned to StockDeductionProcessing for Order {context.Saga.OrderId}"))
                             .PublishAsync(context => context.Init<DeductStockCommand>(new {
+                                CorrelationId = context.Saga.CorrelationId,
                                 OrderId = context.Saga.OrderId,
                                 Items = context.Saga.Items!.Select(i => new { i.ProductId, i.Quantity }).ToList()
                             }))
@@ -88,6 +89,7 @@ namespace OrdersService.Sagas
                             .TransitionTo(StockDeductionProcessing)
                             .Then(context => Console.WriteLine($"[SAGA DIAGNOSTIC] Payment already successful. Transitioning to StockDeductionProcessing for Order {context.Saga.OrderId}"))
                             .PublishAsync(context => context.Init<DeductStockCommand>(new {
+                                CorrelationId = context.Saga.CorrelationId,
                                 OrderId = context.Saga.OrderId,
                                 Items = context.Saga.Items!.Select(i => new { i.ProductId, i.Quantity }).ToList()
                             }))

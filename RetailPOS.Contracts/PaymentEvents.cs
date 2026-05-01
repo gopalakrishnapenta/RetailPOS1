@@ -2,6 +2,7 @@ namespace RetailPOS.Contracts
 {
     public interface PaymentProcessedEvent
     {
+        Guid? CorrelationId { get; }
         int PaymentId { get; }
         int OrderId { get; }
         decimal Amount { get; }

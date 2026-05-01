@@ -2,6 +2,7 @@ namespace RetailPOS.Contracts
 {
     public interface DeductStockCommand
     {
+        Guid? CorrelationId { get; }
         int OrderId { get; }
         List<DeductStockItem> Items { get; }
     }
@@ -14,11 +15,13 @@ namespace RetailPOS.Contracts
 
     public interface StockDeductedEvent
     {
+        Guid? CorrelationId { get; }
         int OrderId { get; }
     }
 
     public interface StockDeductionFailedEvent
     {
+        Guid? CorrelationId { get; }
         int OrderId { get; }
         string Reason { get; }
     }

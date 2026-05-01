@@ -75,10 +75,12 @@ export class PaymentComponent implements OnInit {
         this.calculateChange();
         this.fetchStoreDetails(this.bill.storeId);
 
-        // Auto-trigger cash payment if pre-selected
+        // Auto-trigger cash payment disabled to allow manual confirmation
+        /*
         if (this.paymentMode === 'Cash') {
           setTimeout(() => this.processPayment(), 1000);
         }
+        */
       }),
       catchError((err) => {
         console.error('Error loading bill', err);

@@ -28,6 +28,7 @@ namespace PaymentService.Services
                 // Publish event so OrdersService can update Bill status to "Paid"
                 await _publishEndpoint.Publish<PaymentProcessedEvent>(new
                 {
+                    CorrelationId = Guid.Parse($"00000000-0000-0000-0000-{payment.BillId:D12}"),
                     PaymentId = payment.Id,
                     OrderId = payment.BillId,
                     Amount = payment.Amount,

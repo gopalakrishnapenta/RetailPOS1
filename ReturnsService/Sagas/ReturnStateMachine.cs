@@ -29,8 +29,7 @@ namespace ReturnsService.Sagas
                         {
                             context.Saga.ProductId = item.ProductId;
                             context.Saga.Quantity = item.Quantity;
-                            // Estimate total refund from first item if not provided as a whole
-                            context.Saga.RefundAmount = context.Message.Items.Sum(i => i.Quantity * 10); // Calculation placeholder or actual sync?
+                            context.Saga.RefundAmount = context.Message.TotalRefund;
                         }
                         context.Saga.CustomerMobile = context.Message.CustomerMobile; 
                     })
