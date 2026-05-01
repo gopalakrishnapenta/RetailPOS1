@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
+import { SignalrService } from '../../../core/services/signalr.service';
 import { catchError, finalize, map, of, tap, timeout } from 'rxjs';
 
 @Component({
@@ -28,10 +29,17 @@ export class PaymentComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private api: ApiService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private signalR: SignalrService
   ) {}
-
   ngOnInit() {
+    this.route.queryParamMap.subscribe(params => {
+      const mode = params.get('mode');
+      if (mode === 'Cash' || mode === 'Online') {
+        this.paymentMode = mode;
+      }
+    });
+
     this.route.paramMap.subscribe(params => {
       this.billId = params.get('id') || '';
       if (this.billId) {
@@ -40,6 +48,13 @@ export class PaymentComponent implements OnInit {
         this.router.navigate(['/pos/billing']);
       }
     });
+
+    this.signalR.notifications$.subscribe((notif: any) => {
+      if (notif.message && notif.message.includes(`bill #${this.billId} finalized`)) {
+        this.onBackendFinalized();
+      }
+    });
+
     this.loadRazorpayScript();
   }
 
@@ -59,6 +74,11 @@ export class PaymentComponent implements OnInit {
         this.tenderedAmount = this.bill.totalAmount || 0;
         this.calculateChange();
         this.fetchStoreDetails(this.bill.storeId);
+
+        // Auto-trigger cash payment if pre-selected
+        if (this.paymentMode === 'Cash') {
+          setTimeout(() => this.processPayment(), 1000);
+        }
       }),
       catchError((err) => {
         console.error('Error loading bill', err);
@@ -186,11 +206,16 @@ export class PaymentComponent implements OnInit {
   }
 
   onPaymentSuccess(mode: string, ref: string) {
-    this.paymentSuccess = true;
     this.isProcessing = false;
     this.bill.status = 'Paid';
     this.bill.paymentMode = mode;
     this.bill.referenceNumber = ref;
+    
+    // We don't set paymentSuccess = true here yet, we wait for the Backend via SignalR
+    // Or if it's Cash, we can show it immediately if we're confident
+    if (mode === 'Cash') {
+       this.paymentSuccess = true;
+    }
     
     this.cdr.detectChanges();
     
@@ -198,6 +223,13 @@ export class PaymentComponent implements OnInit {
     setTimeout(() => {
       window.print();
     }, 500);
+  }
+
+  onBackendFinalized() {
+    console.log('[Payment] Backend confirmed finalization!');
+    this.paymentSuccess = true;
+    if (this.bill) this.bill.status = 'Finalized';
+    this.cdr.detectChanges();
   }
 
   newSale() {

@@ -104,9 +104,14 @@
     <!-- Success State View (Receipt) -->
     <div class="success-card glass-panel animate-scale-up" *ngIf="paymentSuccess">
       <div class="success-header">
+        <div class="success-badge">
+          <span class="badge-icon">⭐</span>
+          <span>PAYMENT SUCCESSFUL</span>
+        </div>
         <div class="success-icon">✓</div>
         <h2>Transaction Complete</h2>
-        <p>Receipt generated for Order #{{ bill?.id }}</p>
+        <p class="status-confirmed" *ngIf="bill?.status === 'Finalized'">Order #{{ bill?.id }} has been finalized & inventory updated.</p>
+        <p class="status-pending" *ngIf="bill?.status !== 'Finalized'">Payment received. Finalizing order details...</p>
       </div>
 
       <!-- NEW DETAILED RECEIPT TEMPLATE -->

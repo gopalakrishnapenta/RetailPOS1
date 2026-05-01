@@ -109,30 +109,69 @@
 .theme-toggle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.toggle-container {
+  width: 100%;
+  height: 42px;
   background: var(--bg-tertiary);
-}
-
-.theme-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.theme-btn {
-  border: 1px solid var(--border-color);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
+  border-radius: 12px;
+  padding: 4px;
   cursor: pointer;
+  position: relative;
+  transition: all var(--transition-normal);
+  border: 1px solid var(--border-color);
+}
+
+.toggle-track {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  padding: 0 8px;
+}
+
+.toggle-track .icon {
+  font-size: 16px;
+  z-index: 1;
+  transition: all var(--transition-normal);
+  opacity: 0.5;
+}
+
+.toggle-container.dark .icon.moon {
+  opacity: 1;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4));
+}
+
+.toggle-container:not(.dark) .icon.sun {
+  opacity: 1;
+  filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.4));
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--border-color);
+}
+
+.toggle-container.dark .toggle-thumb {
+  transform: translateX(100%);
+}
+
+.toggle-container:hover {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .user-profile {

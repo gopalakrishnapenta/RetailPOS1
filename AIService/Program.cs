@@ -34,14 +34,21 @@ builder.Configuration.AddEnvironmentVariables();
 // Configure CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        policy => policy.AllowAnyOrigin()
-                          .AllowAnyMethod()
-                          .AllowAnyHeader());
+    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() 
+                         ?? new[] { "http://localhost:4200", "http://localhost:8080" };
+
+    options.AddPolicy("AllowAll", policy => 
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyMethod()
+              .AllowAnyHeader());
 });
 
 // Configure Authentication
-var jwtSecret = builder.Configuration["Jwt:Key"] ?? "super_secret_key_1234567890_pos_system";
+var jwtSecret = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrEmpty(jwtSecret))
+{
+    throw new InvalidOperationException("[SECURITY] Fatal Error: Jwt:Key is missing from configuration.");
+}
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

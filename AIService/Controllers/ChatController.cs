@@ -26,7 +26,7 @@ namespace AIService.Controllers
             }
 
             var client = _httpClientFactory.CreateClient();
-            var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_apiKey}";
+            var url = $"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={_apiKey}";
 
             // Fetch some context from other services (Simplified for now)
             string storeContext = "";
@@ -37,7 +37,10 @@ namespace AIService.Controllers
                     client.DefaultRequestHeaders.Add("Authorization", authHeader);
                 }
 
-                var catResponse = await client.GetAsync("http://localhost:5000/gateway/catalog/categories");
+                // Use service name in Docker environment
+                var gatewayUrl = Environment.GetEnvironmentVariable("GATEWAY_URL") ?? "http://api-gateway:8080";
+                
+                var catResponse = await client.GetAsync($"{gatewayUrl}/gateway/catalog/categories");
                 if (catResponse.IsSuccessStatusCode) {
                     var cats = JsonConvert.DeserializeObject<List<CategoryInfo>>(await catResponse.Content.ReadAsStringAsync());
                     if (cats != null && cats.Any()) {
@@ -45,7 +48,7 @@ namespace AIService.Controllers
                     }
                 }
                 
-                var prodResponse = await client.GetAsync("http://localhost:5000/gateway/catalog/products");
+                var prodResponse = await client.GetAsync($"{gatewayUrl}/gateway/catalog/products");
                 if (prodResponse.IsSuccessStatusCode) {
                     var prods = JsonConvert.DeserializeObject<List<ProductInfo>>(await prodResponse.Content.ReadAsStringAsync());
                     if (prods != null && prods.Any()) {
@@ -101,8 +104,10 @@ namespace AIService.Controllers
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    // Return a graceful message to the user instead of a 400 error
-                    return Ok(new { response = "I'm sorry, I'm having trouble thinking right now. (Technical details: " + response.StatusCode + ")" });
+                    // Return a more descriptive message for debugging
+                    var errorDetails = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[AI ERROR] Gemini API failed: {response.StatusCode} - {errorDetails}");
+                    return Ok(new { response = $"I'm sorry, I'm having trouble thinking right now. (Technical details: {response.StatusCode})" });
                 }
 
                 dynamic? geminiResponse = JsonConvert.DeserializeObject(responseString);

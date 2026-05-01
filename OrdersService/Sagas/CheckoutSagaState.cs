@@ -9,7 +9,9 @@ namespace OrdersService.Sagas
 
         public int OrderId { get; set; }
         public int StoreId { get; set; }
+        public int CashierId { get; set; }
         public decimal TotalAmount { get; set; }
+        public decimal TaxAmount { get; set; }
         public string? CustomerMobile { get; set; }
         
         // Track the current step outcome
@@ -21,6 +23,8 @@ namespace OrdersService.Sagas
         
         // Items to deduct after payment
         public List<SagaOrderItem>? Items { get; set; }
+
+        public Guid? TimeoutTokenId { get; set; }
     }
 
     public class SagaOrderItem

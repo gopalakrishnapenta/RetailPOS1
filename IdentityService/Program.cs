@@ -12,6 +12,7 @@ using MassTransit;
 using IdentityService.Consumers;
 using IdentityService.Middleware;
 using RetailPOS.Common.Logging;
+using RetailPOS.Common.Middleware;
 using Serilog;
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -77,9 +78,12 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() 
+                         ?? new[] { "http://localhost:4200", "http://localhost:8080" };
+
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        policy.WithOrigins(allowedOrigins).AllowAnyMethod().AllowAnyHeader();
     });
 });
 
@@ -109,9 +113,14 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ── JWT Authentication ────────────────────────────────────────────────────
-var jwtKey    = builder.Configuration["Jwt:Key"]      ?? "super_secret_key_1234567890_pos_system";
-var jwtIssuer = builder.Configuration["Jwt:Issuer"]   ?? "RetailPOS";
-var jwtAud    = builder.Configuration["Jwt:Audience"] ?? "RetailPOS_Clients";
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrEmpty(jwtKey))
+{
+    throw new InvalidOperationException("[SECURITY] Fatal Error: Jwt:Key is missing from configuration.");
+}
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "RetailPOS";
+var jwtAud = builder.Configuration["Jwt:Audience"] ?? "RetailPOS_Clients";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -188,6 +197,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseExceptionMiddleware();
 app.UseCors();
 app.UseAuthentication();

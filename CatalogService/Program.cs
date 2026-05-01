@@ -42,8 +42,24 @@ builder.Configuration.AddEnvironmentVariables();
 // Configure Serilog
 builder.ConfigureSerilog("CatalogService");
 
+// ── Distributed Redis Cache ──────────────────────────────────────────────
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+    options.InstanceName = "Catalog_";
+});
+
+// ── MassTransit with Transactional Outbox ────────────────────────────────
 builder.Services.AddMassTransit(x =>
 {
+    /* 
+    x.AddEntityFrameworkOutbox<CatalogDbContext>(o =>
+    {
+        o.UseSqlServer();
+        o.UseBusOutbox(); 
+    });
+    */
+
     x.AddConsumer<CatalogService.Consumers.CategoryConsumer>();
     x.AddConsumer<CatalogService.Consumers.OrderReturnedConsumer>();
     x.AddConsumer<CatalogService.Consumers.StockAdjustedConsumer>();
@@ -51,15 +67,10 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
-        var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
-        var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
-
-        cfg.Host(rabbitHost, "/", h => {
-            h.Username(rabbitUser);
-            h.Password(rabbitPass);
+        cfg.Host(builder.Configuration["RabbitMQ:Host"] ?? "localhost", "/", h => {
+            h.Username(builder.Configuration["RabbitMQ:Username"] ?? "guest");
+            h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
         });
-
 
         cfg.ReceiveEndpoint("catalog-category", e =>
         {
@@ -134,6 +145,12 @@ builder.Services.AddScoped<ITenantProvider, TenantProvider>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options => {
+        var jwtKey = builder.Configuration["Jwt:Key"];
+        if (string.IsNullOrEmpty(jwtKey))
+        {
+            throw new InvalidOperationException("[SECURITY] Fatal Error: Jwt:Key is missing from configuration.");
+        }
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true, 
@@ -142,7 +159,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudiences = builder.Configuration.GetSection("Jwt:Audiences").Get<string[]>() ?? new[] { builder.Configuration["Jwt:Audience"] },
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "super_secret_key_1234567890_pos_system"))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
 

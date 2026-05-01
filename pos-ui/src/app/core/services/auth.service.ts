@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { AuthApiService } from './auth-api.service';
 
 export interface User {
   id?: number;
@@ -23,34 +24,35 @@ export class AuthService {
 
   private http = inject(HttpClient);
   private router = inject(Router);
+  private authApi = inject(AuthApiService);
 
   constructor() {
     this.loadUserFromStorage();
   }
 
   login(credentials: any) {
-    return this.http.post<any>('http://localhost:5000/gateway/auth/login', credentials).pipe(
+    return this.authApi.login(credentials).pipe(
       tap((response: any) => {
         if (response.data && response.data.token) {
           const authData: User = {
             ...response.data,
             role: response.data.role || 'Staff'
           };
-          this.setSession(authData, response.refreshToken);
+          this.setSession(authData);
         }
       })
     );
   }
 
   googleLogin(googleData: any) {
-    return this.http.post<any>('http://localhost:5000/gateway/auth/google-login', googleData).pipe(
+    return this.authApi.googleLogin(googleData).pipe(
       tap((response: any) => {
         if (response.data && response.data.token) {
           const authData: User = {
             ...response.data,
             role: response.data.role || 'Staff'
           };
-          this.setSession(authData, response.refreshToken);
+          this.setSession(authData);
         }
       })
     );
@@ -58,28 +60,22 @@ export class AuthService {
 
   refreshToken(): Observable<any> {
     const token = localStorage.getItem('token');
-    const refreshToken = localStorage.getItem('refreshToken');
-    return this.http.post<any>('http://localhost:5000/gateway/auth/refresh', {
-      accessToken: token,
-      refreshToken: refreshToken
-    }).pipe(
+    // Note: refreshToken is handled via HttpOnly cookie in the backend
+    return this.authApi.refresh(token || '').pipe(
       tap((response: any) => {
-        if (response.data && response.data.token) {
+        if (response && response.token) {
           const authData: User = {
-            ...response.data,
-            role: response.data.role || 'Staff'
+            ...response,
+            role: response.role || 'Staff'
           };
-          this.setSession(authData, response.refreshToken);
+          this.setSession(authData);
         }
       })
     );
   }
 
-  private setSession(authData: User, refreshToken?: string) {
+  private setSession(authData: User) {
     localStorage.setItem('token', authData.token || '');
-    if (refreshToken) {
-      localStorage.setItem('refreshToken', refreshToken);
-    }
     localStorage.setItem('user', JSON.stringify(authData));
     this._user.set(authData);
     this.isAuth.set(true);

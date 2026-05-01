@@ -23,7 +23,10 @@ namespace OrdersService.Consumers
             var command = context.Message;
             _logger.LogInformation($"Saga finalizing order {command.OrderId}");
 
-            var bill = await _context.Bills.IgnoreQueryFilters().FirstOrDefaultAsync(b => b.Id == command.OrderId);
+            var bill = await _context.Bills
+                .Include(b => b.Items)
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(b => b.Id == command.OrderId);
             if (bill != null)
             {
                 bill.Status = "Finalized"; 
@@ -34,6 +37,7 @@ namespace OrdersService.Consumers
                 {
                     OrderId = bill.Id,
                     StoreId = bill.StoreId,
+                    CashierId = bill.CashierId,
                     TotalAmount = bill.TotalAmount,
                     TaxAmount = bill.TaxAmount,
                     Date = DateTime.UtcNow,

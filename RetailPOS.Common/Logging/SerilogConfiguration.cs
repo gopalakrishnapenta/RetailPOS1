@@ -11,6 +11,8 @@ namespace RetailPOS.Common.Logging
     {
         public static void ConfigureSerilog(this WebApplicationBuilder builder, string serviceName)
         {
+            var seqUrl = builder.Configuration["Serilog:SeqUrl"] ?? "http://localhost:5341";
+
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -18,11 +20,12 @@ namespace RetailPOS.Common.Logging
                 .Enrich.FromLogContext()
                 .Enrich.WithExceptionDetails()
                 .Enrich.WithProperty("Service", serviceName)
-                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}")
                 .WriteTo.File(
                     path: $"Logs/{serviceName}-.log",
                     rollingInterval: RollingInterval.Day,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}")
+                .WriteTo.Seq(seqUrl)
                 .ReadFrom.Configuration(builder.Configuration)
                 .CreateLogger();
 

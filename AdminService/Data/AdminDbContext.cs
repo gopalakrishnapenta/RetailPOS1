@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using AdminService.Models;
 using AdminService.Interfaces;
+using MassTransit;
 
 namespace AdminService.Data
 {
@@ -26,6 +27,11 @@ namespace AdminService.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // ── MassTransit Outbox ───────────────────────────────────────────────────
+            modelBuilder.AddInboxStateEntity();
+            modelBuilder.AddOutboxMessageEntity();
+            modelBuilder.AddOutboxStateEntity();
+
             // ── Multi-tenant Global Query Filters ────────────────────────────────────
             modelBuilder.Entity<InventoryAdjustment>().HasQueryFilter(a => a.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || a.StoreId == 0);
             modelBuilder.Entity<AdminStoreEntity>().HasQueryFilter(s => s.IsActive && (s.Id == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || s.Id == 0));
@@ -34,6 +40,16 @@ namespace AdminService.Data
             modelBuilder.Entity<SyncedReturn>().HasQueryFilter(r => r.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || r.StoreId == 0);
             modelBuilder.Entity<SyncedProduct>().HasQueryFilter(p => p.StoreId == _tenantProvider.StoreId || (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0) || p.StoreId == 0);
             
+            // ── Performance Indexes ──────────────────────────────────────────────────
+            modelBuilder.Entity<SyncedOrder>()
+                .HasIndex(o => new { o.StoreId, o.Date });
+
+            modelBuilder.Entity<InventoryAdjustment>()
+                .HasIndex(a => a.ProductId);
+
+            modelBuilder.Entity<StaffMember>()
+                .HasIndex(s => s.Email)
+                .IsUnique();
             // Disable identity generation for the synced key (we use the ID from OrdersService)
             modelBuilder.Entity<SyncedOrder>(entity => {
                 entity.Property(o => o.OrderId).ValueGeneratedNever();

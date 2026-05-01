@@ -92,7 +92,7 @@ namespace AdminService.Services
                 Id = b.OrderId,
                 Customer = b.CustomerMobile ?? "Walking Customer",
                 Total = b.TotalAmount,
-                Time = b.Date.ToLocalTime().ToString("t")
+                Time = b.Date.ToLocalTime().ToString("MMM dd, HH:mm")
             }).ToList();
 
             var hourlyTrend = todayBills.GroupBy(b => b.Date.ToLocalTime().Hour).OrderBy(g => g.Key)

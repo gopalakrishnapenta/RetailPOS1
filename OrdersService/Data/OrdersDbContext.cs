@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using OrdersService.Models;
 using OrdersService.Interfaces;
+using MassTransit;
 
 namespace OrdersService.Data
 {
@@ -21,9 +22,23 @@ namespace OrdersService.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // ── MassTransit Outbox ───────────────────────────────────────────────────
+            modelBuilder.AddInboxStateEntity();
+            modelBuilder.AddOutboxMessageEntity();
+            modelBuilder.AddOutboxStateEntity();
+
             modelBuilder.Entity<Bill>()
                 .HasIndex(b => b.BillNumber)
                 .IsUnique();
+
+            modelBuilder.Entity<Bill>()
+                .HasIndex(b => new { b.StoreId, b.Date });
+
+            modelBuilder.Entity<Bill>()
+                .HasIndex(b => b.CustomerMobile);
+
+            modelBuilder.Entity<Customer>()
+                .HasIndex(c => c.Mobile);
 
             modelBuilder.Entity<BillItem>()
                 .HasOne(bi => bi.Bill)

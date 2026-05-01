@@ -102,11 +102,9 @@ namespace OrdersService.Services
             var bill = await _billRepository.GetBillWithItemsAsync(id);
             if (bill == null) throw new NotFoundException($"Bill with ID {id} not found.");
 
-            // We NO LONGER publish OrderPlacedEvent here!
-            // We wait for the PaymentProcessedEvent from the Payment Service instead.
             bill.Status = "PendingPayment";
-            await _billRepository.SaveChangesAsync();
-
+            Console.WriteLine($"[DIAGNOSTIC] FinalizeBillAsync: Publishing CheckoutInitiatedEvent for Order {bill.Id}");
+            
             // TRIGGER SAGA
             await _publishEndpoint.Publish<CheckoutInitiatedEvent>(new
             {
@@ -119,6 +117,8 @@ namespace OrdersService.Services
                 CustomerMobile = bill.CustomerMobile,
                 Items = bill.Items.Select(i => new { ProductId = i.ProductId, Quantity = i.Quantity }).ToList()
             });
+
+            await _billRepository.SaveChangesAsync();
 
             return true;
         }

@@ -84,7 +84,12 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ── JWT Authentication ────────────────────────────────────────────────────
-var jwtKey    = builder.Configuration["Jwt:Key"]      ?? "super_secret_key_1234567890_pos_system";
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrEmpty(jwtKey))
+{
+    throw new InvalidOperationException("[SECURITY] Fatal Error: Jwt:Key is missing from configuration.");
+}
+
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]   ?? "RetailPOS";
 var jwtAud    = builder.Configuration["Jwt:Audience"] ?? "RetailPOSClients";
 
@@ -123,6 +128,14 @@ builder.Services.AddDbContext<AdminService.Data.AdminSagaDbContext>(options =>
 
 builder.Services.AddMassTransit(x =>
 {
+    /* 
+    x.AddEntityFrameworkOutbox<AdminDbContext>(o =>
+    {
+        o.UseSqlServer();
+        o.UseBusOutbox();
+    });
+    */
+
     x.AddSagaStateMachine<AdminService.Sagas.OnboardingStateMachine, AdminService.Sagas.OnboardingSagaState>()
         .EntityFrameworkRepository(r =>
         {
@@ -138,17 +151,12 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
-        var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
-        var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
-
-        cfg.Host(rabbitHost, "/", h => {
-            h.Username(rabbitUser);
-            h.Password(rabbitPass);
+        cfg.Host(builder.Configuration["RabbitMQ:Host"] ?? "localhost", "/", h => {
+            h.Username(builder.Configuration["RabbitMQ:Username"] ?? "guest");
+            h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
         });
 
         cfg.ConfigureEndpoints(context);
-
     });
 });
 

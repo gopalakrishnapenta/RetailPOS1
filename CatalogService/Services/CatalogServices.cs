@@ -7,6 +7,11 @@ using CatalogService.Exceptions;
 using RetailPOS.Contracts;
 using MassTransit;
 
+using Microsoft.Extensions.Caching.Distributed;
+using System.Text.Json;
+using RetailPOS.Common.Logging;
+using Serilog;
+
 namespace CatalogService.Services
 {
     public class ProductService : IProductService
@@ -14,23 +19,49 @@ namespace CatalogService.Services
         private readonly IProductRepository _productRepository;
         private readonly ITenantProvider _tenantProvider;
         private readonly IPublishEndpoint _publishEndpoint;
+        private readonly IDistributedCache _cache;
+        private readonly ILogger<ProductService> _logger;
 
-        public ProductService(IProductRepository productRepository, ITenantProvider tenantProvider, IPublishEndpoint publishEndpoint)
+        private const string ALL_PRODUCTS_CACHE_KEY = "all_products_v1";
+
+        public ProductService(
+            IProductRepository productRepository, 
+            ITenantProvider tenantProvider, 
+            IPublishEndpoint publishEndpoint,
+            IDistributedCache cache,
+            ILogger<ProductService> logger)
         {
             _productRepository = productRepository;
             _tenantProvider = tenantProvider;
             _publishEndpoint = publishEndpoint;
+            _cache = cache;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<ProductDto>> GetAllProductsAsync()
         {
+            // Try get from cache
+            var cachedData = await _cache.GetStringAsync(ALL_PRODUCTS_CACHE_KEY);
+            if (!string.IsNullOrEmpty(cachedData))
+            {
+                _logger.LogInformation("🚀 [CACHE] Hit for all products list.");
+                return JsonSerializer.Deserialize<IEnumerable<ProductDto>>(cachedData) ?? Enumerable.Empty<ProductDto>();
+            }
+
+            _logger.LogInformation("🐢 [DATABASE] Cache miss for products. Fetching from DB...");
             var db = ((CatalogService.Repositories.ProductRepository)_productRepository).GetContext();
             var products = await db.Products
                 .Include(p => p.Category)
                 .Where(p => p.IsActive)
                 .ToListAsync();
 
-            return products.Where(p => p.Category == null || p.Category.IsActive).Select(MapToDto);
+            var result = products.Where(p => p.Category == null || p.Category.IsActive).Select(MapToDto).ToList();
+
+            // Store in cache for 10 minutes
+            var cacheOptions = new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) };
+            await _cache.SetStringAsync(ALL_PRODUCTS_CACHE_KEY, JsonSerializer.Serialize(result), cacheOptions);
+
+            return result;
         }
 
         public async Task<IEnumerable<ProductDto>> GetAllUnfilteredProductsAsync()
@@ -95,6 +126,9 @@ namespace CatalogService.Services
             await _productRepository.AddAsync(p);
             await _productRepository.SaveChangesAsync();
 
+            // Invalidate Cache
+            await _cache.RemoveAsync(ALL_PRODUCTS_CACHE_KEY);
+
             // SYNC: Notify other services about the new product and its initial stock
             await _publishEndpoint.Publish<ProductCreatedEvent>(new
             {
@@ -126,6 +160,9 @@ namespace CatalogService.Services
 
             _productRepository.Update(p);
             await _productRepository.SaveChangesAsync();
+
+            // Invalidate Cache
+            await _cache.RemoveAsync(ALL_PRODUCTS_CACHE_KEY);
 
             // SYNC: Notify about updates
             await _publishEndpoint.Publish<ProductUpdatedEvent>(new
@@ -196,6 +233,9 @@ namespace CatalogService.Services
             p.IsActive = false;
             _productRepository.Update(p);
             await _productRepository.SaveChangesAsync();
+
+            // Invalidate Cache
+            await _cache.RemoveAsync(ALL_PRODUCTS_CACHE_KEY);
             return true;
         }
 
@@ -246,26 +286,45 @@ namespace CatalogService.Services
     public class CategoryService : ICategoryService
     {
         private readonly ICategoryRepository _categoryRepository;
+        private readonly IDistributedCache _cache;
+        private readonly ILogger<CategoryService> _logger;
 
-        public CategoryService(ICategoryRepository categoryRepository)
+        private const string ALL_CATEGORIES_CACHE_KEY = "all_categories_v1";
+
+        public CategoryService(ICategoryRepository categoryRepository, IDistributedCache cache, ILogger<CategoryService> logger)
         {
             _categoryRepository = categoryRepository;
+            _cache = cache;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync()
         {
+            var cachedData = await _cache.GetStringAsync(ALL_CATEGORIES_CACHE_KEY);
+            if (!string.IsNullOrEmpty(cachedData))
+            {
+                _logger.LogInformation("🚀 [CACHE] Hit for all categories list.");
+                return JsonSerializer.Deserialize<IEnumerable<CategoryDto>>(cachedData) ?? Enumerable.Empty<CategoryDto>();
+            }
+
+            _logger.LogInformation("🐢 [DATABASE] Cache miss for categories. Fetching from DB...");
             var db = ((CatalogService.Repositories.CategoryRepository)_categoryRepository).GetContext();
             var categories = await db.Categories.IgnoreQueryFilters()
                 .Where(c => c.IsActive)
                 .ToListAsync();
 
-            return categories.Select(c => new CategoryDto
+            var result = categories.Select(c => new CategoryDto
             {
                 Id = c.Id,
                 Name = c.Name,
                 Description = c.Description,
                 IsActive = c.IsActive
-            });
+            }).ToList();
+
+            var cacheOptions = new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30) };
+            await _cache.SetStringAsync(ALL_CATEGORIES_CACHE_KEY, JsonSerializer.Serialize(result), cacheOptions);
+
+            return result;
         }
 
         public async Task<IEnumerable<CategoryDto>> GetAllUnfilteredCategoriesAsync()
@@ -293,6 +352,9 @@ namespace CatalogService.Services
             var c = new Category { Name = dto.Name, Description = dto.Description, IsActive = dto.IsActive };
             await _categoryRepository.AddAsync(c);
             await _categoryRepository.SaveChangesAsync();
+
+            // Invalidate Cache
+            await _cache.RemoveAsync(ALL_CATEGORIES_CACHE_KEY);
             dto.Id = c.Id;
             return dto;
         }
@@ -306,6 +368,9 @@ namespace CatalogService.Services
             c.Description = dto.Description;
             c.IsActive = dto.IsActive;
             await _categoryRepository.SaveChangesAsync();
+
+            // Invalidate Cache
+            await _cache.RemoveAsync(ALL_CATEGORIES_CACHE_KEY);
             return true;
         }
 
@@ -317,6 +382,9 @@ namespace CatalogService.Services
 
             c.IsActive = false;
             await _categoryRepository.SaveChangesAsync();
+
+            // Invalidate Cache
+            await _cache.RemoveAsync(ALL_CATEGORIES_CACHE_KEY);
             return true;
         }
 

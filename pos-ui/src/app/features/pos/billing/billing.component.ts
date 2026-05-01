@@ -2,7 +2,9 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { ApiService } from '../../../core/services/api.service';
+import { CatalogApiService } from '../../../core/services/catalog-api.service';
+import { OrderApiService } from '../../../core/services/order-api.service';
+import { Product, Category, Bill, BillItem, User } from '../../../core/models/models';
 
 @Component({
   selector: 'app-billing',
@@ -13,11 +15,11 @@ import { ApiService } from '../../../core/services/api.service';
 })
 export class BillingComponent implements OnInit {
   // --- PROPERTIES ---
-  products: any[] = [];
-  categories: any[] = [];
-  filteredProducts: any[] = [];
+  products: Product[] = [];
+  categories: Category[] = [];
+  filteredProducts: Product[] = [];
   
-  selectedCategory: any = null;
+  selectedCategory: Category | null = null;
   searchQuery: string = '';
   isLoading = true;
   isProcessing = false;
@@ -28,13 +30,18 @@ export class BillingComponent implements OnInit {
   customerMobile: string = '';
   customerName: string = '';
 
-  cart: any[] = [];
+  cart: (Product & { quantity: number })[] = [];
   subtotal = 0;
   tax = 0;
   total = 0;
   paymentMode: 'Cash' | 'Online' = 'Cash';
 
-  constructor(private api: ApiService, private router: Router, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private catalogApi: CatalogApiService, 
+    private orderApi: OrderApiService, 
+    private router: Router, 
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
     this.loadUserInfo();
@@ -64,7 +71,7 @@ export class BillingComponent implements OnInit {
 
   loadData() {
     this.isLoading = true;
-    this.api.getCategories().subscribe({
+    this.catalogApi.getCategories().subscribe({
       next: (cats) => {
         this.categories = cats;
         this.loadProducts();
@@ -79,7 +86,7 @@ export class BillingComponent implements OnInit {
   }
 
   loadProducts() {
-    this.api.getProducts().subscribe({
+    this.catalogApi.getProducts().subscribe({
       next: (prods) => {
         this.products = prods;
         this.applyFilters();
@@ -166,7 +173,7 @@ export class BillingComponent implements OnInit {
     this.isProcessing = true;
     const authData = JSON.parse(localStorage.getItem('user') || '{}');
     
-    const billData = {
+    const billData: Bill = {
       billNumber: 'HOLD-' + Date.now(),
       customerName: this.customerName,
       customerMobile: this.customerMobile,
@@ -184,10 +191,10 @@ export class BillingComponent implements OnInit {
       }))
     };
 
-    this.api.createBill(billData).subscribe({
+    this.orderApi.createBill(billData).subscribe({
       next: (billRes) => {
-        const billId = billRes.id || billRes.Id || 0;
-        this.api.holdBill(billId).subscribe({
+        const billId = (billRes.id || 0) as number;
+        this.orderApi.holdBill(billId).subscribe({
           next: () => {
             alert('Bill has been put on hold successfully.');
             this.resetCart();
@@ -207,8 +214,8 @@ export class BillingComponent implements OnInit {
 
   openHeldBills() {
     this.showHeldBillsModal = true;
-    this.api.getBills().subscribe({
-      next: (bills: any[]) => {
+    this.orderApi.getBills().subscribe({
+      next: (bills: Bill[]) => {
         // Filter for Held or Draft bills
         this.heldBills = bills.filter(b => b.status === 'Held' || b.status === 'Draft');
       },
@@ -256,7 +263,7 @@ export class BillingComponent implements OnInit {
     this.isProcessing = true;
     const authData = JSON.parse(localStorage.getItem('user') || '{}');
     
-    const billData = {
+    const billData: Bill = {
       billNumber: 'BN-' + Date.now(),
       customerName: this.customerName,
       customerMobile: this.customerMobile,
@@ -274,17 +281,17 @@ export class BillingComponent implements OnInit {
       }))
     };
 
-    this.api.createBill(billData).subscribe({
+    this.orderApi.createBill(billData).subscribe({
       next: (billRes) => {
         // Essential Step: Finalize the bill to trigger the backend Checkout Saga before navigating to payment.
-        const billId = billRes.id || billRes.Id || 0;
+        const billId = (billRes.id || 0) as number;
         if (billId === 0) {
           this.isProcessing = false;
           alert('Invalid Bill ID received.');
           return;
         }
 
-        this.api.finalizeBill(billId).subscribe({
+        this.orderApi.finalizeBill(billId).subscribe({
           next: () => {
             this.handlePaymentSuccess(billRes);
           },
@@ -303,7 +310,7 @@ export class BillingComponent implements OnInit {
   }
 
   handlePaymentSuccess(bill: any) {
-    this.router.navigate(['/pos/payment', bill.id]);
+    this.router.navigate(['/pos/payment', bill.id], { queryParams: { mode: this.paymentMode } });
   }
 
   newTransaction() {

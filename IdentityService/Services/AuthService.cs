@@ -183,6 +183,8 @@ namespace IdentityService.Services
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == email);
             if (user == null || user.VerificationOtp != otp) return false;
             user.IsEmailVerified = true;
+            user.VerificationOtp = null;
+            user.VerificationOtpExpiry = null;
             await _userRepository.SaveChangesAsync();
             return true;
         }
@@ -243,6 +245,8 @@ namespace IdentityService.Services
             var user = await _userRepository.SingleOrDefaultAsync(u => u.Email == resetDto.Email);
             if (user == null || user.Otp != resetDto.Otp) return false;
             user.PasswordHash = BCryptNet.HashPassword(resetDto.NewPassword);
+            user.Otp = null;
+            user.OtpExpiry = null;
             await _userRepository.SaveChangesAsync();
             return true;
         }
@@ -323,7 +327,12 @@ namespace IdentityService.Services
             if (storeCode != null) claims.Add(new Claim("StoreCode", storeCode));
             if (shiftDate != null) claims.Add(new Claim("ShiftDate", shiftDate));
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "super_secret_key_1234567890_pos_system"));
+            var jwtKey = _config["Jwt:Key"];
+            if (string.IsNullOrEmpty(jwtKey))
+            {
+                throw new InvalidOperationException("[SECURITY] Fatal Error: Jwt:Key is missing from configuration.");
+            }
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             
             // Generate token with multiple audiences
@@ -358,7 +367,7 @@ namespace IdentityService.Services
                 ValidateAudience = false, // Mapping to all services
                 ValidateIssuer = false,
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "super_secret_key_1234567890_pos_system")),
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is missing."))),
                 ValidateLifetime = false // Here we are saying that we don't care about the token's expiration date
             };
 

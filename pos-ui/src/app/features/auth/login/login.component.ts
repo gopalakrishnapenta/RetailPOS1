@@ -2,7 +2,8 @@ import { Component, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { ApiService } from '../../../core/services/api.service';
+import { AuthApiService } from '../../../core/services/auth-api.service';
+import { User } from '../../../core/models/models';
 
 declare var google: any;
 
@@ -36,7 +37,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
 
 
   constructor(
-    private api: ApiService,
+    private authApi: AuthApiService,
     private router: Router
   ) { }
 
@@ -94,7 +95,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
   handleCredentialResponse(response: any) {
     this.authError = '';
     this.isLoading = true;
-    this.api.googleLogin({ idToken: response.credential }).subscribe({
+    this.authApi.googleLogin({ idToken: response.credential }).subscribe({
       next: (res: any) => {
         this.isLoading = false;
         this.handleAuthResponse(res);
@@ -111,7 +112,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
     this.authError = '';
     this.isLoading = true;
     if (this.showOtp) {
-      this.api.verifyLoginOtp({ email: this.email, otp: this.otp }).subscribe({
+      this.authApi.verifyLoginOtp({ email: this.email, otp: this.otp }).subscribe({
         next: (res: any) => {
           this.isLoading = false;
           this.handleAuthResponse(res);
@@ -123,7 +124,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
       });
     } else {
       this.handleRememberMe();
-      this.api.login({ email: this.email, password: this.password }).subscribe({
+      this.authApi.login({ email: this.email, password: this.password }).subscribe({
         next: (res: any) => {
           this.isLoading = false;
           if (res.message === 'OTP_SENT') {
@@ -144,7 +145,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
     if (this.resendCooldown > 0) return;
     this.authError = '';
 
-    this.api.resendLoginOtp(this.email).subscribe({
+    this.authApi.resendLoginOtp(this.email).subscribe({
       next: (res: any) => {
         this.startCooldown();
       },
@@ -202,7 +203,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
       this.resetError = 'Please enter your email.';
       return;
     }
-    this.api.sendPasswordResetOtp(email).subscribe({
+    this.authApi.sendPasswordResetOtp(email).subscribe({
       next: () => {
         this.resetOtpCooldown = 60;
         if (this.resetCooldownInterval) clearInterval(this.resetCooldownInterval);
@@ -227,7 +228,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
       return;
     }
     this.resetBusy = true;
-    this.api.resetPassword({ email, otp: this.resetOtp, newPassword: this.resetPassword }).subscribe({
+    this.authApi.resetPassword({ email, otp: this.resetOtp, newPassword: this.resetPassword }).subscribe({
       next: () => {
         this.resetBusy = false;
         this.showForgotPassword = false;

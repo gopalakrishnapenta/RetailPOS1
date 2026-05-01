@@ -83,4 +83,9 @@ namespace RetailPOS.Contracts
         int ReturnId { get; }
         string NewStatus { get; }
     }
+
+    public interface CheckoutTimeout
+    {
+        int OrderId { get; }
+    }
 }

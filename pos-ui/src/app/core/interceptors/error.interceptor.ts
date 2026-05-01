@@ -1,6 +1,7 @@
 import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { AuthService } from '../services/auth.service';
+import { NotificationService } from '../services/notification.service';
 import { catchError, switchMap } from 'rxjs/operators';
 import { throwError, BehaviorSubject, filter, take } from 'rxjs';
 
@@ -9,11 +10,30 @@ const refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null)
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
+  const notificationService = inject(NotificationService);
 
   return next(req).pipe(
     catchError((error) => {
-      if (error instanceof HttpErrorResponse && error.status === 401 && !req.url.includes('auth/login')) {
-        return handle401Error(req, next, authService);
+      if (error instanceof HttpErrorResponse) {
+        if (error.status === 401 && !req.url.includes('auth/login')) {
+          return handle401Error(req, next, authService);
+        }
+
+        // Global error handling for other statuses
+        let errorMessage = 'An unexpected error occurred.';
+        if (error.error && typeof error.error === 'string') {
+          errorMessage = error.error;
+        } else if (error.error && error.error.message) {
+          errorMessage = error.error.message;
+        } else if (error.status === 0) {
+          errorMessage = 'Cannot connect to the server. Please check your internet connection.';
+        } else if (error.status === 404) {
+          errorMessage = 'The requested resource was not found.';
+        } else if (error.status >= 500) {
+          errorMessage = 'The server encountered an error. Please try again later.';
+        }
+
+        notificationService.error(errorMessage);
       }
       return throwError(() => error);
     })

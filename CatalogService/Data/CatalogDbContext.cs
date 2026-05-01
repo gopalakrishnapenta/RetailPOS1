@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using CatalogService.Models;
 using CatalogService.Interfaces;
+using MassTransit;
 
 namespace CatalogService.Data
 {
@@ -20,12 +21,26 @@ namespace CatalogService.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // ── MassTransit Outbox ───────────────────────────────────────────────────
+            modelBuilder.AddInboxStateEntity();
+            modelBuilder.AddOutboxMessageEntity();
+            modelBuilder.AddOutboxStateEntity();
+
             modelBuilder.Entity<Product>()
                 .HasIndex(p => p.Sku)
                 .IsUnique();
 
             modelBuilder.Entity<Product>()
                 .HasIndex(p => p.Barcode);
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => new { p.StoreId, p.IsActive });
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.Name);
+
+            modelBuilder.Entity<Category>()
+                .HasIndex(c => new { c.StoreId, c.IsActive });
 
             modelBuilder.Entity<Product>()
                 .HasOne(p => p.Category)

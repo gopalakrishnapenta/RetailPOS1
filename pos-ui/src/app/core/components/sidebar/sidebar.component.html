@@ -64,10 +64,13 @@
 
   <div class="sidebar-footer">
     <div class="theme-toggle">
-      <span class="theme-label">Theme</span>
-      <button class="theme-btn" (click)="toggleTheme()">
-        {{ theme === 'dark' ? 'Dark' : 'Light' }}
-      </button>
+      <div class="toggle-container" (click)="toggleTheme()" [class.dark]="theme === 'dark'">
+        <div class="toggle-track">
+          <div class="icon sun">☀️</div>
+          <div class="icon moon">🌙</div>
+          <div class="toggle-thumb"></div>
+        </div>
+      </div>
     </div>
     <div class="user-profile">
       <div class="avatar">{{ userName[0]?.toUpperCase() }}</div>

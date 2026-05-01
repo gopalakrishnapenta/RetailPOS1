@@ -11,6 +11,7 @@ using OrdersService.Middleware;
 using RetailPOS.Common.Authorization;
 using Microsoft.OpenApi.Models;
 using RetailPOS.Common.Logging;
+using RetailPOS.Common.Middleware;
 using Serilog;
 
 JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -42,6 +43,15 @@ builder.ConfigureSerilog("OrdersService");
 
 builder.Services.AddMassTransit(x =>
 {
+    /* 
+    // Configure EF Core Outbox
+    x.AddEntityFrameworkOutbox<OrdersDbContext>(o =>
+    {
+        o.UseSqlServer();
+        o.UseBusOutbox();
+    });
+    */
+
     x.AddConsumer<OrdersService.Consumers.ReturnInitiatedConsumer>();
     x.AddConsumer<OrdersService.Consumers.OrderReturnedConsumer>();
     x.AddConsumer<OrdersService.Consumers.SagaOrderCommandsConsumer>();
@@ -55,13 +65,9 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
-        var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
-        var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
-
-        cfg.Host(rabbitHost, "/", h => {
-            h.Username(rabbitUser);
-            h.Password(rabbitPass);
+        cfg.Host(builder.Configuration["RabbitMQ:Host"] ?? "localhost", "/", h => {
+            h.Username(builder.Configuration["RabbitMQ:Username"] ?? "guest");
+            h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
         });
         
         cfg.ConfigureEndpoints(context);
@@ -118,15 +124,21 @@ builder.Services.AddScoped<ITenantProvider, TenantProvider>();
 
 builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options => {
+        var jwtKey = builder.Configuration["Jwt:Key"];
+        if (string.IsNullOrEmpty(jwtKey))
+        {
+            throw new InvalidOperationException("[SECURITY] Fatal Error: Jwt:Key is missing from configuration.");
+        }
+
         options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
         {
             ValidateIssuer = true, 
             ValidateAudience = true, 
             ValidateLifetime = true, 
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "RetailPOS", 
             ValidAudiences = builder.Configuration.GetSection("Jwt:Audiences").Get<string[]>() ?? new[] { builder.Configuration["Jwt:Audience"] ?? "OrdersService" },
-            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "super_secret_key_1234567890_pos_system"))
+            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwtKey))
         };
     });
 
@@ -170,6 +182,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseExceptionMiddleware();
 // app.UseCors(); removed to centralize CORS in ApiGateway
 app.UseAuthentication();

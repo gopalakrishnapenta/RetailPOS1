@@ -51,7 +51,7 @@
 .premium-select {
   appearance: none;
   background: var(--bg-tertiary);
-  border: 1.5px solid #e5e7eb;
+  border: 1.5px solid var(--border-color);
   border-radius: 8px;
   padding: 8px 36px 8px 12px;
   font-size: 0.9rem;
@@ -63,7 +63,7 @@
 }
 
 .premium-select:hover {
-  border-color: #3b82f6;
+  border-color: var(--accent-primary);
   background: var(--bg-secondary);
 }
 
@@ -311,7 +311,7 @@
 
 .receipt-header {
   text-align: center;
-  border-bottom: 2px dashed #e5e7eb;
+  border-bottom: 2px dashed var(--border-color);
   padding-bottom: 20px;
   margin-bottom: 20px;
 }

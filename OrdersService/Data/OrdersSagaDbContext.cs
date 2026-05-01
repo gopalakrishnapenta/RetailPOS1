@@ -25,6 +25,8 @@ namespace OrdersService.Data
         {
             entity.Property(x => x.CurrentState).HasMaxLength(64);
             entity.Property(x => x.CustomerMobile).HasMaxLength(15);
+            entity.Property(x => x.TotalAmount).HasPrecision(18, 2);
+            entity.Property(x => x.TaxAmount).HasPrecision(18, 2);
             
             // Map the items list as JSON or a separate table. 
             // For simplicity in SQL Server 2019+, we'll use string conversion or just ignore for now if not strictly needed in the state.

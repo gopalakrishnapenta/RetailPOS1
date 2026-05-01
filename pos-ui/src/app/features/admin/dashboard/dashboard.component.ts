@@ -1,10 +1,13 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiService } from '../../../core/services/api.service';
+import { AuthApiService } from '../../../core/services/auth-api.service';
+import { AdminApiService } from '../../../core/services/admin-api.service';
+import { OrderApiService } from '../../../core/services/order-api.service';
 import { SignalrService } from '../../../core/services/signalr.service';
 import { Subject, timer } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { Store, DashboardStats, Bill } from '../../../core/models/models';
 
 import { RouterModule } from '@angular/router';
 
@@ -24,7 +27,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     salesChangePercent: 0
   };
   
-  stores: any[] = [];
+  stores: Store[] = [];
   selectedStoreId: number = 0;
   storeRevenue: any[] = [];
   alerts: any[] = [];
@@ -35,11 +38,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   // Receipt Modal State
   showReceiptModal = false;
-  selectedBill: any = null;
+  selectedBill: Bill | null = null;
   isReceiptLoading = false;
 
   constructor(
-    private api: ApiService, 
+    private authApi: AuthApiService,
+    private adminApi: AdminApiService,
+    private orderApi: OrderApiService,
     private signalr: SignalrService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -74,8 +79,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.isAdmin = role.includes('admin');
 
     if (this.isAdmin) {
-      this.api.getStores().subscribe({
-        next: (data: any[]) => {
+      this.authApi.getStores().subscribe({
+        next: (data: Store[]) => {
           this.stores = data;
           this.loadStats();
         },
@@ -89,7 +94,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   loadStats(isSilent: boolean = false) {
     if (!isSilent) this.isLoading = true;
-    this.api.getDashboardStats(this.selectedStoreId).subscribe({
+    this.adminApi.getDashboardStats(this.selectedStoreId).subscribe({
       next: (data: any) => {
         console.log('[DASHBOARD] Stats data received:', data);
         this.stats = data;
@@ -126,14 +131,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.selectedBill = null;
 
     console.log('Dashboard: Requesting bill details for ID:', id);
-    this.api.getBillDetails(id).subscribe({
-      next: (data: any) => {
+    this.orderApi.getBillDetails(id).subscribe({
+      next: (data: Bill) => {
         console.log('Dashboard: Received bill details:', data);
         this.isReceiptLoading = false;
         
         if (data) {
           // Normalize items property (handle both camelCase and PascalCase)
-          data.items = data.items || data.Items || [];
+          data.items = data.items || [];
           this.selectedBill = data;
         } else {
           console.warn('Dashboard: Bill details empty.');

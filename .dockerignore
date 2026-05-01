@@ -1,0 +1,12 @@
+**/.git
+**/.vs
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/out
+**/*.user
+**/*.lock.json
+.dockerignore
+docker-compose.yml
+docker-compose.override.yml
