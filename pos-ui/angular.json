@@ -79,6 +79,12 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "headers": {
+              "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
+              "Cross-Origin-Embedder-Policy": "credentialless"
+            }
+          },
           "configurations": {
             "production": {
               "buildTarget": "pos-ui:build:production"

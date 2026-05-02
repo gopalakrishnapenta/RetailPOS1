@@ -68,7 +68,7 @@ namespace OrdersService.Data.Migrations
 
                     b.HasIndex("Delivered");
 
-                    b.ToTable("InboxState");
+                    b.ToTable("InboxState", (string)null);
                 });
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.OutboxMessage", b =>
@@ -161,7 +161,7 @@ namespace OrdersService.Data.Migrations
                         .IsUnique()
                         .HasFilter("[InboxMessageId] IS NOT NULL AND [InboxConsumerId] IS NOT NULL");
 
-                    b.ToTable("OutboxMessage");
+                    b.ToTable("OutboxMessage", (string)null);
                 });
 
             modelBuilder.Entity("MassTransit.EntityFrameworkCoreIntegration.OutboxState", b =>
@@ -191,7 +191,7 @@ namespace OrdersService.Data.Migrations
 
                     b.HasIndex("Created");
 
-                    b.ToTable("OutboxState");
+                    b.ToTable("OutboxState", (string)null);
                 });
 
             modelBuilder.Entity("OrdersService.Models.Bill", b =>
@@ -245,7 +245,7 @@ namespace OrdersService.Data.Migrations
 
                     b.HasIndex("StoreId", "Date");
 
-                    b.ToTable("Bills");
+                    b.ToTable("Bills", (string)null);
                 });
 
             modelBuilder.Entity("OrdersService.Models.BillItem", b =>
@@ -283,7 +283,7 @@ namespace OrdersService.Data.Migrations
 
                     b.HasIndex("BillId");
 
-                    b.ToTable("BillItems");
+                    b.ToTable("BillItems", (string)null);
                 });
 
             modelBuilder.Entity("OrdersService.Models.Customer", b =>
@@ -313,7 +313,7 @@ namespace OrdersService.Data.Migrations
 
                     b.HasIndex("Mobile");
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customers", (string)null);
                 });
 
             modelBuilder.Entity("OrdersService.Models.BillItem", b =>

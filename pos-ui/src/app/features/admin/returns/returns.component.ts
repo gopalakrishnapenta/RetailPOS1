@@ -14,6 +14,8 @@ interface StoreReturnGroup {
   totalCount: number;
   pendingCount: number;
   totalRefund: number;
+  currentPage: number;
+  pageSize: number;
 }
 
 @Component({
@@ -96,51 +98,73 @@ interface StoreReturnGroup {
 
           <!-- Returns Table (Collapsible) -->
           <div class="store-body" [class.expanded]="group.isExpanded">
-            <table class="returns-table">
-              <thead>
-                <tr>
-                  <th>Return #</th>
-                  <th>Order #</th>
-                  <th>Customer</th>
-                  <th>Refund</th>
-                  <th>Reason</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                  <th class="text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let ret of group.returns" class="animate-fade-in">
-                  <td><span class="badge-id">#{{ ret.id }}</span></td>
-                  <td><span class="badge-order">Bill #{{ ret.originalBillId }}</span></td>
-                  <td>
-                    <span class="customer-mobile">📱 {{ ret.customerMobile || '—' }}</span>
-                  </td>
-                  <td class="amount-cell">{{ ret.refundAmount | currency }}</td>
-                  <td class="reason-cell" [title]="ret.reason">{{ ret.reason }}</td>
-                  <td>
-                    <span class="status-badge" [ngClass]="getStatusClass(ret.status)">
-                      {{ ret.status }}
-                    </span>
-                  </td>
-                  <td class="date-cell">{{ ret.date | date:'dd MMM, hh:mm a' }}</td>
-                  <td class="text-center">
-                    <div class="action-group" *ngIf="ret.status === 'Initiated'">
-                      <button class="action-btn approve-btn" (click)="onApprove(ret)" title="Approve Return">
-                        ✅ Approve
-                      </button>
-                      <button class="action-btn reject-btn" (click)="onReject(ret)" title="Reject Return">
-                        ❌ Reject
-                      </button>
-                    </div>
-                    <div class="approval-note" *ngIf="ret.status !== 'Initiated' && ret.managerApprovalNote">
-                      <small class="note-text">💬 {{ ret.managerApprovalNote }}</small>
-                    </div>
-                    <span class="finalized-label" *ngIf="ret.status !== 'Initiated' && !ret.managerApprovalNote">—</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="table-scroll">
+              <table class="returns-table">
+                <thead>
+                  <tr>
+                    <th>Return #</th>
+                    <th>Order #</th>
+                    <th>Customer</th>
+                    <th>Refund</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th class="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let ret of getPaginatedReturns(group)" class="animate-fade-in">
+                    <td><span class="badge-id">#{{ ret.id }}</span></td>
+                    <td><span class="badge-order">Bill #{{ ret.originalBillId }}</span></td>
+                    <td>
+                      <span class="customer-mobile">📱 {{ ret.customerMobile || '—' }}</span>
+                    </td>
+                    <td class="amount-cell">{{ ret.refundAmount | currency:'INR' }}</td>
+                    <td class="reason-cell" [title]="ret.reason">{{ ret.reason }}</td>
+                    <td>
+                      <span class="status-badge" [ngClass]="getStatusClass(ret.status)">
+                        {{ ret.status }}
+                      </span>
+                    </td>
+                    <td class="date-cell">{{ ret.date | date:'dd MMM, hh:mm a' }}</td>
+                    <td class="text-center">
+                      <div class="action-group" *ngIf="ret.status === 'Initiated'">
+                        <button class="action-btn approve-btn" (click)="onApprove(ret)" title="Approve Return">
+                          ✅ Approve
+                        </button>
+                        <button class="action-btn reject-btn" (click)="onReject(ret)" title="Reject Return">
+                          ❌ Reject
+                        </button>
+                      </div>
+                      <div class="approval-note" *ngIf="ret.status !== 'Initiated' && ret.managerApprovalNote">
+                        <small class="note-text">💬 {{ ret.managerApprovalNote }}</small>
+                      </div>
+                      <span class="finalized-label" *ngIf="ret.status !== 'Initiated' && !ret.managerApprovalNote">—</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div class="pagination-footer" *ngIf="group.totalCount > group.pageSize">
+              <div class="p-info">
+                Showing <strong>{{ (group.currentPage - 1) * group.pageSize + 1 }}</strong> - 
+                <strong>{{ Math.min(group.currentPage * group.pageSize, group.totalCount) }}</strong> of 
+                <strong>{{ group.totalCount }}</strong> returns
+              </div>
+              <div class="p-controls">
+                <button class="p-btn" [disabled]="group.currentPage === 1" (click)="changePage(group, -1)">
+                  <span class="icon">‹</span> Prev
+                </button>
+                <div class="p-pages">
+                  Page <strong>{{ group.currentPage }}</strong> of <strong>{{ getTotalPages(group) }}</strong>
+                </div>
+                <button class="p-btn" [disabled]="group.currentPage === getTotalPages(group)" (click)="changePage(group, 1)">
+                  Next <span class="icon">›</span>
+                </button>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -284,6 +308,26 @@ interface StoreReturnGroup {
     @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     .animate-slide-up { animation: slideUp 0.25s ease; }
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Pagination ── */
+    .pagination-footer { 
+      padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; 
+      background: var(--bg-tertiary); border-top: 1px solid var(--border-color); 
+    }
+    .p-info { font-size: 0.85rem; color: var(--text-muted); }
+    .p-info strong { color: var(--text-primary); }
+    .p-controls { display: flex; align-items: center; gap: 16px; }
+    .p-pages { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+    .p-pages strong { color: var(--text-primary); }
+    .p-btn { 
+      display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; 
+      border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); font-size: 0.8rem; 
+      font-weight: 700; cursor: pointer; transition: 0.2s;
+    }
+    .p-btn:hover:not(:disabled) { border-color: #3b82f6; color: #3b82f6; background: rgba(59,130,246,0.04); }
+    .p-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .p-btn .icon { font-size: 1.1rem; line-height: 1; }
+    .table-scroll { overflow-x: auto; }
   `]
 })
 export class ReturnsManagementComponent implements OnInit, OnDestroy {
@@ -292,6 +336,7 @@ export class ReturnsManagementComponent implements OnInit, OnDestroy {
   storeGroups: StoreReturnGroup[] = [];
   allStores: any[] = [];
   isLoading = true;
+  Math = Math;
 
   // Modal
   showNoteModal = false;
@@ -371,7 +416,9 @@ export class ReturnsManagementComponent implements OnInit, OnDestroy {
           isExpanded: false,
           totalCount: 0,
           pendingCount: 0,
-          totalRefund: 0
+          totalRefund: 0,
+          currentPage: 1,
+          pageSize: 10
         });
       }
       const group = groupMap.get(sid)!;
@@ -396,6 +443,22 @@ export class ReturnsManagementComponent implements OnInit, OnDestroy {
 
   toggleGroup(group: StoreReturnGroup) {
     group.isExpanded = !group.isExpanded;
+  }
+
+  getPaginatedReturns(group: StoreReturnGroup) {
+    const start = (group.currentPage - 1) * group.pageSize;
+    return group.returns.slice(start, start + group.pageSize);
+  }
+
+  getTotalPages(group: StoreReturnGroup) {
+    return Math.ceil(group.totalCount / group.pageSize);
+  }
+
+  changePage(group: StoreReturnGroup, delta: number) {
+    const next = group.currentPage + delta;
+    if (next >= 1 && next <= this.getTotalPages(group)) {
+      group.currentPage = next;
+    }
   }
 
   getStatusClass(status: string): string {

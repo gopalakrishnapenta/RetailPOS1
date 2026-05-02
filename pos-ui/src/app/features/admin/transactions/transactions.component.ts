@@ -11,6 +11,8 @@ interface StoreTransactionGroup {
   totalAmount: number;
   returnsAmount: number;
   count: number;
+  currentPage: number;
+  pageSize: number;
 }
 
 @Component({
@@ -117,7 +119,7 @@ interface StoreTransactionGroup {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let bill of group.bills" 
+                  <tr *ngFor="let bill of getPaginatedBills(group)" 
                       (click)="viewBillReceipt(bill.id)"
                       [class.row-returned]="normalizeStatus(bill.status) === 'returned'"
                       [class.row-pending]="normalizeStatus(bill.status) === 'pending'"
@@ -145,6 +147,26 @@ interface StoreTransactionGroup {
                   </tr>
                 </tbody>
               </table>
+            </div>
+
+            <!-- Pagination Footer -->
+            <div class="pagination-footer" *ngIf="group.count > group.pageSize">
+              <div class="p-info">
+                Showing <strong>{{ (group.currentPage - 1) * group.pageSize + 1 }}</strong> - 
+                <strong>{{ Math.min(group.currentPage * group.pageSize, group.count) }}</strong> of 
+                <strong>{{ group.count }}</strong> transactions
+              </div>
+              <div class="p-controls">
+                <button class="p-btn" [disabled]="group.currentPage === 1" (click)="changePage(group, -1)">
+                  <span class="icon">‹</span> Prev
+                </button>
+                <div class="p-pages">
+                  Page <strong>{{ group.currentPage }}</strong> of <strong>{{ getTotalPages(group) }}</strong>
+                </div>
+                <button class="p-btn" [disabled]="group.currentPage === getTotalPages(group)" (click)="changePage(group, 1)">
+                  Next <span class="icon">›</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -336,6 +358,25 @@ interface StoreTransactionGroup {
 
     .empty-state { padding: 64px; text-align: center; color: #94a3b8; }
     .empty-icon { font-size: 3rem; margin-bottom: 16px; display: block; }
+
+    /* Pagination */
+    .pagination-footer { 
+      padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; 
+      background: #f8fafc; border-top: 1px solid #f1f5f9; 
+    }
+    .p-info { font-size: 0.85rem; color: #64748b; }
+    .p-info strong { color: #1e293b; }
+    .p-controls { display: flex; align-items: center; gap: 16px; }
+    .p-pages { font-size: 0.85rem; color: #64748b; font-weight: 600; }
+    .p-pages strong { color: #1e293b; }
+    .p-btn { 
+      display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; 
+      border: 1px solid #e2e8f0; background: white; color: #1e293b; font-size: 0.8rem; 
+      font-weight: 700; cursor: pointer; transition: 0.2s;
+    }
+    .p-btn:hover:not(:disabled) { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; }
+    .p-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .p-btn .icon { font-size: 1.1rem; line-height: 1; }
     
     .animate-fade-in { animation: fadeIn 0.4s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -347,6 +388,7 @@ export class TransactionsComponent implements OnInit {
   bills: any[] = [];
   allStores: any[] = [];
   storeGroups: StoreTransactionGroup[] = [];
+  Math = Math;
   
   searchQuery = '';
   statusFilter = 'all';
@@ -418,7 +460,9 @@ export class TransactionsComponent implements OnInit {
           isExpanded: false,
           totalAmount: 0,
           returnsAmount: 0,
-          count: 0
+          count: 0,
+          currentPage: 1,
+          pageSize: 10
         });
       }
       
@@ -447,6 +491,22 @@ export class TransactionsComponent implements OnInit {
 
   toggleGroup(group: StoreTransactionGroup) {
     group.isExpanded = !group.isExpanded;
+  }
+
+  getPaginatedBills(group: StoreTransactionGroup) {
+    const start = (group.currentPage - 1) * group.pageSize;
+    return group.bills.slice(start, start + group.pageSize);
+  }
+
+  getTotalPages(group: StoreTransactionGroup) {
+    return Math.ceil(group.count / group.pageSize);
+  }
+
+  changePage(group: StoreTransactionGroup, delta: number) {
+    const next = group.currentPage + delta;
+    if (next >= 1 && next <= this.getTotalPages(group)) {
+      group.currentPage = next;
+    }
   }
 
   setStatusFilter(status: string) {
