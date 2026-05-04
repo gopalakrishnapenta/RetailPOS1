@@ -199,4 +199,8 @@ export class ApiService {
   chatWithAI(message: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/ai/chat`, { message });
   }
+
+  syncCatalogProducts(): Observable<any> {
+    return this.http.post(`${this.baseUrl}/catalog/sync/products`, {});
+  }
 }

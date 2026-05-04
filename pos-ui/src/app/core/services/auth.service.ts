@@ -44,6 +44,20 @@ export class AuthService {
     );
   }
 
+  verifyLoginOtp(verifyDto: any) {
+    return this.authApi.verifyLoginOtp(verifyDto).pipe(
+      tap((response: any) => {
+        if (response && response.token) {
+          const authData: User = {
+            ...response,
+            role: response.role || 'Staff'
+          };
+          this.setSession(authData);
+        }
+      })
+    );
+  }
+
   googleLogin(googleData: any) {
     return this.authApi.googleLogin(googleData).pipe(
       tap((response: any) => {

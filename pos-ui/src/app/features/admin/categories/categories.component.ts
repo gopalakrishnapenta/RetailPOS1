@@ -107,38 +107,40 @@ import { ApiService } from '../../../core/services/api.service';
     </div>
   `,
   styles: [`
-    .admin-container { padding: var(--spacing-xl); display: flex; flex-direction: column; gap: var(--spacing-xl); }
+    .admin-container { padding: var(--spacing-xl); display: flex; flex-direction: column; gap: var(--spacing-xl); background: var(--bg-primary); min-height: 100vh; }
     .admin-header { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-lg); flex-wrap: wrap; gap: 16px; }
-    .table-section { padding: 0; overflow: hidden; }
+    .table-section { padding: 0; overflow: hidden; background: var(--bg-secondary); border-radius: var(--radius-lg); }
     
     .actions { display: flex; gap: 12px; align-items: center; }
     .search-box { position: relative; min-width: 250px; }
     .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
-    .search-input { padding-left: 36px !important; }
+    .search-input { padding-left: 36px !important; background: var(--bg-tertiary) !important; color: var(--text-primary) !important; border-color: var(--border-color) !important; }
 
     .pagination-controls { display: flex; justify-content: center; align-items: center; gap: 16px; padding: var(--spacing-md); margin-top: -10px; }
     .page-info { font-weight: 600; color: var(--text-secondary); font-size: 0.875rem; }
 
     .admin-table { width: 100%; border-collapse: collapse; text-align: left; }
     .admin-table th { padding: var(--spacing-md) var(--spacing-lg); background: var(--bg-tertiary); color: var(--text-secondary); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
-    .admin-table td { padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border-color); font-size: 0.875rem; vertical-align: middle; }
-    .admin-table tr:hover { background: rgba(248, 250, 252, 0.5); }
+    .admin-table td { padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border-color); font-size: 0.875rem; vertical-align: middle; color: var(--text-primary); }
+    .admin-table tr:hover td { background: var(--bg-tertiary); }
     
     .action-buttons { display: flex; gap: 8px; justify-content: center; }
-    .btn-icon { width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .btn-icon { width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
     .btn-icon.edit:hover { background: var(--bg-tertiary); color: var(--accent-primary); border-color: var(--accent-primary); }
-    .btn-icon.delete:hover { background: #fef2f2; color: var(--accent-danger); border-color: var(--accent-danger); }
+    .btn-icon.delete:hover { background: rgba(239, 68, 68, 0.1); color: var(--accent-danger); border-color: var(--accent-danger); }
     
-    .inactive-row { opacity: 0.5; background-color: var(--bg-secondary); }
-    .inactive-row td { color: var(--text-muted); }
+    .inactive-row { opacity: 0.5; }
+    .inactive-row td { color: var(--text-muted) !important; }
     
     /* Modal Styles */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-content { width: 100%; max-width: 450px; padding: 24px; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { width: 100%; max-width: 450px; padding: 32px; background: var(--bg-secondary); border-radius: 20px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
-    .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted); }
+    .modal-header h3 { margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-primary); }
+    .close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: var(--text-muted); line-height: 1; transition: color 0.2s; }
+    .close-btn:hover { color: var(--text-primary); }
     
-    .modal-footer { margin-top: 32px; display: flex; justify-content: flex-end; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border-color); }
+    .modal-footer { margin-top: 32px; display: flex; justify-content: flex-end; gap: 12px; padding-top: 20px; border-top: 1px solid var(--border-color); }
     
     .mb-4 { margin-bottom: 1rem; }
     .text-center { text-align: center; }
@@ -146,9 +148,13 @@ import { ApiService } from '../../../core/services/api.service';
     .text-secondary { color: var(--text-secondary); }
     .text-primary { color: var(--accent-primary); }
     
-    textarea.input-field { resize: none; padding-top: 12px; }
+    textarea.input-field { resize: none; padding-top: 12px; min-height: 120px; background: var(--bg-tertiary); }
     
-    .checkbox-container { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.875rem; margin-top: 16px; }
+    .checkbox-container { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 0.875rem; margin-top: 20px; font-weight: 600; color: var(--text-primary); }
+    .checkbox-container input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent-primary); }
+
+    .form-container { display: flex; flex-direction: column; gap: 16px; }
+    .form-group label { display: block; font-size: 0.75rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
   `]
 })
 export class CategoriesComponent implements OnInit {

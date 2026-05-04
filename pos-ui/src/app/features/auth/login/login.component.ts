@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthApiService } from '../../../core/services/auth-api.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models/models';
 
 declare var google: any;
@@ -32,17 +33,34 @@ export class LoginComponent implements OnInit, AfterViewInit {
   resetOtpCooldown = 0;
   showResetPassword = false;
   isLoading = false;
+  theme: 'light' | 'dark' = 'light';
   private cooldownInterval: any;
   private resetCooldownInterval: any;
 
 
   constructor(
     private authApi: AuthApiService,
+    private authService: AuthService,
     private router: Router
   ) { }
 
   ngOnInit() {
     this.loadRememberedEmail();
+    this.loadTheme();
+  }
+
+  private loadTheme() {
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark' || saved === 'light') {
+      this.theme = saved;
+    }
+    document.documentElement.setAttribute('data-theme', this.theme);
+  }
+
+  toggleTheme() {
+    this.theme = this.theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', this.theme);
+    document.documentElement.setAttribute('data-theme', this.theme);
   }
 
   ngAfterViewInit() {
@@ -95,10 +113,11 @@ export class LoginComponent implements OnInit, AfterViewInit {
   handleCredentialResponse(response: any) {
     this.authError = '';
     this.isLoading = true;
-    this.authApi.googleLogin({ idToken: response.credential }).subscribe({
+    this.authService.googleLogin({ idToken: response.credential }).subscribe({
       next: (res: any) => {
         this.isLoading = false;
-        this.handleAuthResponse(res);
+        // The service already handles session setup
+        this.handleAuthNavigation(res.data);
       },
       error: (err) => {
         this.isLoading = false;
@@ -112,10 +131,10 @@ export class LoginComponent implements OnInit, AfterViewInit {
     this.authError = '';
     this.isLoading = true;
     if (this.showOtp) {
-      this.authApi.verifyLoginOtp({ email: this.email, otp: this.otp }).subscribe({
+      this.authService.verifyLoginOtp({ email: this.email, otp: this.otp }).subscribe({
         next: (res: any) => {
           this.isLoading = false;
-          this.handleAuthResponse(res);
+          this.handleAuthNavigation(res);
         },
         error: (err) => {
           this.isLoading = false;
@@ -124,13 +143,13 @@ export class LoginComponent implements OnInit, AfterViewInit {
       });
     } else {
       this.handleRememberMe();
-      this.authApi.login({ email: this.email, password: this.password }).subscribe({
+      this.authService.login({ email: this.email, password: this.password }).subscribe({
         next: (res: any) => {
           this.isLoading = false;
           if (res.message === 'OTP_SENT') {
             this.router.navigate(['/otp-verification'], { queryParams: { email: this.email } });
           } else {
-            this.handleAuthResponse(res.data);
+            this.handleAuthNavigation(res.data);
           }
         },
         error: (err) => {
@@ -166,10 +185,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
     }, 1000);
   }
 
-  private handleAuthResponse(data: any) {
-    localStorage.setItem('token', data.token || data.Token || '');
-    localStorage.setItem('user', JSON.stringify(data));
-
+  private handleAuthNavigation(data: any) {
     const role = data.role || data.Role || '';
     const token = data.token || data.Token || '';
 

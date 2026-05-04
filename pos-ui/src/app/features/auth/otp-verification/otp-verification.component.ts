@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-otp-verification',
@@ -11,12 +12,17 @@ import { ApiService } from '../../../core/services/api.service';
   template: `
     <div class="auth-container">
       <div class="auth-card glass-panel">
-        <div class="theme-toggle">
-          <button type="button" class="theme-btn" (click)="setTheme('light')" [class.active]="theme === 'light'">Light</button>
-          <button type="button" class="theme-btn" (click)="setTheme('dark')" [class.active]="theme === 'dark'">Dark</button>
+        <div class="theme-toggle-header">
+          <div class="theme-switch" (click)="toggleTheme()" [class.dark]="theme === 'dark'">
+            <div class="toggle-track">
+              <div class="icon sun">☀️</div>
+              <div class="icon moon">🌙</div>
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
         </div>
         <div class="auth-header">
-          <div class="logo">N</div>
+          <div class="logo">POS</div>
           <h1>Verify Identity</h1>
           <p>We've sent a 6-digit code to <strong>{{ email }}</strong></p>
         </div>
@@ -64,8 +70,8 @@ import { ApiService } from '../../../core/services/api.service';
     }
     .auth-card {
       width: 100%;
-      max-width: 400px;
-      padding: 40px;
+      max-width: 440px;
+      padding: 48px;
       border-radius: 24px;
       background: var(--panel-bg);
       backdrop-filter: blur(18px);
@@ -73,68 +79,56 @@ import { ApiService } from '../../../core/services/api.service';
       box-shadow: var(--shadow-lg);
       text-align: center;
       color: var(--text-primary);
+      position: relative;
     }
-    .theme-toggle {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-bottom: 16px;
+    .theme-toggle-header {
+      position: absolute;
+      top: 24px;
+      right: 24px;
     }
-    .theme-btn {
-      border: 1px solid var(--border-color);
-      background: var(--bg-secondary);
-      color: var(--text-secondary);
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .theme-btn.active {
-      background: #3b82f6;
-      color: white;
-      border-color: #3b82f6;
-    }
+    
     .logo {
-      width: 48px;
-      height: 48px;
-      background: #3b82f6;
-      border-radius: 12px;
+      width: 56px;
+      height: 56px;
+      background: var(--accent-primary);
+      color: white;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 800;
-      font-size: 24px;
+      font-size: 16px;
       margin: 0 auto 24px;
-      box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+      box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
     }
-    h1 { font-size: 24px; margin-bottom: 8px; font-weight: 700; }
+    h1 { font-size: 24px; margin-bottom: 8px; font-weight: 800; color: var(--text-primary); }
     p { color: var(--text-secondary); font-size: 14px; margin-bottom: 32px; }
-    strong { color: #3b82f6; }
+    strong { color: var(--accent-primary); }
     .form-group { text-align: left; margin-bottom: 24px; }
-    label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; color: var(--text-muted); }
+    label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; color: var(--text-muted); }
     input {
       width: 100%;
       background: var(--bg-secondary);
       border: 1px solid var(--border-color);
       border-radius: 12px;
-      padding: 14px;
+      padding: 16px;
       color: var(--text-primary);
-      font-size: 20px;
+      font-size: 24px;
       text-align: center;
-      letter-spacing: 0.5em;
+      letter-spacing: 0.4em;
+      font-weight: 700;
       transition: all 0.2s;
     }
-    input:focus { border-color: #3b82f6; outline: none; background: var(--bg-tertiary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+    input:focus { border-color: var(--accent-primary); outline: none; background: var(--bg-tertiary); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
     .helper-text { display: block; margin-top: 8px; font-size: 12px; color: var(--text-muted); }
-    .btn-block { width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; font-size: 16px; border: none; cursor: pointer; transition: all 0.2s; }
-    .btn-primary { background: #3b82f6; color: white; }
-    .btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-block { width: 100%; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 16px; border: none; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: var(--accent-primary); color: white; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-secondary); transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
     .auth-footer { margin-top: 32px; font-size: 14px; }
-    .link-btn { background: none; border: none; color: #3b82f6; font-weight: 600; cursor: pointer; padding: 0; }
+    .link-btn { background: none; border: none; color: var(--accent-primary); font-weight: 700; cursor: pointer; padding: 0; }
     .link-btn:disabled { color: var(--text-muted); cursor: not-allowed; }
-    .back-link { display: block; margin-top: 16px; color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+    .back-link { display: block; margin-top: 16px; color: var(--text-muted); text-decoration: none; transition: color 0.2s; font-weight: 600; }
     .back-link:hover { color: var(--text-primary); }
   `]
 })
@@ -148,7 +142,8 @@ export class OtpVerificationComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private api: ApiService
+    private api: ApiService,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
@@ -161,26 +156,23 @@ export class OtpVerificationComponent implements OnInit {
     document.documentElement.setAttribute('data-theme', this.theme);
   }
 
-  setTheme(mode: 'light' | 'dark') {
-    this.theme = mode;
-    localStorage.setItem('theme', mode);
-    document.documentElement.setAttribute('data-theme', mode);
+  toggleTheme() {
+    this.theme = this.theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', this.theme);
+    document.documentElement.setAttribute('data-theme', this.theme);
   }
 
   verifyOtp() {
     this.isProcessing = true;
-    this.api.verifyLoginOtp({ email: this.email, otp: this.otp }).subscribe({
+    this.authService.verifyLoginOtp({ email: this.email, otp: this.otp }).subscribe({
       next: (res) => {
-        localStorage.setItem('token', res.token);
-        localStorage.setItem('user', JSON.stringify(res));
-        
         const rawRole = res.role || res.Role || '';
         const role = rawRole.toLowerCase();
 
         if (role.includes('admin')) {
           this.router.navigate(['/admin/dashboard']);
         } else if (role.includes('manager')) {
-          this.router.navigate(['/admin/inventory']); // Managers see inventory
+          this.router.navigate(['/admin/inventory']);
         } else if (role.includes('cashier')) {
           this.router.navigate(['/pos/billing']);
         } else if (role.includes('pending')) {

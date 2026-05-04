@@ -1,7 +1,16 @@
 <div class="login-container">
   <div class="login-card" [class.step-2-active]="showOtp">
+    <div class="theme-toggle-pos">
+      <div class="theme-switch" (click)="toggleTheme()" [class.dark]="theme === 'dark'">
+        <div class="toggle-track">
+          <div class="icon sun">☀️</div>
+          <div class="icon moon">🌙</div>
+          <div class="toggle-thumb"></div>
+        </div>
+      </div>
+    </div>
     <div class="logo-wrapper">
-      <div class="square-logo">N</div>
+      <div class="square-logo">POS</div>
       <h1 class="brand-title">NexusPOS</h1>
       <p class="brand-subtitle">Sign in to your account to continue</p>
     </div>

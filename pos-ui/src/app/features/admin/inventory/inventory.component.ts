@@ -146,24 +146,24 @@ import { ApiService } from '../../../core/services/api.service';
     </div>
   `,
   styles: [`
-    .admin-container { padding: var(--spacing-xl); display: flex; flex-direction: column; gap: var(--spacing-xl); }
+    .admin-container { padding: var(--spacing-xl); display: flex; flex-direction: column; gap: var(--spacing-xl); background: var(--bg-primary); min-height: 100vh; }
     .admin-header { display: flex; justify-content: space-between; align-items: center; padding: var(--spacing-lg); flex-wrap: wrap; gap: 16px; }
-    .table-section { padding: 0; overflow: hidden; }
+    .table-section { padding: 0; overflow: hidden; background: var(--bg-secondary); border-radius: var(--radius-lg); }
     
     .actions { display: flex; gap: 12px; align-items: center; }
     .search-box { position: relative; min-width: 250px; }
     .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
-    .search-input { padding-left: 36px !important; }
+    .search-input { padding-left: 36px !important; background: var(--bg-tertiary) !important; color: var(--text-primary) !important; border-color: var(--border-color) !important; }
 
     .pagination-controls { display: flex; justify-content: center; align-items: center; gap: 16px; padding: var(--spacing-md); margin-top: -10px; }
     .page-info { font-weight: 600; color: var(--text-secondary); font-size: 0.875rem; }
 
     .admin-table { width: 100%; border-collapse: collapse; text-align: left; }
     .admin-table th { padding: var(--spacing-md) var(--spacing-lg); background: var(--bg-tertiary); color: var(--text-secondary); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
-    .admin-table td { padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border-color); font-size: 0.875rem; vertical-align: middle; }
+    .admin-table td { padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--border-color); font-size: 0.875rem; vertical-align: middle; color: var(--text-primary); }
     
     .badge-sku { background: var(--bg-tertiary); color: var(--text-secondary); padding: 4px 8px; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.75rem; font-weight: 600; border: 1px solid var(--border-color); }
-    .badge-tag { background: rgba(59, 130, 246, 0.1); color: #3b82f6; padding: 4px 10px; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 600; }
+    .badge-tag { background: rgba(59, 130, 246, 0.15); color: var(--accent-primary); padding: 4px 10px; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 600; }
     
     .product-info { font-weight: 600; color: var(--text-primary); }
     
@@ -172,37 +172,39 @@ import { ApiService } from '../../../core/services/api.service';
     .stock-unit { font-size: 10px; text-transform: uppercase; color: var(--text-muted); margin-top: -4px; }
     .stock-display.low-stock .stock-count { color: var(--accent-danger); }
 
-    .badge.success { background: #ecfdf5; color: #059669; }
-    .badge.danger { background: #fef2f2; color: #dc2626; }
+    .badge.success { background: rgba(16, 185, 129, 0.15); color: var(--accent-success); }
+    .badge.danger { background: rgba(239, 68, 68, 0.15); color: var(--accent-danger); }
     .badge { padding: 4px 12px; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 600; }
 
-    .btn-icon { width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .btn-icon { width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
     .btn-icon:hover { background: var(--bg-tertiary); border-color: var(--accent-primary); color: var(--accent-primary); }
 
     .text-center { text-align: center; }
     .text-muted { color: var(--text-muted); }
 
     /* Modal Styles */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 2000; }
-    .modal-card { width: 450px; padding: 32px; border-radius: var(--radius-lg); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+    .modal-card { width: 450px; padding: 32px; border-radius: var(--radius-lg); background: var(--bg-secondary); box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); }
     .modal-header { display: flex; gap: 16px; margin-bottom: 24px; }
-    .modal-icon { width: 48px; height: 48px; background: var(--bg-tertiary); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 24px; }
-    .modal-title-wrap h3 { margin: 0; font-size: 1.25rem; font-weight: 700; }
+    .modal-icon { width: 48px; height: 48px; background: var(--bg-tertiary); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--accent-primary); }
+    .modal-title-wrap h3 { margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-primary); }
     .modal-title-wrap p { margin: 4px 0 0; color: var(--text-secondary); font-size: 0.875rem; }
     
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .mt-16 { margin-top: 16px; }
-    label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
-    .static-val { padding: 10px 14px; background: var(--bg-tertiary); border-radius: var(--radius-sm); font-weight: 600; }
+    label { display: block; font-size: 0.75rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px; }
+    .static-val { padding: 12px 14px; background: var(--bg-tertiary); border-radius: var(--radius-sm); font-weight: 700; color: var(--text-primary); border: 1px solid var(--border-color); }
     
-    .type-selector { display: flex; border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden; }
-    .type-selector button { flex: 1; border: none; padding: 10px; background: transparent; cursor: pointer; font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); }
+    .type-selector { display: flex; border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-tertiary); }
+    .type-selector button { flex: 1; border: none; padding: 10px; background: transparent; cursor: pointer; font-size: 0.875rem; font-weight: 700; color: var(--text-secondary); transition: all 0.2s; }
     .type-selector button.active { background: var(--accent-primary); color: white; }
 
-    .main-input { font-size: 1.5rem !important; font-weight: 700 !important; text-align: center; height: 60px !important; }
-    .modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; }
-    .btn-cancel { padding: 10px 20px; border: 1px solid var(--border-color); background: transparent; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
-    .btn-save { padding: 10px 24px; border: none; background: var(--accent-primary); color: white; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
+    .main-input { font-size: 1.75rem !important; font-weight: 800 !important; text-align: center; height: 64px !important; background: var(--bg-tertiary) !important; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border-color); }
+    .btn-cancel { padding: 10px 20px; border: 1px solid var(--border-color); background: transparent; border-radius: var(--radius-md); font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+    .btn-cancel:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+    .btn-save { padding: 10px 24px; border: none; background: var(--accent-primary); color: white; border-radius: var(--radius-md); font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
+    .btn-save:hover:not(:disabled) { background: var(--accent-secondary); transform: translateY(-1px); }
     .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
 
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -331,11 +333,13 @@ export class InventoryComponent implements OnInit {
 
   syncFromCatalog() {
     this.isLoading = true;
-    this.api.getProducts().subscribe({
-      next: (prods) => {
-        console.log('Synced products from catalog', prods);
-        this.loadInventory();
-        this.cdr.detectChanges();
+    this.api.syncCatalogProducts().subscribe({
+      next: (res) => {
+        console.log('Backend sync triggered', res);
+        // Give the background worker a second to process the events
+        setTimeout(() => {
+          this.loadInventory();
+        }, 1500);
       },
       error: (err) => {
         console.error('Sync failed', err);

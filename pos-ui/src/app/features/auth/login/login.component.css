@@ -13,10 +13,17 @@
   background: var(--panel-bg);
   padding: 48px;
   border-radius: var(--radius-lg);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  display: flex;
   flex-direction: column;
   gap: 24px;
-  align-self: center; /* Ensure it stays centered */
+}
+
+.theme-toggle-pos {
+  position: absolute;
+  top: 24px;
+  right: 24px;
 }
 
 .logo-wrapper {
@@ -226,12 +233,12 @@
 .modal-card {
   width: 100%;
   max-width: 420px;
-  background: #111827;
-  border: 1px solid #1f2937;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
-  color: #f8fafc;
+  box-shadow: var(--shadow-lg);
+  color: var(--text-primary);
 }
 
 .modal-header {
