@@ -31,7 +31,7 @@ export class PaymentComponent implements OnInit {
     private api: ApiService,
     private cdr: ChangeDetectorRef,
     private signalR: SignalrService
-  ) {}
+  ) { }
   ngOnInit() {
     this.route.queryParamMap.subscribe(params => {
       const mode = params.get('mode');
@@ -54,9 +54,8 @@ export class PaymentComponent implements OnInit {
         this.onBackendFinalized();
       }
     });
-
-    this.loadRazorpayScript();
   }
+
 
   loadBillDetails() {
     this.isLoading = true;
@@ -212,15 +211,15 @@ export class PaymentComponent implements OnInit {
     this.bill.status = 'Paid';
     this.bill.paymentMode = mode;
     this.bill.referenceNumber = ref;
-    
+
     // We don't set paymentSuccess = true here yet, we wait for the Backend via SignalR
     // Or if it's Cash, we can show it immediately if we're confident
     if (mode === 'Cash') {
-       this.paymentSuccess = true;
+      this.paymentSuccess = true;
     }
-    
+
     this.cdr.detectChanges();
-    
+
     // Automatic Printing
     setTimeout(() => {
       window.print();
@@ -236,14 +235,6 @@ export class PaymentComponent implements OnInit {
 
   newSale() {
     this.router.navigate(['/pos/billing']);
-  }
-
-  private loadRazorpayScript() {
-    if ((window as any).hasOwnProperty('Razorpay')) return;
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
   }
 
   private normalizeBill(raw: any) {

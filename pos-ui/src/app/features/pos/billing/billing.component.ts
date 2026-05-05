@@ -46,7 +46,6 @@ export class BillingComponent implements OnInit {
   ngOnInit() {
     this.loadUserInfo();
     this.loadData();
-    this.loadRazorpayScript();
   }
 
   // --- INITIALIZATION ---
@@ -59,14 +58,6 @@ export class BillingComponent implements OnInit {
     } catch (e) {
       console.warn('Could not load user info', e);
     }
-  }
-
-  loadRazorpayScript() {
-    if ((window as any).hasOwnProperty('Razorpay')) return;
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    document.body.appendChild(script);
   }
 
   loadData() {

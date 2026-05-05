@@ -165,20 +165,20 @@ export class OtpVerificationComponent implements OnInit {
   verifyOtp() {
     this.isProcessing = true;
     this.authService.verifyLoginOtp({ email: this.email, otp: this.otp }).subscribe({
-      next: (res) => {
-        const rawRole = res.role || res.Role || '';
+      next: (res: any) => {
+        const data = res.data || res;
+        const rawRole = data.role || data.Role || '';
         const role = rawRole.toLowerCase();
 
-        if (role.includes('admin')) {
+        console.log('[OTP Verification] Success. Role:', rawRole);
+
+        if (role.includes('admin') || role.includes('storemanager')) {
           this.router.navigate(['/admin/dashboard']);
-        } else if (role.includes('manager')) {
-          this.router.navigate(['/admin/inventory']);
-        } else if (role.includes('cashier')) {
-          this.router.navigate(['/pos/billing']);
         } else if (role.includes('pending')) {
           this.router.navigate(['/pending-approval']);
         } else {
-          this.router.navigate(['/login']);
+          // Default for Staff, Cashier, etc.
+          this.router.navigate(['/pos/billing']);
         }
       },
       error: (err) => {

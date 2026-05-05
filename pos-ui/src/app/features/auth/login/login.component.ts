@@ -36,6 +36,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
   theme: 'light' | 'dark' = 'light';
   private cooldownInterval: any;
   private resetCooldownInterval: any;
+  private isGoogleInitialized = false;
 
 
   constructor(
@@ -88,12 +89,15 @@ export class LoginComponent implements OnInit, AfterViewInit {
     if (typeof google !== 'undefined') {
       const btnElement = document.getElementById('googleBtn');
       if (btnElement) {
-        google.accounts.id.initialize({
-          client_id: '279364566745-oc9hv9a5tt1k91hgoi51s3qi0ot80u92.apps.googleusercontent.com',
-          callback: this.handleCredentialResponse.bind(this),
-          auto_select: false,
-          ux_mode: 'popup'
-        });
+        if (!this.isGoogleInitialized) {
+          google.accounts.id.initialize({
+            client_id: '279364566745-oc9hv9a5tt1k91hgoi51s3qi0ot80u92.apps.googleusercontent.com',
+            callback: this.handleCredentialResponse.bind(this),
+            auto_select: false,
+            ux_mode: 'popup'
+          });
+          this.isGoogleInitialized = true;
+        }
         google.accounts.id.renderButton(
           btnElement,
           { theme: 'outline', size: 'large', text: 'signin_with' }
@@ -134,7 +138,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
       this.authService.verifyLoginOtp({ email: this.email, otp: this.otp }).subscribe({
         next: (res: any) => {
           this.isLoading = false;
-          this.handleAuthNavigation(res);
+          this.handleAuthNavigation(res.data);
         },
         error: (err) => {
           this.isLoading = false;
@@ -186,14 +190,23 @@ export class LoginComponent implements OnInit, AfterViewInit {
   }
 
   private handleAuthNavigation(data: any) {
+    if (!data) {
+      console.error('No authentication data provided to handleAuthNavigation');
+      return;
+    }
     const role = data.role || data.Role || '';
     const token = data.token || data.Token || '';
 
+    console.log('[Auth Navigation] Role:', role, 'Token present:', !!token);
+
     if (role === 'PENDING_STAFF' || !token) {
+      console.log('[Auth Navigation] Navigating to pending-approval');
       this.router.navigate(['/pending-approval']);
     } else if (role === 'Admin' || role === 'StoreManager') {
+      console.log('[Auth Navigation] Navigating to admin/dashboard');
       this.router.navigate(['/admin/dashboard']);
     } else {
+      console.log('[Auth Navigation] Navigating to pos/billing');
       this.router.navigate(['/pos/billing']);
     }
   }

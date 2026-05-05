@@ -33,10 +33,13 @@ export class AuthService {
   login(credentials: any) {
     return this.authApi.login(credentials).pipe(
       tap((response: any) => {
-        if (response.data && response.data.token) {
+        const data = response.data || response;
+        const token = data.token || data.Token;
+        if (data && token) {
           const authData: User = {
-            ...response.data,
-            role: response.data.role || 'Staff'
+            ...data,
+            token: token,
+            role: data.role || data.Role || 'Staff'
           };
           this.setSession(authData);
         }
@@ -47,10 +50,13 @@ export class AuthService {
   verifyLoginOtp(verifyDto: any) {
     return this.authApi.verifyLoginOtp(verifyDto).pipe(
       tap((response: any) => {
-        if (response && response.token) {
+        const data = response.data || response;
+        const token = data.token || data.Token;
+        if (data && token) {
           const authData: User = {
-            ...response,
-            role: response.role || 'Staff'
+            ...data,
+            token: token,
+            role: data.role || data.Role || 'Staff'
           };
           this.setSession(authData);
         }
@@ -61,10 +67,13 @@ export class AuthService {
   googleLogin(googleData: any) {
     return this.authApi.googleLogin(googleData).pipe(
       tap((response: any) => {
-        if (response.data && response.data.token) {
+        const data = response.data || response;
+        const token = data.token || data.Token;
+        if (data && token) {
           const authData: User = {
-            ...response.data,
-            role: response.data.role || 'Staff'
+            ...data,
+            token: token,
+            role: data.role || data.Role || 'Staff'
           };
           this.setSession(authData);
         }
@@ -74,13 +83,15 @@ export class AuthService {
 
   refreshToken(): Observable<any> {
     const token = localStorage.getItem('token');
-    // Note: refreshToken is handled via HttpOnly cookie in the backend
     return this.authApi.refresh(token || '').pipe(
       tap((response: any) => {
-        if (response && response.token) {
+        const data = response.data || response;
+        const newToken = data.token || data.Token;
+        if (data && newToken) {
           const authData: User = {
-            ...response,
-            role: response.role || 'Staff'
+            ...data,
+            token: newToken,
+            role: data.role || data.Role || 'Staff'
           };
           this.setSession(authData);
         }

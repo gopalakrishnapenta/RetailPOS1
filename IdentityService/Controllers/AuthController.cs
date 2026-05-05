@@ -35,7 +35,7 @@ namespace IdentityService.Controllers
             if (result.RefreshToken != null)
                 SetTokenCookie(result.RefreshToken);
 
-            return Ok(result.Data);
+            return Ok(new { data = result.Data });
         }
 
         [HttpPost("register")]
@@ -97,7 +97,7 @@ namespace IdentityService.Controllers
             if (result.RefreshToken != null)
                 SetTokenCookie(result.RefreshToken);
 
-            return Ok(result.Data);
+            return Ok(new { data = result.Data });
         }
 
         [HttpGet("users")]
@@ -136,7 +136,7 @@ namespace IdentityService.Controllers
             if (result.RefreshToken != null)
                 SetTokenCookie(result.RefreshToken);
 
-            return Ok(result.Data);
+            return Ok(new { data = result.Data });
         }
 
         [HttpPost("sync-users")]
