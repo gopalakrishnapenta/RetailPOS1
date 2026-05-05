@@ -37,7 +37,7 @@ namespace CatalogService.Services
             _logger = logger;
         }
 
-        private string GetCacheKey() => $"products_store_{_tenantProvider.StoreId}";
+        private string GetCacheKey() => $"products_store_{_tenantProvider.StoreId}_{_tenantProvider.Role}";
 
         public async Task<IEnumerable<ProductDto>> GetAllProductsAsync()
         {
@@ -46,16 +46,16 @@ namespace CatalogService.Services
             var cachedData = await _cache.GetStringAsync(cacheKey);
             if (!string.IsNullOrEmpty(cachedData))
             {
-                _logger.LogInformation($"🚀 [CACHE] Hit for store {_tenantProvider.StoreId} products list.");
+                _logger.LogInformation($"🚀 [CACHE] Hit for store {_tenantProvider.StoreId} (Role: {_tenantProvider.Role}) products list.");
                 return JsonSerializer.Deserialize<IEnumerable<ProductDto>>(cachedData) ?? Enumerable.Empty<ProductDto>();
             }
 
             _logger.LogInformation($"🐢 [DATABASE] Cache miss for store {_tenantProvider.StoreId} products. Fetching from DB...");
-            var db = ((CatalogService.Repositories.ProductRepository)_productRepository).GetContext();
-            var products = await db.Products
-                .Include(p => p.Category)
-                .Where(p => p.IsActive)
-                .ToListAsync();
+            
+            // Use explicit scoped query to ensure security filter is applied even if Global Query Filters are bypassed
+            var query = GetScopedProductQuery().Include(p => p.Category).Where(p => p.IsActive);
+            
+            var products = await query.ToListAsync();
 
             var result = products.Where(p => p.Category == null || p.Category.IsActive).Select(MapToDto).ToList();
 

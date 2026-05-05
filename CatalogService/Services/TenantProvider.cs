@@ -18,26 +18,31 @@ namespace CatalogService.Services
             get
             {
                 var context = _httpContextAccessor.HttpContext;
-                if (context == null) return 0;
+                if (context?.User == null) return 0;
 
                 // Check Role robustly to determine if we should allow header override
                 string role = this.Role;
 
                 // Admin Override from Header
-                if (role == "Admin" && context.Request.Headers.TryGetValue("X-Store-Id", out var headerStoreId))
+                if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase) && 
+                    context.Request.Headers.TryGetValue("X-Store-Id", out var headerStoreId))
                 {
                     if (int.TryParse(headerStoreId, out int sid)) return sid;
                 }
 
+                // Try to get StoreId from various claim names
                 var claim = context.User.FindFirst("StoreId") ?? 
                             context.User.FindFirst("storeid") ??
-                            context.User.FindFirst("Storeid");
+                            context.User.FindFirst("Storeid") ??
+                            context.User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/sid") ??
+                            context.User.FindFirst(ClaimTypes.Sid);
 
                 if (claim != null && int.TryParse(claim.Value, out int storeId))
                 {
                     return storeId;
                 }
-                return 0; // Admin or unauthenticated
+
+                return 0; // Global or unauthenticated
             }
         }
 
@@ -47,10 +52,12 @@ namespace CatalogService.Services
             {
                 var context = _httpContextAccessor.HttpContext;
                 if (context?.User == null) return string.Empty;
+
                 var roleClaim = context.User.FindFirst(ClaimTypes.Role) ?? 
                                 context.User.FindFirst("role") ?? 
                                 context.User.FindFirst("Role") ??
                                 context.User.FindFirst("http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
+                
                 return roleClaim?.Value ?? string.Empty;
             }
         }

@@ -50,14 +50,14 @@ namespace CatalogService.Data
 
             // ── Multi-tenant Global Query Filters ────────────────────────────────────
             modelBuilder.Entity<Product>().HasQueryFilter(p =>
-                (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0)
-                || p.StoreId == _tenantProvider.StoreId);
+                (string.Equals(_tenantProvider.Role, "Admin", StringComparison.OrdinalIgnoreCase) && _tenantProvider.StoreId == 0)
+                || (p.StoreId == _tenantProvider.StoreId && _tenantProvider.StoreId != 0));
 
             modelBuilder.Entity<Category>().HasQueryFilter(c => 
                 c.IsActive && (
-                (_tenantProvider.Role == "Admin" && _tenantProvider.StoreId == 0)
-                || c.StoreId == _tenantProvider.StoreId
-                || c.StoreId == 0));
+                (string.Equals(_tenantProvider.Role, "Admin", StringComparison.OrdinalIgnoreCase) && _tenantProvider.StoreId == 0)
+                || (c.StoreId == _tenantProvider.StoreId && _tenantProvider.StoreId != 0)
+                || (c.StoreId == 0))); // Categories can still be global
 
             modelBuilder.Entity<Category>()
                 .Property(c => c.Id)
