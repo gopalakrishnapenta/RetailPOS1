@@ -115,18 +115,25 @@ export class LoginComponent implements OnInit, AfterViewInit {
   }
 
   handleCredentialResponse(response: any) {
+    console.log('[Google Login] Credential received, authenticating with backend...');
     this.authError = '';
     this.isLoading = true;
     this.authService.googleLogin({ idToken: response.credential }).subscribe({
       next: (res: any) => {
         this.isLoading = false;
-        // The service already handles session setup
+        console.log('[Google Login] Success:', res.message);
         this.handleAuthNavigation(res.data);
       },
       error: (err) => {
         this.isLoading = false;
-        console.error('Google login error:', err);
-        this.authError = err.error?.message || 'Google login failed';
+        console.error('[Google Login] Error details:', err);
+        if (err.status === 503) {
+          this.authError = 'The server is busy or timed out. Please try again in a few seconds.';
+        } else if (err.status === 0) {
+          this.authError = 'Unable to connect to the server. Please check your internet connection.';
+        } else {
+          this.authError = err.error?.message || 'Google login failed. Please try again.';
+        }
       }
     });
   }
@@ -134,6 +141,8 @@ export class LoginComponent implements OnInit, AfterViewInit {
   onSubmit() {
     this.authError = '';
     this.isLoading = true;
+    console.log('[Login] Submitting form...', this.showOtp ? 'OTP' : 'Credentials');
+
     if (this.showOtp) {
       this.authService.verifyLoginOtp({ email: this.email, otp: this.otp }).subscribe({
         next: (res: any) => {
@@ -142,6 +151,7 @@ export class LoginComponent implements OnInit, AfterViewInit {
         },
         error: (err) => {
           this.isLoading = false;
+          console.error('[Login] OTP Verification Error:', err);
           this.authError = err.error?.message || 'Invalid OTP';
         }
       });
@@ -150,7 +160,9 @@ export class LoginComponent implements OnInit, AfterViewInit {
       this.authService.login({ email: this.email, password: this.password }).subscribe({
         next: (res: any) => {
           this.isLoading = false;
+          console.log('[Login] Response:', res.message);
           if (res.message === 'OTP_SENT') {
+            console.log('[Login] Redirecting to OTP page');
             this.router.navigate(['/otp-verification'], { queryParams: { email: this.email } });
           } else {
             this.handleAuthNavigation(res.data);
@@ -158,7 +170,12 @@ export class LoginComponent implements OnInit, AfterViewInit {
         },
         error: (err) => {
           this.isLoading = false;
-          this.authError = err.error?.message || 'Login failed';
+          console.error('[Login] Error:', err);
+          if (err.status === 503) {
+            this.authError = 'The authentication service is taking too long. Please try again; your code might have been sent already.';
+          } else {
+            this.authError = err.error?.message || 'Login failed';
+          }
         }
       });
     }

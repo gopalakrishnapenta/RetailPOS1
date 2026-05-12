@@ -101,7 +101,7 @@ app.UseAuthorization();
 app.Use(async (context, next) =>
 {
     context.Response.Headers.Append("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
-    context.Response.Headers.Append("Cross-Origin-Embedder-Policy", "credentialless");
+    // Removed Cross-Origin-Embedder-Policy as it blocks external Google resources
     await next();
 });
 

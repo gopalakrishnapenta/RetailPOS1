@@ -1,8 +1,9 @@
-import { Component, OnInit, AfterViewInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { ApiService } from '../../../core/services/api.service';
+import { AuthApiService } from '../../../core/services/auth-api.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 declare var google: any;
 
@@ -13,7 +14,7 @@ declare var google: any;
   templateUrl: './signup.component.html',
   styleUrl: '../login/login.component.css' // Reusing login styles
 })
-export class SignupComponent implements OnInit, AfterViewInit {
+export class SignupComponent implements OnInit, AfterViewInit, OnDestroy {
   email = '';
   password = '';
   confirmPassword = '';
@@ -27,10 +28,11 @@ export class SignupComponent implements OnInit, AfterViewInit {
 
   fullName = '';
 
-  constructor(
-    private api: ApiService,
-    private router: Router
-  ) {}
+  private authApi = inject(AuthApiService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
+  constructor() {}
 
   ngOnInit() {
   }
@@ -70,19 +72,37 @@ export class SignupComponent implements OnInit, AfterViewInit {
   }
 
   handleGoogleSignupResponse(response: any) {
-    this.api.googleLogin({ idToken: response.credential }).subscribe({
+    this.isLoading = true;
+    this.authService.googleLogin({ idToken: response.credential }).subscribe({
       next: (res: any) => {
-        localStorage.setItem('token', res.token || res.Token || '');
-        localStorage.setItem('user', JSON.stringify(res));
-        this.router.navigate(['/pending-approval']);
+        this.isLoading = false;
+        this.handleAuthNavigation(res.data);
       },
-      error: (err) => alert(err.error?.message || 'Google Sign-Up failed')
+      error: (err) => {
+        this.isLoading = false;
+        console.error('Google signup error:', err);
+        alert(err.error?.message || 'Google Sign-Up failed');
+      }
     });
+  }
+
+  private handleAuthNavigation(data: any) {
+    if (!data) return;
+    const role = data.role || data.Role || '';
+    const token = data.token || data.Token || '';
+
+    if (role === 'PENDING_STAFF' || !token) {
+      this.router.navigate(['/pending-approval']);
+    } else if (role === 'Admin' || role === 'StoreManager') {
+      this.router.navigate(['/admin/dashboard']);
+    } else {
+      this.router.navigate(['/pos/billing']);
+    }
   }
 
   resendOtp() {
     if (this.resendCooldown > 0) return;
-    this.api.resendVerification(this.email).subscribe({
+    this.authApi.resendVerification(this.email).subscribe({
       next: () => {
         this.startCooldown();
         alert('Verification code resent successfully.');
@@ -105,7 +125,7 @@ export class SignupComponent implements OnInit, AfterViewInit {
   onSubmit() {
     this.isLoading = true;
     if (this.isRegistered) {
-      this.api.verifyEmail({ email: this.email, otp: this.verificationOtp }).subscribe({
+      this.authApi.verifyEmail({ email: this.email, otp: this.verificationOtp }).subscribe({
         next: () => {
           this.isLoading = false;
           alert('Email verified successfully! Please log in.');
@@ -128,7 +148,7 @@ export class SignupComponent implements OnInit, AfterViewInit {
         return;
       }
 
-      this.api.register({ fullName: this.fullName, email: this.email, password: this.password }).subscribe({
+      this.authApi.register({ fullName: this.fullName, email: this.email, password: this.password }).subscribe({
         next: (res: any) => {
           this.isLoading = false;
           this.isRegistered = true;
@@ -147,3 +167,4 @@ export class SignupComponent implements OnInit, AfterViewInit {
     if (this.cooldownInterval) clearInterval(this.cooldownInterval);
   }
 }
+

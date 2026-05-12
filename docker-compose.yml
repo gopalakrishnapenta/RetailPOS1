@@ -4,11 +4,15 @@ services:
   db:
     image: mcr.microsoft.com/mssql/server:2025-latest
     container_name: retailpos-db
+    user: root
     environment:
       - ACCEPT_EULA=Y
       - MSSQL_SA_PASSWORD=YourSecurePassword123!
     ports:
       - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+      - ./backups:/var/opt/mssql/backup
     healthcheck:
       test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "YourSecurePassword123!", "-C", "-Q", "SELECT 1"]
       interval: 10s
@@ -233,4 +237,5 @@ networks:
 
 volumes:
   seq-data:
+  mssql-data:
 

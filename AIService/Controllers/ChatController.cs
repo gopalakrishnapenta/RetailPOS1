@@ -26,7 +26,7 @@ namespace AIService.Controllers
             }
 
             var client = _httpClientFactory.CreateClient();
-            var url = $"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={_apiKey}";
+            var url = $"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={_apiKey}";
 
             // Fetch some context from other services (Simplified for now)
             string storeContext = "";
@@ -78,17 +78,15 @@ namespace AIService.Controllers
                                "3. To find 'out of stock', look for the 'OUT OF STOCK' status in the table.\n" +
                                "4. Answer in a friendly, helpful way.";
 
+            var combinedPrompt = $"{systemPrompt}\n\nUSER MESSAGE: {request.Message}";
+
             var geminiRequest = new
             {
-                system_instruction = new
-                {
-                    parts = new[] { new { text = systemPrompt } }
-                },
                 contents = new[]
                 {
                     new { 
                         role = "user",
-                        parts = new[] { new { text = request.Message } } 
+                        parts = new[] { new { text = combinedPrompt } } 
                     }
                 }
             };
