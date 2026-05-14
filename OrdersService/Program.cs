@@ -56,6 +56,7 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<OrdersService.Consumers.ReturnInitiatedConsumer>();
     x.AddConsumer<OrdersService.Consumers.OrderReturnedConsumer>();
     x.AddConsumer<OrdersService.Consumers.SagaOrderCommandsConsumer>();
+    x.AddConsumer<OrdersService.Consumers.PaymentProcessedConsumer>();
 
     x.AddSagaStateMachine<OrdersService.Sagas.CheckoutStateMachine, OrdersService.Sagas.CheckoutSagaState>()
         .EntityFrameworkRepository(r =>

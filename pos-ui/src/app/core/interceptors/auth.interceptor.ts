@@ -5,7 +5,6 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const storeId = user.storeId !== undefined ? user.storeId : (user.StoreId !== undefined ? user.StoreId : 0);
-  
   if (token) {
     const cloned = req.clone({
       setHeaders: {
@@ -15,6 +14,6 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
     });
     return next(cloned);
   }
-  
+
   return next(req);
 };
